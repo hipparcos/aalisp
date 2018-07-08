@@ -2,7 +2,7 @@ out=alisp
 sources=alisp.c
 objects=$(sources:%.c=%.o)
 
-DEBUG?=-g -O0
+DEBUG?=-ggdb3 -O0
 CFLAGS=-Wall -c -std=c99 $(DEBUG)
 LDFLAGS=-Wall
 

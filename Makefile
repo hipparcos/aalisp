@@ -1,3 +1,5 @@
+include VERSION
+
 out=alisp
 sources=alisp.c
 objects=$(sources:%.c=%.o)
@@ -5,6 +7,16 @@ objects=$(sources:%.c=%.o)
 DEBUG?=-ggdb3 -O0
 CFLAGS=-Wall -c -std=c99 $(DEBUG)
 LDFLAGS=-Wall
+
+ifdef PROGNAME
+CFLAGS+=-DPROGNAME=$(PROGNAME)
+endif
+ifdef VERSION
+CFLAGS+=-DVERSION=$(VERSION)
+endif
+ifdef CODENAME
+CFLAGS+=-DCODENAME=$(CODENAME)
+endif
 
 all: build
 

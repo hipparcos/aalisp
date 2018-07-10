@@ -3,22 +3,26 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <getopt.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 
 #include "version.h"
 
-#define INPUT_SIZE  2048
-
-static char input[INPUT_SIZE];
+/* Configurable variables */
 static char* prompt = "> ";
 
+/**
+ * Alisp is a small lisp interpreter.
+ * http://www.buildyourownlisp.com/contents
+ */
 int main(int argc, char** argv) {
     /* Command line arguments */
     int c;
     while ((c = getopt(argc, argv, "p:")) != -1) {
         switch (c) {
-            case 'p':
-                prompt = optarg;
-                break;
+        case 'p':
+            prompt = optarg;
+            break;
         }
     }
 
@@ -28,11 +32,10 @@ int main(int argc, char** argv) {
 
     /* REPL loop */
     while (true) {
-        fputs(prompt, stdout);
-
-        fgets(input, INPUT_SIZE, stdin);
-
-        fputs(input, stdout);
+        char* input = readline(prompt);
+        add_history(input);
+        puts(input);
+        free(input);
     }
 
     return EXIT_SUCCESS;

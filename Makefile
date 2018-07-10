@@ -7,8 +7,8 @@ version_header=version.h
 
 SHELL=/bin/bash
 DEBUG?=-ggdb3 -O0
-CFLAGS=-Wall -c -std=c99 $(DEBUG)
-LDFLAGS=-Wall
+CFLAGS=-Wall -std=c99 $(DEBUG)
+LDFLAGS=-Wall -lreadline
 
 include $(version_file)
 include $(build_file)

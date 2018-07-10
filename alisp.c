@@ -6,7 +6,10 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+#include "vendor/mpc/mpc.h"
+
 #include "version.h"
+#include "polish.h"
 
 /* Configurable variables */
 static char* prompt = "> ";
@@ -34,7 +37,7 @@ int main(int argc, char** argv) {
     while (true) {
         char* input = readline(prompt);
         add_history(input);
-        puts(input);
+        polish_eval(input, stdout, stderr);
         free(input);
     }
 

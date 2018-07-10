@@ -1,5 +1,5 @@
 out=alisp
-sources=alisp.c
+sources=alisp.c vendor/mpc/mpc.c polish.c
 objects=$(sources:%.c=%.o)
 version_file=version.mk
 build_file=buildnumber.mk
@@ -8,7 +8,7 @@ version_header=version.h
 SHELL=/bin/bash
 DEBUG?=-ggdb3 -O0
 CFLAGS=-Wall -std=c99 $(DEBUG)
-LDFLAGS=-Wall -lreadline
+LDFLAGS=-Wall -lreadline -lm
 
 include $(version_file)
 include $(build_file)
@@ -55,4 +55,4 @@ $(version_header): $(sources) $(version_file)
 	@echo -e "\n#endif" >> $(version_header)
 
 # List of all special targets (always out-of-date).
-.PHONY: all build clean
+.PHONY: all build clean tags

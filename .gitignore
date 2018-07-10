@@ -1,5 +1,4 @@
-*.o
-*.d
+**.[od]
 tags
 version.h
 .gdb_history

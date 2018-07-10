@@ -1,0 +1,4 @@
+[submodule "vendor/mpc"]
+	path = vendor/mpc
+	url = https://github.com/orangeduck/mpc.git
+    ignore = untracked

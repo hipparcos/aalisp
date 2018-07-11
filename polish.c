@@ -65,6 +65,27 @@ double lval_as_dbl(struct lval v) {
     }
 }
 
+bool lval_equals(struct lval x, struct lval y) {
+    if (x.type == LVAL_ERR) return false;
+    if (y.type == LVAL_ERR) return false;
+    if (x.type != y.type) return false;
+
+    static const double epsilon = 0.000001;
+
+    if (x.type == LVAL_NUM && x.data.num == y.data.num)
+        return true;
+    if (x.type == LVAL_DBL && x.data.dbl - y.data.dbl < epsilon)
+        return true;
+
+    return false;
+}
+
+bool lval_err_equals(struct lval x, struct lval y) {
+    if (x.type != y.type) return false;
+    if (x.type != LVAL_ERR) return false;
+    return x.data.err == y.data.err;
+}
+
 void lval_print_to(struct lval v, FILE* output) {
     switch (v.type) {
     case LVAL_NUM:
@@ -83,6 +104,30 @@ void lval_print_to(struct lval v, FILE* output) {
             break;
         case LERR_BAD_NUM:
             fprintf(output, "Error: invalid number.");
+            break;
+        }
+        break;
+    }
+}
+
+void lval_to_string(struct lval v, char* out) {
+    switch (v.type) {
+    case LVAL_NUM:
+        sprintf(out, "%li", v.data.num);
+        break;
+    case LVAL_DBL:
+        sprintf(out, "%g", v.data.dbl);
+        break;
+    case LVAL_ERR:
+        switch (v.data.err) {
+        case LERR_DIV_ZERO:
+            sprintf(out, "Error: division by 0.");
+            break;
+        case LERR_BAD_OP:
+            sprintf(out, "Error: invalid operator.");
+            break;
+        case LERR_BAD_NUM:
+            sprintf(out, "Error: invalid number.");
             break;
         }
         break;

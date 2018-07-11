@@ -1,5 +1,5 @@
-out=alisp
-sources=alisp.c vendor/mpc/mpc.c polish.c
+out=$(PROGNAME)
+sources=$(PROGNAME).c vendor/mpc/mpc.c polish.c
 headers=vendor/mpc/mpc.h polish.h
 objects=$(sources:%.c=%.o)
 

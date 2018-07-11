@@ -1,3 +1,3 @@
-PROGNAME=Alisp
+PROGNAME=aalisp
 VERSION=v0.0.1
 CODENAME=dev

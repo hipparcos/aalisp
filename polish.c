@@ -21,16 +21,18 @@ enum lerr {
 /* lval is the return type of an evalution. */
 struct lval {
     enum ltype type;
-    long num;
-    double dbl;
-    enum lerr err;
+    union {
+        long num;
+        double dbl;
+        enum lerr err;
+    } data;
 };
 
 /* Create a new number type lval. */
 struct lval lval_num(long x) {
     struct lval v;
     v.type = LVAL_NUM;
-    v.num = x;
+    v.data.num = x;
     return v;
 }
 
@@ -38,7 +40,7 @@ struct lval lval_num(long x) {
 struct lval lval_dbl(double x) {
     struct lval v;
     v.type = LVAL_DBL;
-    v.dbl = x;
+    v.data.dbl = x;
     return v;
 }
 
@@ -46,19 +48,19 @@ struct lval lval_dbl(double x) {
 struct lval lval_err(enum lerr err) {
     struct lval v;
     v.type = LVAL_ERR;
-    v.err = err;
+    v.data.err = err;
     return v;
 }
 
 bool lval_is_zero(struct lval v) {
-    return (v.type == LVAL_NUM && v.num == 0)
-        || (v.type == LVAL_DBL && fpclassify(v.dbl) == FP_ZERO);
+    return (v.type == LVAL_NUM && v.data.num == 0)
+        || (v.type == LVAL_DBL && fpclassify(v.data.dbl) == FP_ZERO);
 }
 
 double lval_as_dbl(struct lval v) {
     switch (v.type) {
-    case LVAL_NUM: return (double) v.num;
-    case LVAL_DBL: return v.dbl;
+    case LVAL_NUM: return (double) v.data.num;
+    case LVAL_DBL: return v.data.dbl;
     default: return .0;
     }
 }
@@ -66,13 +68,13 @@ double lval_as_dbl(struct lval v) {
 void lval_print_to(struct lval v, FILE* output) {
     switch (v.type) {
     case LVAL_NUM:
-        fprintf(output, "%li", v.num);
+        fprintf(output, "%li", v.data.num);
         break;
     case LVAL_DBL:
-        fprintf(output, "%g", v.dbl);
+        fprintf(output, "%g", v.data.dbl);
         break;
     case LVAL_ERR:
-        switch (v.err) {
+        switch (v.data.err) {
         case LERR_DIV_ZERO:
             fprintf(output, "Error: division by 0.");
             break;
@@ -162,7 +164,7 @@ struct lval polish_op_add(struct lval x, struct lval y) {
     if (EITHER_IS_DBL(x,y)) {
         return lval_dbl(lval_as_dbl(x) + lval_as_dbl(y));
     } else {
-        return lval_num(x.num + y.num);
+        return lval_num(x.data.num + y.data.num);
     }
 }
 
@@ -170,7 +172,7 @@ struct lval polish_op_sub(struct lval x, struct lval y) {
     if (EITHER_IS_DBL(x,y)) {
         return lval_dbl(lval_as_dbl(x) - lval_as_dbl(y));
     } else {
-        return lval_num(x.num - y.num);
+        return lval_num(x.data.num - y.data.num);
     }
 }
 
@@ -178,7 +180,7 @@ struct lval polish_op_mul(struct lval x, struct lval y) {
     if (EITHER_IS_DBL(x,y)) {
         return lval_dbl(lval_as_dbl(x) * lval_as_dbl(y));
     } else {
-        return lval_num(x.num * y.num);
+        return lval_num(x.data.num * y.data.num);
     }
 }
 
@@ -190,7 +192,7 @@ struct lval polish_op_div(struct lval x, struct lval y) {
     if (EITHER_IS_DBL(x,y)) {
         return lval_dbl(lval_as_dbl(x) / lval_as_dbl(y));
     } else {
-        return lval_num(x.num / y.num);
+        return lval_num(x.data.num / y.data.num);
     }
 }
 
@@ -203,7 +205,7 @@ struct lval polish_op_mod(struct lval x, struct lval y) {
         return lval_err(LERR_DIV_ZERO);
     }
 
-    return lval_num(x.num % y.num);
+    return lval_num(x.data.num % y.data.num);
 }
 
 struct lval polish_eval_op(struct lval x, char* op, struct lval y) {

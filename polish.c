@@ -1,11 +1,14 @@
 #include "polish.h"
 
+#include <math.h>
+#include <stdbool.h>
 #include <string.h>
 
 #include "vendor/mpc/mpc.h"
 
 enum ltype {
     LVAL_NUM,
+    LVAL_DBL,
     LVAL_ERR
 };
 
@@ -19,6 +22,7 @@ enum lerr {
 struct lval {
     enum ltype type;
     long num;
+    double dbl;
     enum lerr err;
 };
 
@@ -30,6 +34,14 @@ struct lval lval_num(long x) {
     return v;
 }
 
+/* Create a new double type lval. */
+struct lval lval_dbl(double x) {
+    struct lval v;
+    v.type = LVAL_DBL;
+    v.dbl = x;
+    return v;
+}
+
 /* Create a new error type lval. */
 struct lval lval_err(enum lerr err) {
     struct lval v;
@@ -38,10 +50,26 @@ struct lval lval_err(enum lerr err) {
     return v;
 }
 
+bool lval_is_zero(struct lval v) {
+    return (v.type == LVAL_NUM && v.num == 0)
+        || (v.type == LVAL_DBL && fpclassify(v.dbl) == FP_ZERO);
+}
+
+double lval_as_dbl(struct lval v) {
+    switch (v.type) {
+    case LVAL_NUM: return (double) v.num;
+    case LVAL_DBL: return v.dbl;
+    default: return .0;
+    }
+}
+
 void lval_print_to(struct lval v, FILE* output) {
     switch (v.type) {
     case LVAL_NUM:
         fprintf(output, "%li", v.num);
+        break;
+    case LVAL_DBL:
+        fprintf(output, "%g", v.dbl);
         break;
     case LVAL_ERR:
         switch (v.err) {
@@ -68,18 +96,21 @@ struct lval polish_eval_expr(mpc_ast_t* ast);
 
 void polish_eval(const char* restrict input) {
     mpc_parser_t* Number    = mpc_new("number");
+    mpc_parser_t* Double    = mpc_new("double");
     mpc_parser_t* Operator  = mpc_new("operator");
     mpc_parser_t* Expr      = mpc_new("expr");
     mpc_parser_t* Polish    = mpc_new("polish");
 
+    /* double must be matched before number. */
     mpca_lang(MPCA_LANG_DEFAULT,
-              "                                                  \
-              number   : /-?[0-9]+/ ;                            \
-              operator : '+' | '-' | '*' | '/' | '%' ;           \
-              expr     : <number> | '(' <operator> <expr>+ ')' ; \
-              polish   : /^/ <operator> <expr>+ /$/ ;            \
+              "                                                             \
+              double   : /-?[0-9]*\\.[0-9]+/ ;                              \
+              number   : /-?[0-9]+/ ;                                       \
+              operator : '+' | '-' | '*' | '/' | '%' ;                      \
+              expr     : <double> | <number> | '(' <operator> <expr>+ ')' ; \
+              polish   : /^/ <operator> <expr>+ /$/ ;                       \
               ",
-              Number, Operator, Expr, Polish);
+              Number, Double, Operator, Expr, Polish);
 
     mpc_result_t r;
     if (mpc_parse("<stdin>", input, Polish, &r)) {
@@ -91,7 +122,7 @@ void polish_eval(const char* restrict input) {
         mpc_err_delete(r.error);
     }
 
-    mpc_cleanup(4, Number, Operator, Expr, Polish);
+    mpc_cleanup(5, Number, Double, Operator, Expr, Polish);
 }
 
 struct lval polish_eval_expr(mpc_ast_t* ast) {
@@ -103,8 +134,16 @@ struct lval polish_eval_expr(mpc_ast_t* ast) {
         }
         return lval_num(x);
     }
+    if (strstr(ast->tag, "double")) {
+        errno = 0;
+        double x = strtod(ast->contents, NULL);
+        if (errno == ERANGE) {
+            return lval_err(LERR_BAD_NUM);
+        }
+        return lval_dbl(x);
+    }
 
-    /* Operator is 2nd child. */
+    /* Operator always is 2nd child. */
     char* op = ast->children[1]->contents;
 
     /* Eval the remaining children. */
@@ -117,23 +156,65 @@ struct lval polish_eval_expr(mpc_ast_t* ast) {
     return x;
 }
 
+#define EITHER_IS_DBL(x,y) x.type == LVAL_DBL || y.type == LVAL_DBL
+
+struct lval polish_op_add(struct lval x, struct lval y) {
+    if (EITHER_IS_DBL(x,y)) {
+        return lval_dbl(lval_as_dbl(x) + lval_as_dbl(y));
+    } else {
+        return lval_num(x.num + y.num);
+    }
+}
+
+struct lval polish_op_sub(struct lval x, struct lval y) {
+    if (EITHER_IS_DBL(x,y)) {
+        return lval_dbl(lval_as_dbl(x) - lval_as_dbl(y));
+    } else {
+        return lval_num(x.num - y.num);
+    }
+}
+
+struct lval polish_op_mul(struct lval x, struct lval y) {
+    if (EITHER_IS_DBL(x,y)) {
+        return lval_dbl(lval_as_dbl(x) * lval_as_dbl(y));
+    } else {
+        return lval_num(x.num * y.num);
+    }
+}
+
+struct lval polish_op_div(struct lval x, struct lval y) {
+    if (lval_is_zero(y)) {
+        return lval_err(LERR_DIV_ZERO);
+    }
+
+    if (EITHER_IS_DBL(x,y)) {
+        return lval_dbl(lval_as_dbl(x) / lval_as_dbl(y));
+    } else {
+        return lval_num(x.num / y.num);
+    }
+}
+
+struct lval polish_op_mod(struct lval x, struct lval y) {
+    if (EITHER_IS_DBL(x, y)) {
+        return lval_err(LERR_BAD_NUM);
+    }
+
+    if (lval_is_zero(y)) {
+        return lval_err(LERR_DIV_ZERO);
+    }
+
+    return lval_num(x.num % y.num);
+}
+
 struct lval polish_eval_op(struct lval x, char* op, struct lval y) {
     if (x.type == LVAL_ERR) return x;
     if (y.type == LVAL_ERR) return y;
 
-    if (strcmp(op, "+") == 0) return lval_num(x.num + y.num);
-    if (strcmp(op, "-") == 0) return lval_num(x.num - y.num);
-    if (strcmp(op, "*") == 0) return lval_num(x.num * y.num);
-    if (strcmp(op, "/") == 0) {
-        return y.num == 0
-            ? lval_err(LERR_DIV_ZERO)
-            : lval_num(x.num / y.num);
-    }
-    if (strcmp(op, "%") == 0) {
-        return y.num == 0
-            ? lval_err(LERR_DIV_ZERO)
-            : lval_num(x.num % y.num);
-    }
+    if (strcmp(op, "+") == 0) return polish_op_add(x, y);
+    if (strcmp(op, "-") == 0) return polish_op_sub(x, y);
+    if (strcmp(op, "*") == 0) return polish_op_mul(x, y);
+    if (strcmp(op, "/") == 0) return polish_op_div(x, y);
+    if (strcmp(op, "%") == 0) return polish_op_mod(x, y);
 
     return lval_err(LERR_BAD_NUM);
 }

@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
     while (true) {
         char* input = readline(prompt);
         add_history(input);
-        polish_eval(input, stdout, stderr);
+        polish_eval(input);
         free(input);
     }
 

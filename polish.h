@@ -3,6 +3,6 @@
 
 #include <stdio.h>
 
-void polish_eval(const char* restrict input, FILE* output, FILE* error);
+void polish_eval(const char* restrict input);
 
 #endif

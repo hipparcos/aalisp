@@ -75,7 +75,7 @@ void polish_eval(const char* restrict input) {
     mpca_lang(MPCA_LANG_DEFAULT,
               "                                                  \
               number   : /-?[0-9]+/ ;                            \
-              operator : '+' | '-' | '*' | '/' ;                 \
+              operator : '+' | '-' | '*' | '/' | '%' ;           \
               expr     : <number> | '(' <operator> <expr>+ ')' ; \
               polish   : /^/ <operator> <expr>+ /$/ ;            \
               ",
@@ -128,6 +128,11 @@ struct lval polish_eval_op(struct lval x, char* op, struct lval y) {
         return y.num == 0
             ? lval_err(LERR_DIV_ZERO)
             : lval_num(x.num / y.num);
+    }
+    if (strcmp(op, "%") == 0) {
+        return y.num == 0
+            ? lval_err(LERR_DIV_ZERO)
+            : lval_num(x.num % y.num);
     }
 
     return lval_err(LERR_BAD_NUM);

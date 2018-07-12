@@ -20,8 +20,8 @@ all: build
 
 build: $(out)
 
-clean:
-	rm -f *.o *.d $(version_header) tags $(out) $(testcases)
+clean::
+	rm -f *.o *.d $(version_header) tags $(out)
 
 # test target.
 include $(test_file)

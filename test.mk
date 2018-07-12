@@ -8,6 +8,9 @@ test: $(testcases)
 $(testcases): % : %.o
 	@echo "---- "$@ && $(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@ && ./$@ && echo "----"
 
+clean::
+	rm -f $(testcases)
+
 # Include dependancies makefiles.
 include $(tests:%.c=%.d)
 

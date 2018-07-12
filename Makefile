@@ -3,17 +3,19 @@ sources=$(PROGNAME).c vendor/mpc/mpc.c polish.c lval.c
 headers=vendor/mpc/mpc.h polish.h
 objects=$(sources:%.c=%.o)
 
-version_file=version.mk
-build_file=buildnumber.mk
-test_file=test.mk
-version_header=version.h
+version_file:=version.mk
+build_file:=buildnumber.mk
+test_file:=test.mk
+version_header:=version.h
 
-SHELL=/bin/bash
+SHELL:=/bin/bash
 DEBUG?=-ggdb3 -O0
-CFLAGS=-Wall -std=c99 $(DEBUG)
-LDFLAGS=-Wall -lreadline -lm
+CFLAGS:=-Wall -std=c99 $(DEBUG)
+LDFLAGS:=-Wall -lreadline -lm
 
+# Define PROGNAME, VERSION, CODENAME.
 include $(version_file)
+# Define BUILD.
 include $(build_file)
 
 all: build

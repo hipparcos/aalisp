@@ -1,5 +1,5 @@
-tests=polish_test.c
-testcases=$(tests:%.c=%)
+tests:=polish_test.c
+testcases:=$(tests:%.c=%)
 
 polish_test: vendor/mpc/mpc.o lval.o
 

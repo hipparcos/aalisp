@@ -1,4 +1,4 @@
-#include "polish.c"
+#include "polish.c" // To access module defined functions.
 
 #include <stdio.h>
 #include "vendor/minunit/minunit.h"

@@ -3,11 +3,9 @@ sources=$(PROGNAME).c vendor/mpc/mpc.c polish.c lval.c
 headers=vendor/mpc/mpc.h polish.h
 objects=$(sources:%.c=%.o)
 
-tests=polish_test.c
-testcases=$(tests:%.c=%)
-
 version_file=version.mk
 build_file=buildnumber.mk
+test_file=test.mk
 version_header=version.h
 
 SHELL=/bin/bash
@@ -25,12 +23,8 @@ build: $(out)
 clean:
 	rm -f *.o *.d $(version_header) tags $(out) $(testcases)
 
-test: $(testcases)
-
-$(testcases): % : %.o vendor/mpc/mpc.o
-	@echo "---- "$@ && $(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@ && ./$@ && echo "----"
-
-include $(tests:%.c=%.d)
+# test target.
+include $(test_file)
 
 # Build executable.
 $(out): $(objects)

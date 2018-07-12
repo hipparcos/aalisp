@@ -11,23 +11,12 @@
 static struct lval polish_eval_op(struct lval x, char* op, struct lval y);
 static struct lval polish_eval_expr(mpc_ast_t* ast);
 
-void polish_eval(const char* restrict input) {
-    mpc_parser_t* Number    = mpc_new("number");
-    mpc_parser_t* Double    = mpc_new("double");
-    mpc_parser_t* Operator  = mpc_new("operator");
-    mpc_parser_t* Expr      = mpc_new("expr");
-    mpc_parser_t* Polish    = mpc_new("polish");
+/* Parser */
+mpc_parser_t* Polish    = NULL;
 
-    /* double must be matched before number. */
-    mpca_lang(MPCA_LANG_DEFAULT,
-              "                                                             \
-              double   : /-?[0-9]*\\.[0-9]+/ ;                              \
-              number   : /-?[0-9]+/ ;                                       \
-              operator : '+' | '-' | '*' | '/' | '%' ;                      \
-              expr     : <double> | <number> | '(' <operator> <expr>+ ')' ; \
-              polish   : /^/ <operator> <expr>+ /$/ ;                       \
-              ",
-              Number, Double, Operator, Expr, Polish);
+void polish_eval(const char* restrict input) {
+    if (!Polish)
+        polish_setup();
 
     mpc_result_t r;
     if (mpc_parse("<stdin>", input, Polish, &r)) {
@@ -38,10 +27,45 @@ void polish_eval(const char* restrict input) {
         mpc_err_print(r.error);
         mpc_err_delete(r.error);
     }
-
-    mpc_cleanup(5, Number, Double, Operator, Expr, Polish);
 }
 
+/* Init & Cleanup */
+mpc_parser_t* Number    = NULL;
+mpc_parser_t* Double    = NULL;
+mpc_parser_t* Operator  = NULL;
+mpc_parser_t* Expr      = NULL;
+
+void polish_setup() {
+    if (!Polish) {
+        Number    = mpc_new("number");
+        Double    = mpc_new("double");
+        Operator  = mpc_new("operator");
+        Expr      = mpc_new("expr");
+        Polish    = mpc_new("polish");
+
+        /* double must be matched before number. */
+        mpca_lang(MPCA_LANG_DEFAULT,
+                  "                                                             \
+                  double   : /-?[0-9]*\\.[0-9]+/ ;                              \
+                  number   : /-?[0-9]+/ ;                                       \
+                  operator : '+' | '-' | '*' | '/' | '%' ;                      \
+                  expr     : <double> | <number> | '(' <operator> <expr>+ ')' ; \
+                  polish   : /^/ <operator> <expr>+ /$/ ;                       \
+                  ",
+                  Number, Double, Operator, Expr, Polish);
+    }
+}
+
+void polish_cleanup() {
+    mpc_cleanup(5, Number, Double, Operator, Expr, Polish);
+    Number = NULL;
+    Double = NULL;
+    Operator = NULL;
+    Expr = NULL;
+    Polish = NULL;
+}
+
+/* Expression evaluation */
 static struct lval polish_eval_expr(mpc_ast_t* ast) {
     if (strstr(ast->tag, "number")) {
         errno = 0;
@@ -73,6 +97,7 @@ static struct lval polish_eval_expr(mpc_ast_t* ast) {
     return x;
 }
 
+/* Operators evaluation */
 #define EITHER_IS_DBL(x,y) x.type == LVAL_DBL || y.type == LVAL_DBL
 
 static struct lval polish_op_add(struct lval x, struct lval y) {

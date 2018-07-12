@@ -33,6 +33,8 @@ int main(int argc, char** argv) {
     printf(PROGNAME" "VERSION"-"CODENAME" build %d\n", BUILD);
     puts("Press Ctrl+C to exit.\n");
 
+    polish_setup();
+
     /* REPL loop */
     while (true) {
         char* input = readline(prompt);
@@ -40,6 +42,8 @@ int main(int argc, char** argv) {
         polish_eval(input);
         free(input);
     }
+
+    polish_cleanup();
 
     return EXIT_SUCCESS;
 }

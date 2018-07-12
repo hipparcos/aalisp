@@ -1,5 +1,5 @@
 out=$(PROGNAME)
-sources=$(PROGNAME).c vendor/mpc/mpc.c polish.c
+sources=$(PROGNAME).c vendor/mpc/mpc.c polish.c lval.c
 headers=vendor/mpc/mpc.h polish.h
 objects=$(sources:%.c=%.o)
 

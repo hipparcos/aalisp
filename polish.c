@@ -5,141 +5,11 @@
 #include <string.h>
 
 #include "vendor/mpc/mpc.h"
-
-enum ltype {
-    LVAL_NUM,
-    LVAL_DBL,
-    LVAL_ERR
-};
-
-enum lerr {
-    LERR_DIV_ZERO,
-    LERR_BAD_OP,
-    LERR_BAD_NUM
-};
-
-/* lval is the return type of an evalution. */
-struct lval {
-    enum ltype type;
-    union {
-        long num;
-        double dbl;
-        enum lerr err;
-    } data;
-};
-
-/* Create a new number type lval. */
-struct lval lval_num(long x) {
-    struct lval v;
-    v.type = LVAL_NUM;
-    v.data.num = x;
-    return v;
-}
-
-/* Create a new double type lval. */
-struct lval lval_dbl(double x) {
-    struct lval v;
-    v.type = LVAL_DBL;
-    v.data.dbl = x;
-    return v;
-}
-
-/* Create a new error type lval. */
-struct lval lval_err(enum lerr err) {
-    struct lval v;
-    v.type = LVAL_ERR;
-    v.data.err = err;
-    return v;
-}
-
-bool lval_is_zero(struct lval v) {
-    return (v.type == LVAL_NUM && v.data.num == 0)
-        || (v.type == LVAL_DBL && fpclassify(v.data.dbl) == FP_ZERO);
-}
-
-double lval_as_dbl(struct lval v) {
-    switch (v.type) {
-    case LVAL_NUM: return (double) v.data.num;
-    case LVAL_DBL: return v.data.dbl;
-    default: return .0;
-    }
-}
-
-bool lval_equals(struct lval x, struct lval y) {
-    if (x.type == LVAL_ERR) return false;
-    if (y.type == LVAL_ERR) return false;
-    if (x.type != y.type) return false;
-
-    static const double epsilon = 0.000001;
-
-    if (x.type == LVAL_NUM && x.data.num == y.data.num)
-        return true;
-    if (x.type == LVAL_DBL && x.data.dbl - y.data.dbl < epsilon)
-        return true;
-
-    return false;
-}
-
-bool lval_err_equals(struct lval x, struct lval y) {
-    if (x.type != y.type) return false;
-    if (x.type != LVAL_ERR) return false;
-    return x.data.err == y.data.err;
-}
-
-void lval_print_to(struct lval v, FILE* output) {
-    switch (v.type) {
-    case LVAL_NUM:
-        fprintf(output, "%li", v.data.num);
-        break;
-    case LVAL_DBL:
-        fprintf(output, "%g", v.data.dbl);
-        break;
-    case LVAL_ERR:
-        switch (v.data.err) {
-        case LERR_DIV_ZERO:
-            fprintf(output, "Error: division by 0.");
-            break;
-        case LERR_BAD_OP:
-            fprintf(output, "Error: invalid operator.");
-            break;
-        case LERR_BAD_NUM:
-            fprintf(output, "Error: invalid number.");
-            break;
-        }
-        break;
-    }
-}
-
-void lval_to_string(struct lval v, char* out) {
-    switch (v.type) {
-    case LVAL_NUM:
-        sprintf(out, "%li", v.data.num);
-        break;
-    case LVAL_DBL:
-        sprintf(out, "%g", v.data.dbl);
-        break;
-    case LVAL_ERR:
-        switch (v.data.err) {
-        case LERR_DIV_ZERO:
-            sprintf(out, "Error: division by 0.");
-            break;
-        case LERR_BAD_OP:
-            sprintf(out, "Error: invalid operator.");
-            break;
-        case LERR_BAD_NUM:
-            sprintf(out, "Error: invalid number.");
-            break;
-        }
-        break;
-    }
-}
-
-void lval_print(struct lval v)   { lval_print_to(v, stdout); }
-void lval_println(struct lval v) { lval_print_to(v, stdout); putchar('\n'); }
+#include "lval.h"
 
 /* Private prototypes */
-struct lval polish_eval_op(struct lval x, char* op, struct lval y);
-struct lval polish_eval_expr(mpc_ast_t* ast);
+static struct lval polish_eval_op(struct lval x, char* op, struct lval y);
+static struct lval polish_eval_expr(mpc_ast_t* ast);
 
 void polish_eval(const char* restrict input) {
     mpc_parser_t* Number    = mpc_new("number");
@@ -172,7 +42,7 @@ void polish_eval(const char* restrict input) {
     mpc_cleanup(5, Number, Double, Operator, Expr, Polish);
 }
 
-struct lval polish_eval_expr(mpc_ast_t* ast) {
+static struct lval polish_eval_expr(mpc_ast_t* ast) {
     if (strstr(ast->tag, "number")) {
         errno = 0;
         long x = strtol(ast->contents, NULL, 10);
@@ -205,7 +75,7 @@ struct lval polish_eval_expr(mpc_ast_t* ast) {
 
 #define EITHER_IS_DBL(x,y) x.type == LVAL_DBL || y.type == LVAL_DBL
 
-struct lval polish_op_add(struct lval x, struct lval y) {
+static struct lval polish_op_add(struct lval x, struct lval y) {
     if (EITHER_IS_DBL(x,y)) {
         return lval_dbl(lval_as_dbl(x) + lval_as_dbl(y));
     } else {
@@ -213,7 +83,7 @@ struct lval polish_op_add(struct lval x, struct lval y) {
     }
 }
 
-struct lval polish_op_sub(struct lval x, struct lval y) {
+static struct lval polish_op_sub(struct lval x, struct lval y) {
     if (EITHER_IS_DBL(x,y)) {
         return lval_dbl(lval_as_dbl(x) - lval_as_dbl(y));
     } else {
@@ -221,7 +91,7 @@ struct lval polish_op_sub(struct lval x, struct lval y) {
     }
 }
 
-struct lval polish_op_mul(struct lval x, struct lval y) {
+static struct lval polish_op_mul(struct lval x, struct lval y) {
     if (EITHER_IS_DBL(x,y)) {
         return lval_dbl(lval_as_dbl(x) * lval_as_dbl(y));
     } else {
@@ -229,7 +99,7 @@ struct lval polish_op_mul(struct lval x, struct lval y) {
     }
 }
 
-struct lval polish_op_div(struct lval x, struct lval y) {
+static struct lval polish_op_div(struct lval x, struct lval y) {
     if (lval_is_zero(y)) {
         return lval_err(LERR_DIV_ZERO);
     }
@@ -241,7 +111,7 @@ struct lval polish_op_div(struct lval x, struct lval y) {
     }
 }
 
-struct lval polish_op_mod(struct lval x, struct lval y) {
+static struct lval polish_op_mod(struct lval x, struct lval y) {
     if (EITHER_IS_DBL(x, y)) {
         return lval_err(LERR_BAD_NUM);
     }
@@ -253,7 +123,7 @@ struct lval polish_op_mod(struct lval x, struct lval y) {
     return lval_num(x.data.num % y.data.num);
 }
 
-struct lval polish_eval_op(struct lval x, char* op, struct lval y) {
+static struct lval polish_eval_op(struct lval x, char* op, struct lval y) {
     if (x.type == LVAL_ERR) return x;
     if (y.type == LVAL_ERR) return y;
 

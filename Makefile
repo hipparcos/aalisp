@@ -1,6 +1,6 @@
 out=$(PROGNAME)
-sources=$(PROGNAME).c vendor/mpc/mpc.c polish.c lval.c
-headers=vendor/mpc/mpc.h polish.h
+sources=$(PROGNAME).c vendor/mpc/mpc.c polish.c lval.c vendor/mini-gmp/mini-gmp.c
+headers=vendor/mpc/mpc.h polish.h vendor/mini-gmp/mini-gmp.h
 objects=$(sources:%.c=%.o)
 
 version_file:=version.mk
@@ -9,7 +9,7 @@ test_file:=test.mk
 version_header:=version.h
 
 SHELL:=/bin/bash
-DEBUG?=-ggdb3 -O0
+DEBUG?=-ggdb3 -O0 -DDEBUG
 CFLAGS:=-Wall -std=c99 $(DEBUG)
 LDFLAGS:=-Wall -lreadline -lm
 
@@ -23,7 +23,7 @@ all: build
 build: $(out)
 
 clean::
-	rm -f *.o *.d $(version_header) tags $(out)
+	rm -f *.o *.d $(objects) $(version_header) tags $(out)
 
 # test target.
 include $(test_file)

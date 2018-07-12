@@ -4,8 +4,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 
+#include "vendor/mini-gmp/mini-gmp.h"
+
 enum ltype {
     LVAL_NUM,
+    LVAL_BIGNUM,
     LVAL_DBL,
     LVAL_ERR
 };
@@ -21,17 +24,20 @@ struct lval {
     enum ltype type;
     union {
         long num;
+        mpz_t bignum;
         double dbl;
         enum lerr err;
     } data;
 };
 
 struct lval lval_num(long x);
+struct lval lval_bignum(mpz_t x);
 struct lval lval_dbl(double x);
 struct lval lval_err(enum lerr err);
 
 bool lval_is_zero(struct lval v);
 double lval_as_dbl(struct lval v);
+mpz_t* lval_as_bignum(struct lval v);
 bool lval_equals(struct lval x, struct lval y);
 bool lval_err_equals(struct lval x, struct lval y);
 

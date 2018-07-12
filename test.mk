@@ -1,7 +1,7 @@
 tests:=polish_test.c
 testcases:=$(tests:%.c=%)
 
-polish_test: vendor/mpc/mpc.o lval.o
+polish_test: vendor/mpc/mpc.o vendor/mini-gmp/mini-gmp.o lval.o
 
 test: $(testcases)
 

@@ -42,31 +42,49 @@ static char* test_op_helper(
 #define LENGTH(array) sizeof(array)/sizeof(array[0])
 
 static char* test_polish_op_add() {
+    mpz_t bn;
+    mpz_init_set_ui(bn, 9223372036854775808u);
     struct testcase testcases[] = {
         {.x= lval_num(1), .y= lval_num(1), .expected= lval_num(2)},
         {.x= lval_num(1), .y= lval_dbl(1.1), .expected= lval_dbl(2.1)},
         {.x= lval_dbl(1.1), .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
+        {.x= lval_num(9223372036854775807), .y= lval_num(1), .expected= lval_bignum(bn)},
     };
+    mpz_clear(bn);
     return test_op_helper("op_add %s + %s = %s got %s", polish_op_add,
                           testcases, LENGTH(testcases));
 }
 
 static char* test_polish_op_sub() {
+    mpz_t bn, bnn;
+    mpz_init(bnn);
+    mpz_init_set_ui(bn, 9223372036854775809u);
+    mpz_mul_si(bnn, bn, -1);
     struct testcase testcases[] = {
         {.x= lval_num(1), .y= lval_num(1), .expected= lval_num(0)},
         {.x= lval_num(1), .y= lval_dbl(1.1), .expected= lval_dbl(-0.1)},
         {.x= lval_dbl(1.1), .y= lval_dbl(1.1), .expected= lval_dbl(0.0)},
+        {.x= lval_num(-9223372036854775807), .y= lval_num(2), .expected= lval_bignum(bnn)},
     };
+    mpz_clear(bn);
+    mpz_clear(bnn);
     return test_op_helper("op_sub %s - %s = %s got %s", polish_op_sub,
                           testcases, LENGTH(testcases));
 }
 
 static char* test_polish_op_mul() {
+    mpz_t bn, bnn;
+    mpz_init(bnn);
+    mpz_init_set_ui(bn, 9223372036854775807);
+    mpz_mul_si(bnn, bn, 10);
     struct testcase testcases[] = {
         {.x= lval_num(2), .y= lval_num(2), .expected= lval_num(4)},
         {.x= lval_num(2), .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
         {.x= lval_dbl(2.0), .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
+        {.x= lval_num(9223372036854775807), .y= lval_num(10), .expected= lval_bignum(bnn)},
     };
+    mpz_clear(bn);
+    mpz_clear(bnn);
     return test_op_helper("op_mul %s * %s = %s got %s", polish_op_mul,
                           testcases, LENGTH(testcases));
 }

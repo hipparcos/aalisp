@@ -49,7 +49,7 @@ void polish_setup() {
                   "                                                             \
                   double   : /-?[0-9]*\\.[0-9]+/ ;                              \
                   number   : /-?[0-9]+/ ;                                       \
-                  operator : '+' | '-' | '*' | '/' | '%' ;                      \
+                  operator : '+' | '-' | '*' | '/' | '%' | '!' ;                \
                   expr     : <double> | <number> | '(' <operator> <expr>+ ')' ; \
                   polish   : /^/ <operator> <expr>+ /$/ ;                       \
                   ",
@@ -108,6 +108,10 @@ static struct lval polish_eval_expr(mpc_ast_t* ast) {
 #define EITHER_IS_BIGNUM(x,y) (x.type == LVAL_BIGNUM || y.type == LVAL_BIGNUM)
 
 static struct lval polish_op_add(struct lval x, struct lval y) {
+    if (EITHER_IS_DBL(x,y) && EITHER_IS_BIGNUM(x,y)) {
+        return lval_err(LERR_BAD_NUM);
+    }
+
     if (EITHER_IS_DBL(x,y)) {
         return lval_dbl(lval_as_dbl(x) + lval_as_dbl(y));
     } else if (EITHER_IS_BIGNUM(x,y)) {
@@ -137,6 +141,10 @@ static struct lval polish_op_add(struct lval x, struct lval y) {
 }
 
 static struct lval polish_op_sub(struct lval x, struct lval y) {
+    if (EITHER_IS_DBL(x,y) && EITHER_IS_BIGNUM(x,y)) {
+        return lval_err(LERR_BAD_NUM);
+    }
+
     if (EITHER_IS_DBL(x,y)) {
         return lval_dbl(lval_as_dbl(x) - lval_as_dbl(y));
     } else if (EITHER_IS_BIGNUM(x,y)) {
@@ -166,6 +174,10 @@ static struct lval polish_op_sub(struct lval x, struct lval y) {
 }
 
 static struct lval polish_op_mul(struct lval x, struct lval y) {
+    if (EITHER_IS_DBL(x,y) && EITHER_IS_BIGNUM(x,y)) {
+        return lval_err(LERR_BAD_NUM);
+    }
+
     if (EITHER_IS_DBL(x,y)) {
         return lval_dbl(lval_as_dbl(x) * lval_as_dbl(y));
     } else if (EITHER_IS_BIGNUM(x,y)) {
@@ -200,6 +212,9 @@ static struct lval polish_op_div(struct lval x, struct lval y) {
     if (lval_is_zero(y)) {
         return lval_err(LERR_DIV_ZERO);
     }
+    if (EITHER_IS_DBL(x,y) && EITHER_IS_BIGNUM(x,y)) {
+        return lval_err(LERR_BAD_NUM);
+    }
 
     if (EITHER_IS_DBL(x,y)) {
         return lval_dbl(lval_as_dbl(x) / lval_as_dbl(y));
@@ -223,9 +238,11 @@ static struct lval polish_op_mod(struct lval x, struct lval y) {
     if (EITHER_IS_DBL(x, y)) {
         return lval_err(LERR_BAD_NUM);
     }
-
     if (lval_is_zero(y)) {
         return lval_err(LERR_DIV_ZERO);
+    }
+    if (EITHER_IS_DBL(x,y) && EITHER_IS_BIGNUM(x,y)) {
+        return lval_err(LERR_BAD_NUM);
     }
 
     if (EITHER_IS_BIGNUM(x,y)) {

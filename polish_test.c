@@ -51,11 +51,12 @@ static char* test_polish_op_add() {
     mpz_t bn;
     mpz_init_set_ui(bn, 9223372036854775808u);
     struct testcase testcases[] = {
-        {.x= lval_num(1), .y= lval_num(1), .expected= lval_num(2)},
-        {.x= lval_num(1), .y= lval_dbl(1.1), .expected= lval_dbl(2.1)},
+        {.x= lval_num(1),   .y= lval_num(1),   .expected= lval_num(2)},
+        {.x= lval_num(1),   .y= lval_dbl(1.1), .expected= lval_dbl(2.1)},
         {.x= lval_dbl(1.1), .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
-        {.x= lval_num(9223372036854775807), .y= lval_num(1), .expected= lval_bignum(bn)},
-        {.x= lval_num(2), .y= lval_nil(), .expected= lval_num(2)},
+        {.x= lval_num(9223372036854775807),
+                            .y= lval_num(1),   .expected= lval_bignum(bn)},
+        {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
     mpz_clear(bn);
     return test_op_helper("op_add %s + %s = %s got %s", op_add,
@@ -68,11 +69,12 @@ static char* test_polish_op_sub() {
     mpz_init_set_ui(bn, 9223372036854775809u);
     mpz_mul_si(bnn, bn, -1);
     struct testcase testcases[] = {
-        {.x= lval_num(1), .y= lval_num(1), .expected= lval_num(0)},
-        {.x= lval_num(1), .y= lval_dbl(1.1), .expected= lval_dbl(-0.1)},
+        {.x= lval_num(1),   .y= lval_num(1),   .expected= lval_num(0)},
+        {.x= lval_num(1),   .y= lval_dbl(1.1), .expected= lval_dbl(-0.1)},
         {.x= lval_dbl(1.1), .y= lval_dbl(1.1), .expected= lval_dbl(0.0)},
-        {.x= lval_num(-9223372036854775807), .y= lval_num(2), .expected= lval_bignum(bnn)},
-        {.x= lval_num(2), .y= lval_nil(), .expected= lval_num(2)},
+        {.x= lval_num(-9223372036854775807),
+                            .y= lval_num(2),   .expected= lval_bignum(bnn)},
+        {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
     mpz_clear(bn);
     mpz_clear(bnn);
@@ -86,11 +88,12 @@ static char* test_polish_op_mul() {
     mpz_init_set_ui(bn, 9223372036854775807);
     mpz_mul_si(bnn, bn, 10);
     struct testcase testcases[] = {
-        {.x= lval_num(2), .y= lval_num(2), .expected= lval_num(4)},
-        {.x= lval_num(2), .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
+        {.x= lval_num(2),   .y= lval_num(2),   .expected= lval_num(4)},
+        {.x= lval_num(2),   .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
         {.x= lval_dbl(2.0), .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
-        {.x= lval_num(9223372036854775807), .y= lval_num(10), .expected= lval_bignum(bnn)},
-        {.x= lval_num(2), .y= lval_nil(), .expected= lval_num(2)},
+        {.x= lval_num(9223372036854775807),
+                            .y= lval_num(10),  .expected= lval_bignum(bnn)},
+        {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
     mpz_clear(bn);
     mpz_clear(bnn);
@@ -100,12 +103,12 @@ static char* test_polish_op_mul() {
 
 static char* test_polish_op_div() {
     struct testcase testcases[] = {
-        {.x= lval_num(2), .y= lval_num(2), .expected= lval_num(1)},
-        {.x= lval_num(2), .y= lval_dbl(2.0), .expected= lval_dbl(1.0)},
+        {.x= lval_num(2),   .y= lval_num(2),   .expected= lval_num(1)},
+        {.x= lval_num(2),   .y= lval_dbl(2.0), .expected= lval_dbl(1.0)},
         {.x= lval_dbl(2.0), .y= lval_dbl(2.0), .expected= lval_dbl(1.0)},
-        {.x= lval_num(2), .y= lval_num(0), .expected= lval_err(LERR_DIV_ZERO)},
-        {.x= lval_num(2), .y= lval_dbl(.0), .expected= lval_err(LERR_DIV_ZERO)},
-        {.x= lval_num(2), .y= lval_nil(), .expected= lval_num(2)},
+        {.x= lval_num(2),   .y= lval_num(0),   .expected= lval_err(LERR_DIV_ZERO)},
+        {.x= lval_num(2),   .y= lval_dbl(.0),  .expected= lval_err(LERR_DIV_ZERO)},
+        {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
     return test_op_helper("op_div %s / %s = %s got %s", op_div,
                           testcases, LENGTH(testcases), false);
@@ -113,11 +116,11 @@ static char* test_polish_op_div() {
 
 static char* test_polish_op_mod() {
     struct testcase testcases[] = {
-        {.x= lval_num(8), .y= lval_num(3), .expected= lval_num(2)},
-        {.x= lval_num(2), .y= lval_num(0), .expected= lval_err(LERR_DIV_ZERO)},
-        {.x= lval_num(2), .y= lval_dbl(2.0), .expected= lval_err(LERR_BAD_NUM)},
+        {.x= lval_num(8),   .y= lval_num(3),   .expected= lval_num(2)},
+        {.x= lval_num(2),   .y= lval_num(0),   .expected= lval_err(LERR_DIV_ZERO)},
+        {.x= lval_num(2),   .y= lval_dbl(2.0), .expected= lval_err(LERR_BAD_NUM)},
         {.x= lval_dbl(2.0), .y= lval_dbl(2.0), .expected= lval_err(LERR_BAD_NUM)},
-        {.x= lval_num(2), .y= lval_nil(), .expected= lval_num(0)},
+        {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(0)},
     };
     return test_op_helper("op_mod %s %% %s = %s got %s", op_mod,
                           testcases, LENGTH(testcases), false);
@@ -128,8 +131,8 @@ static char* test_polish_op_fac() {
     mpz_init_set_ui(bn, 2432902008176640000);
     mpz_mul_si(bn, bn, 21);
     struct testcase testcases[] = {
-        {.x= lval_num(0), .expected= lval_num(1)},
-        {.x= lval_num(1), .expected= lval_num(1)},
+        {.x= lval_num(0),  .expected= lval_num(1)},
+        {.x= lval_num(1),  .expected= lval_num(1)},
         {.x= lval_num(20), .expected= lval_num(2432902008176640000)},
         {.x= lval_num(21), .expected= lval_bignum(bn)},
         {.x= lval_num(-1), .expected= lval_err(LERR_BAD_NUM)},
@@ -144,11 +147,11 @@ static char* test_polish_op_pow() {
     mpz_init(bn);
     mpz_ui_pow_ui(bn, 10, 100);
     struct testcase testcases[] = {
-        {.x= lval_num(2), .y= lval_num(4), .expected= lval_num(16)},
-        {.x= lval_num(4), .y= lval_dbl(0.5), .expected= lval_dbl(2.0)},
+        {.x= lval_num(2),  .y= lval_num(4),   .expected= lval_num(16)},
+        {.x= lval_num(4),  .y= lval_dbl(0.5), .expected= lval_dbl(2.0)},
         {.x= lval_num(10), .y= lval_num(100), .expected= lval_bignum(bn)},
-        {.x= lval_num(2), .y= lval_num(-1), .expected= lval_err(LERR_BAD_NUM)},
-        {.x= lval_num(2), .y= lval_nil(), .expected= lval_num(2)},
+        {.x= lval_num(2),  .y= lval_num(-1),  .expected= lval_err(LERR_BAD_NUM)},
+        {.x= lval_num(2),  .y= lval_nil(),    .expected= lval_num(2)},
     };
     mpz_clear(bn);
     return test_op_helper("op_mod %s %% %s = %s got %s", op_pow,
@@ -157,10 +160,10 @@ static char* test_polish_op_pow() {
 
 static char* test_polish_lang() {
     struct testcase testcases[] = {
-        {.input= "+ 1 1", .expected= lval_num(2)},
-        {.input= "+ 1 (* 10 2)", .expected= lval_num(21)},
+        {.input= "+ 1 1",          .expected= lval_num(2)},
+        {.input= "+ 1 (* 10 2)",   .expected= lval_num(21)},
         {.input= "+ 1.0 (* 10 2)", .expected= lval_dbl(21)},
-        {.input= "/ 10 0", .expected= lval_err(LERR_DIV_ZERO)},
+        {.input= "/ 10 0",         .expected= lval_err(LERR_DIV_ZERO)},
     };
 
     char* message = (char*)calloc(sizeof(char), 1024);

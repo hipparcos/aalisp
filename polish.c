@@ -9,6 +9,7 @@
 #include "lval.h"
 
 /* Private prototypes */
+static struct lval polish_eval_unary_op(struct lval x, char* op);
 static struct lval polish_eval_op(struct lval x, char* op, struct lval y);
 static struct lval polish_eval_expr(mpc_ast_t* ast);
 
@@ -96,8 +97,12 @@ static struct lval polish_eval_expr(mpc_ast_t* ast) {
     /* Eval the remaining children. */
     struct lval x = polish_eval_expr(ast->children[2]);
 
-    for (int i = 3; strstr(ast->children[i]->tag, "expr"); i++) {
-        x = polish_eval_op(x, op, polish_eval_expr(ast->children[i]));
+    if (strstr(ast->children[3]->tag, "expr")) {
+        for (int i = 3; strstr(ast->children[i]->tag, "expr"); i++) {
+            x = polish_eval_op(x, op, polish_eval_expr(ast->children[i]));
+        }
+    } else {
+        x = polish_eval_unary_op(x, op);
     }
 
     return x;
@@ -261,6 +266,46 @@ static struct lval polish_op_mod(struct lval x, struct lval y) {
     return lval_num(x.data.num % y.data.num);
 }
 
+static struct lval polish_op_fact(struct lval x) {
+    if (x.type == LVAL_DBL) {
+        return lval_err(LERR_BAD_NUM);
+    }
+    if (x.type == LVAL_NUM && x.data.num < 0) {
+        return lval_err(LERR_BAD_NUM);
+    }
+    if (x.type == LVAL_BIGNUM && mpz_sgn(x.data.bignum) < 0) {
+        return lval_err(LERR_BAD_NUM);
+    }
+    if (x.type == LVAL_BIGNUM && mpz_cmp_si(x.data.bignum, ULONG_MAX) > 0) {
+        return lval_err(LERR_BAD_NUM);
+    }
+
+    if (lval_is_zero(x)) {
+        return lval_num(1);
+    }
+
+    /* Up to long. */
+    if (x.type == LVAL_NUM && x.data.num < 21) {
+        int n = x.data.num;
+        long fact = n;
+        while (n > 2) {
+            fact *= --n;
+        }
+        return lval_num(fact);
+    }
+
+    /* Always use bignum from here. */
+    mpz_t* arg = lval_as_bignum(x);
+    unsigned long n = mpz_get_ui(*arg);
+    mpz_t fact;
+    mpz_init(fact);
+    mpz_fac_ui(fact, n);
+    struct lval ret = lval_bignum(fact);
+    mpz_clear(fact);
+    mpz_clear(*arg);
+    return ret;
+}
+
 static struct lval polish_eval_op(struct lval x, char* op, struct lval y) {
     if (x.type == LVAL_ERR) return x;
     if (y.type == LVAL_ERR) return y;
@@ -270,6 +315,14 @@ static struct lval polish_eval_op(struct lval x, char* op, struct lval y) {
     if (strcmp(op, "*") == 0) return polish_op_mul(x, y);
     if (strcmp(op, "/") == 0) return polish_op_div(x, y);
     if (strcmp(op, "%") == 0) return polish_op_mod(x, y);
+
+    return lval_err(LERR_BAD_NUM);
+}
+
+static struct lval polish_eval_unary_op(struct lval x, char* op) {
+    if (x.type == LVAL_ERR) return x;
+
+    if (strcmp(op, "!") == 0) return polish_op_fact(x);
 
     return lval_err(LERR_BAD_NUM);
 }

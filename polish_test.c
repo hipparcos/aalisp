@@ -1,5 +1,6 @@
 #include "polish.c" // To access module defined functions.
 
+#include <stdbool.h>
 #include <stdio.h>
 #include "vendor/minunit/minunit.h"
 
@@ -18,7 +19,7 @@ static char* test_op_helper(
     const char* format,
     struct lval (*op)(struct lval, struct lval),
     struct testcase testcases[],
-    unsigned long number_of_cases) {
+    unsigned long number_of_cases, bool unary) {
 
     char* message = (char*)calloc(sizeof(char), 1024);
     struct lval got;
@@ -28,10 +29,15 @@ static char* test_op_helper(
         struct testcase tt = testcases[i];
         got = op(tt.x, tt.y);
         lval_to_string(tt.x, temp[0]);
-        lval_to_string(tt.y, temp[1]);
+        if (!unary)
+            lval_to_string(tt.y, temp[1]);
         lval_to_string(tt.expected, temp[2]);
         lval_to_string(got, temp[3]);
-        sprintf(message, format, temp[0], temp[1], temp[2], temp[3]);
+        if (!unary) {
+            sprintf(message, format, temp[0], temp[1], temp[2], temp[3]);
+        } else {
+            sprintf(message, format, temp[0], temp[2], temp[3]);
+        }
         mu_assert(message, lval_equals(got, tt.expected) || lval_err_equals(got, tt.expected));
     }
 
@@ -52,7 +58,7 @@ static char* test_polish_op_add() {
     };
     mpz_clear(bn);
     return test_op_helper("op_add %s + %s = %s got %s", polish_op_add,
-                          testcases, LENGTH(testcases));
+                          testcases, LENGTH(testcases), false);
 }
 
 static char* test_polish_op_sub() {
@@ -69,7 +75,7 @@ static char* test_polish_op_sub() {
     mpz_clear(bn);
     mpz_clear(bnn);
     return test_op_helper("op_sub %s - %s = %s got %s", polish_op_sub,
-                          testcases, LENGTH(testcases));
+                          testcases, LENGTH(testcases), false);
 }
 
 static char* test_polish_op_mul() {
@@ -86,7 +92,7 @@ static char* test_polish_op_mul() {
     mpz_clear(bn);
     mpz_clear(bnn);
     return test_op_helper("op_mul %s * %s = %s got %s", polish_op_mul,
-                          testcases, LENGTH(testcases));
+                          testcases, LENGTH(testcases), false);
 }
 
 static char* test_polish_op_div() {
@@ -98,7 +104,7 @@ static char* test_polish_op_div() {
         {.x= lval_num(2), .y= lval_dbl(.0), .expected= lval_err(LERR_DIV_ZERO)},
     };
     return test_op_helper("op_div %s / %s = %s got %s", polish_op_div,
-                          testcases, LENGTH(testcases));
+                          testcases, LENGTH(testcases), false);
 }
 
 static char* test_polish_op_mod() {
@@ -109,7 +115,28 @@ static char* test_polish_op_mod() {
         {.x= lval_dbl(2.0), .y= lval_dbl(2.0), .expected= lval_err(LERR_BAD_NUM)},
     };
     return test_op_helper("op_mod %s %% %s = %s got %s", polish_op_mod,
-                          testcases, LENGTH(testcases));
+                          testcases, LENGTH(testcases), false);
+}
+
+static struct lval binary_fact(struct lval x, struct lval y) {
+    (void)(y); // Suppress warning.
+    return polish_op_fact(x);
+}
+
+static char* test_polish_op_fact() {
+    mpz_t bn;
+    mpz_init_set_ui(bn, 2432902008176640000);
+    mpz_mul_si(bn, bn, 21);
+    struct testcase testcases[] = {
+        {.x= lval_num(0), .expected= lval_num(1)},
+        {.x= lval_num(1), .expected= lval_num(1)},
+        {.x= lval_num(20), .expected= lval_num(2432902008176640000)},
+        {.x= lval_num(21), .expected= lval_bignum(bn)},
+        {.x= lval_num(-1), .expected= lval_err(LERR_BAD_NUM)},
+    };
+    mpz_clear(bn);
+    return test_op_helper("op_fact %s! = %s got %s", binary_fact,
+                          testcases, LENGTH(testcases), true);
 }
 
 static char* test_polish_lang() {
@@ -155,6 +182,7 @@ static char* all_tests() {
     mu_run_test(test_polish_op_mul);
     mu_run_test(test_polish_op_div);
     mu_run_test(test_polish_op_mod);
+    mu_run_test(test_polish_op_fact);
     mu_run_test(test_polish_lang);
     return 0;
 }

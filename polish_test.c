@@ -140,6 +140,22 @@ static char* test_polish_op_fac() {
                           testcases, LENGTH(testcases), true);
 }
 
+static char* test_polish_op_pow() {
+    mpz_t bn;
+    mpz_init(bn);
+    mpz_ui_pow_ui(bn, 10, 100);
+    struct testcase testcases[] = {
+        {.x= lval_num(2), .y= lval_num(4), .expected= lval_num(16)},
+        {.x= lval_num(4), .y= lval_dbl(0.5), .expected= lval_dbl(2.0)},
+        {.x= lval_num(10), .y= lval_num(100), .expected= lval_bignum(bn)},
+        {.x= lval_num(2), .y= lval_num(-1), .expected= lval_err(LERR_BAD_NUM)},
+    };
+    mpz_clear(bn);
+    polish_declare_operators();
+    return test_op_helper("op_mod %s %% %s = %s got %s", op_pow,
+                          testcases, LENGTH(testcases), false);
+}
+
 static char* test_polish_lang() {
     struct testcase testcases[] = {
         {.input= "+ 1 1", .expected= lval_num(2)},
@@ -184,6 +200,7 @@ static char* all_tests() {
     mu_run_test(test_polish_op_div);
     mu_run_test(test_polish_op_mod);
     mu_run_test(test_polish_op_fac);
+    mu_run_test(test_polish_op_pow);
     mu_run_test(test_polish_lang);
     return 0;
 }

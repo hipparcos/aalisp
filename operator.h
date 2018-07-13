@@ -32,16 +32,30 @@ inline bool cnd_are_num(struct lval x, struct lval y) {
     return x.type == LVAL_NUM && (y.type == LVAL_NUM || y.type == LVAL_NIL);
 }
 
-inline bool cnd_x_is_neg(struct lval x, struct lval y) {
-    UNUSED(y);
+inline bool _is_neg(struct lval x) {
     return (x.type == LVAL_NUM && x.data.num < 0) ||
            (x.type == LVAL_BIGNUM && mpz_sgn(x.data.bignum) < 0) ||
            (x.type == LVAL_DBL && x.data.dbl < 0);
 }
+inline bool cnd_x_is_neg(struct lval x, struct lval y) {
+    UNUSED(y);
+    return _is_neg(x);
+}
+inline bool cnd_y_is_neg(struct lval x, struct lval y) {
+    UNUSED(x);
+    return _is_neg(y);
+}
 
+inline bool _too_big_for_ul(struct lval x) {
+    return x.type == LVAL_BIGNUM && mpz_cmp_ui(x.data.bignum, ULONG_MAX) > 0;
+}
 inline bool cnd_x_too_big_for_ul(struct lval x, struct lval y) {
     UNUSED(y);
-    return x.type == LVAL_BIGNUM && mpz_cmp_ui(x.data.bignum, ULONG_MAX) > 0;
+    return _too_big_for_ul(x);
+}
+inline bool cnd_y_too_big_for_ul(struct lval x, struct lval y) {
+    UNUSED(x);
+    return _too_big_for_ul(y);
 }
 
 /* Conditions for long. */
@@ -57,6 +71,10 @@ inline bool cnd_num_mul_overflow(const long a, const long b) {
     return ((b > 0 && ((a > 0 && a > LONG_MAX / b) || (a < 0 && a < LONG_MIN / b))) ||
             (b == -1 && a == -LONG_MAX) ||
             (b < -1 && ((a < 0 && a < LONG_MAX / b) || (a > 0 && a > LONG_MIN / b))));
+}
+inline bool cnd_num_pow_overflow(const long a, const long b) {
+    long base = (a < 0) ? -a : a;
+    return (double)(b) > log2((double)LONG_MAX)/log2((double)base);
 }
 
 inline bool cnd_num_fact_overflow(const long a, const long b) {
@@ -91,6 +109,7 @@ inline long op_num_mod(const long a, const long b) {
     return a % b;
 }
 
+long op_num_pow(const long a, const long b);
 long op_num_fact(const long a, const long b);
 
 /* Operators: double. */
@@ -116,7 +135,12 @@ inline double op_dbl_div(const double a, const double b) {
     return a / b;
 }
 
+inline double op_dbl_pow(const double a, const double b) {
+    return pow(a, b);
+}
+
 /* Operators: bignum. */
 void op_bignum_fac(mpz_t r, const mpz_t a, const mpz_t b);
+void op_bignum_pow(mpz_t r, const mpz_t a, const mpz_t b);
 
 #endif

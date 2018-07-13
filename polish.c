@@ -51,7 +51,7 @@ void polish_setup() {
                   "                                                             \
                   double   : /-?[0-9]*\\.[0-9]+/ ;                              \
                   number   : /-?[0-9]+/ ;                                       \
-                  operator : '+' | '-' | '*' | '/' | '%' | '!' ;                \
+                  operator : '+' | '-' | '*' | '/' | '%' | '!' | '^' ;          \
                   expr     : <double> | <number> | '(' <operator> <expr>+ ')' ; \
                   polish   : /^/ <operator> <expr>+ /$/ ;                       \
                   ",
@@ -188,8 +188,16 @@ const struct guard guard_x_is_negative = {
     .condition= cnd_x_is_neg,
     .error= LERR_BAD_NUM
 };
+const struct guard guard_y_is_negative = {
+    .condition= cnd_y_is_neg,
+    .error= LERR_BAD_NUM
+};
 const struct guard guard_x_too_big = {
     .condition= cnd_x_too_big_for_ul,
+    .error= LERR_BAD_NUM
+};
+const struct guard guard_y_too_big = {
+    .condition= cnd_y_too_big_for_ul,
     .error= LERR_BAD_NUM
 };
 const struct guard guard_div_by_zero = {
@@ -215,6 +223,8 @@ struct guard op_mod_guards[3];
 struct op_descriptor op_mod;
 struct guard op_fac_guards[3];
 struct op_descriptor op_fac;
+struct guard op_pow_guards[3];
+struct op_descriptor op_pow;
 
 void polish_declare_operators() {
     op_add.symbol = "+";
@@ -273,6 +283,17 @@ void polish_declare_operators() {
     op_fac_guards[0] = guard_either_is_double;
     op_fac_guards[1] = guard_x_is_negative;
     op_fac_guards[2] = guard_x_too_big;
+
+    op_pow.symbol = "^";
+    op_pow.guards = op_pow_guards;
+    op_pow.guardc = 3;
+    op_pow.op_num = op_num_pow;
+    op_pow.cnd_overflow = cnd_num_pow_overflow;
+    op_pow.op_bignum = op_bignum_pow;
+    op_pow.op_dbl = op_dbl_pow;
+    op_pow_guards[0] = guard_dbl_and_bignum;
+    op_pow_guards[1] = guard_y_is_negative;
+    op_pow_guards[2] = guard_y_too_big;
 }
 
 static struct lval polish_eval_op(struct lval x, char* op, struct lval y) {
@@ -284,6 +305,7 @@ static struct lval polish_eval_op(struct lval x, char* op, struct lval y) {
     if (strcmp(op, "*") == 0) return polish_op(op_mul, x, y);
     if (strcmp(op, "/") == 0) return polish_op(op_div, x, y);
     if (strcmp(op, "%") == 0) return polish_op(op_mod, x, y);
+    if (strcmp(op, "^") == 0) return polish_op(op_pow, x, y);
     if (strcmp(op, "!") == 0) {
         if (y.type != LVAL_NIL) {
             return lval_err(LERR_TOO_MANY_ARGS);

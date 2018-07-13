@@ -6,12 +6,17 @@ bool cnd_either_is_dbl(struct lval x, struct lval y);
 bool cnd_either_is_bignum(struct lval x, struct lval y);
 bool cnd_dbl_and_bignum(struct lval x, struct lval y);
 bool cnd_are_num(struct lval x, struct lval y);
+bool _is_neg(struct lval x);
 bool cnd_x_is_neg(struct lval x, struct lval y);
+bool cnd_y_is_neg(struct lval x, struct lval y);
+bool _too_big_for_ul(struct lval x);
 bool cnd_x_too_big_for_ul(struct lval x, struct lval y);
+bool cnd_y_too_big_for_ul(struct lval x, struct lval y);
 bool cnd_num_add_overflow(const long a, const long b);
 bool cnd_num_sub_overflow(const long a, const long b);
 bool cnd_num_mul_overflow(const long a, const long b);
 bool cnd_num_fact_overflow(const long a, const long b);
+bool cnd_num_pow_overflow(const long a, const long b);
 
 /* Operators: long. */
 /* For inline definitions -> .h */
@@ -21,6 +26,14 @@ long op_num_sub(const long a, const long b);
 long op_num_mul(const long a, const long b);
 long op_num_div(const long a, const long b);
 long op_num_mod(const long a, const long b);
+
+long op_num_pow(const long a, const long b) {
+    long x = a;
+    for (int n = b; n > 1; n--) {
+        x *= a;
+    }
+    return x;
+}
 
 long op_num_fact(const long a, const long b) {
     UNUSED(b);
@@ -42,6 +55,7 @@ double op_dbl_add(const double a, const double b);
 double op_dbl_sub(const double a, const double b);
 double op_dbl_mul(const double a, const double b);
 double op_dbl_div(const double a, const double b);
+double op_dbl_pow(const double a, const double b);
 
 /* Operators: bignum. */
 void op_bignum_fac(mpz_t r, const mpz_t a, const mpz_t b) {
@@ -51,4 +65,9 @@ void op_bignum_fac(mpz_t r, const mpz_t a, const mpz_t b) {
         mpz_set_si(r, 1);
     }
     mpz_fac_ui(r, n);
+}
+
+void op_bignum_pow(mpz_t r, const mpz_t a, const mpz_t b) {
+    unsigned long n = mpz_get_ui(b);
+    mpz_pow_ui(r, a, n);
 }

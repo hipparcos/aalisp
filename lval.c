@@ -4,6 +4,13 @@
 #include <stdlib.h>
 
 /* Create a new number type lval. */
+struct lval lval_nil() {
+    struct lval v;
+    v.type = LVAL_NIL;
+    return v;
+}
+
+/* Create a new number type lval. */
 struct lval lval_num(long x) {
     struct lval v;
     v.type = LVAL_NUM;
@@ -38,7 +45,8 @@ struct lval lval_err(enum lerr err) {
 bool lval_is_zero(struct lval v) {
     mpz_t zero;
     mpz_init_set_si(zero, 0);
-    return (v.type == LVAL_NUM && v.data.num == 0)
+    return (v.type == LVAL_NIL)
+           || (v.type == LVAL_NUM && v.data.num == 0)
            || (v.type == LVAL_BIGNUM && mpz_cmp(v.data.bignum, zero) == 0)
            || (v.type == LVAL_DBL && fpclassify(v.data.dbl) == FP_ZERO);
 }
@@ -97,6 +105,9 @@ bool lval_err_equals(struct lval x, struct lval y) {
 #define WRITER(val, func, out) \
     char* buf = NULL; \
     switch (val.type) { \
+    case LVAL_NIL: \
+        func(out, "nil"); \
+        break; \
     case LVAL_NUM: \
         func(out, "%li", val.data.num); \
         break; \
@@ -110,6 +121,9 @@ bool lval_err_equals(struct lval x, struct lval y) {
         break; \
     case LVAL_ERR: \
         switch (val.data.err) { \
+        case LERR_EVAL: \
+            func(out, "Error: evaluation."); \
+            break; \
         case LERR_DIV_ZERO: \
             func(out, "Error: division by 0."); \
             break; \
@@ -118,6 +132,9 @@ bool lval_err_equals(struct lval x, struct lval y) {
             break; \
         case LERR_BAD_NUM: \
             func(out, "Error: invalid number."); \
+            break; \
+        case LERR_TOO_MANY_ARGS: \
+            func(out, "Error: too many arguments."); \
             break; \
         } \
         break; \

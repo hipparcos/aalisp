@@ -7,6 +7,7 @@
 #include "vendor/mini-gmp/mini-gmp.h"
 
 enum ltype {
+    LVAL_NIL,
     LVAL_NUM,
     LVAL_BIGNUM,
     LVAL_DBL,
@@ -14,9 +15,11 @@ enum ltype {
 };
 
 enum lerr {
+    LERR_EVAL,
     LERR_DIV_ZERO,
     LERR_BAD_OP,
-    LERR_BAD_NUM
+    LERR_BAD_NUM,
+    LERR_TOO_MANY_ARGS
 };
 
 /* lval is the return type of an evalution. */
@@ -30,6 +33,7 @@ struct lval {
     } data;
 };
 
+struct lval lval_nil();
 struct lval lval_num(long x);
 struct lval lval_bignum(mpz_t x);
 struct lval lval_dbl(double x);

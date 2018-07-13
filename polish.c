@@ -7,9 +7,10 @@
 
 #include "vendor/mpc/mpc.h"
 #include "lval.h"
+#include "operator.h"
 
 /* Private prototypes */
-static struct lval polish_eval_unary_op(struct lval x, char* op);
+void polish_declare_operators();
 static struct lval polish_eval_op(struct lval x, char* op, struct lval y);
 static struct lval polish_eval_expr(mpc_ast_t* ast);
 
@@ -55,6 +56,8 @@ void polish_setup() {
                   polish   : /^/ <operator> <expr>+ /$/ ;                       \
                   ",
                   Number, Double, Operator, Expr, Polish);
+
+        polish_declare_operators();
     }
 }
 
@@ -97,232 +100,196 @@ static struct lval polish_eval_expr(mpc_ast_t* ast) {
     /* Eval the remaining children. */
     struct lval x = polish_eval_expr(ast->children[2]);
 
+    /* Multiple operand. */
     if (strstr(ast->children[3]->tag, "expr")) {
         for (int i = 3; strstr(ast->children[i]->tag, "expr"); i++) {
             x = polish_eval_op(x, op, polish_eval_expr(ast->children[i]));
         }
+    /* One operand. */
     } else {
-        x = polish_eval_unary_op(x, op);
+        x = polish_eval_op(x, op, lval_nil());
     }
 
     return x;
 }
 
-/* Operators evaluation */
-#define EITHER_IS_DBL(x,y) (x.type == LVAL_DBL || y.type == LVAL_DBL)
-#define EITHER_IS_BIGNUM(x,y) (x.type == LVAL_BIGNUM || y.type == LVAL_BIGNUM)
+/* Conditions: eval a condition for the given operands. */
+typedef bool (*condition_func)(struct lval, struct lval);
 
-static struct lval polish_op_add(struct lval x, struct lval y) {
-    if (EITHER_IS_DBL(x,y) && EITHER_IS_BIGNUM(x,y)) {
-        return lval_err(LERR_BAD_NUM);
+/* Guard: a condition associated with an error. */
+struct guard {
+    condition_func condition;
+    enum lerr error;
+};
+
+/* Operators: generic */
+struct op_descriptor {
+    const char*         symbol;
+    bool                unary;
+    const struct guard* guards;
+    int                 guardc;
+    long   (*op_num)(const long, const long);
+    bool   (*cnd_overflow)(const long, const long);
+    void   (*op_bignum)(mpz_t r, const mpz_t x, const mpz_t y);
+    double (*op_dbl)(const double, const double);
+};
+
+static struct lval polish_op(
+    const struct op_descriptor descriptor,
+    const struct lval x, const struct lval y
+) {
+
+    /* Guards */
+    for (int i = 0; i < descriptor.guardc; i++) {
+        if ((descriptor.guards[i].condition)(x, y)) {
+            return lval_err(descriptor.guards[i].error);
+        }
     }
 
-    if (EITHER_IS_DBL(x,y)) {
-        return lval_dbl(lval_as_dbl(x) + lval_as_dbl(y));
-    } else if (EITHER_IS_BIGNUM(x,y)) {
+    /* Eval: double */
+    if (cnd_either_is_dbl(x, y)) {
+        double a = lval_as_dbl(x);
+        double b = lval_as_dbl(y);
+        return lval_dbl(descriptor.op_dbl(a, b));
+    }
+    /* Eval: bignum */
+    if (cnd_either_is_bignum(x, y)) {
         mpz_t* a = lval_as_bignum(x);
         mpz_t* b = lval_as_bignum(y);
-        mpz_t res;
-        mpz_init(res);
-        mpz_add(res, *a, *b);
+        mpz_t r;
+        mpz_init(r);
+        descriptor.op_bignum(r, *a, *b);
         mpz_clear(*a);
         mpz_clear(*b);
-        struct lval ret = lval_bignum(res);
-        mpz_clear(res);
+        struct lval ret = lval_bignum(r);
+        mpz_clear(r);
         return ret;
-    } else {
+    }
+    /* Eval: num */
+    if (cnd_are_num(x, y)) {
         long a = x.data.num;
         long b = y.data.num;
-        if (a >= LONG_MAX - b) {
-            mpz_t* bnx = lval_as_bignum(x);
-            mpz_t* bny = lval_as_bignum(y);
-            struct lval res = polish_op_add(lval_bignum(*bnx), lval_bignum(*bny));
-            mpz_clear(*bnx);
-            mpz_clear(*bny);
+        if (descriptor.cnd_overflow && descriptor.cnd_overflow(a, b)) {
+            mpz_t* bna = lval_as_bignum(x);
+            mpz_t* bnb = lval_as_bignum(y);
+            struct lval res = polish_op(descriptor, lval_bignum(*bna), lval_bignum(*bnb));
+            mpz_clear(*bna);
+            mpz_clear(*bnb);
             return res;
         }
-        return lval_num(x.data.num + y.data.num);
+        return lval_num(descriptor.op_num(a, b));
     }
+
+    return lval_err(LERR_EVAL);
 }
 
-static struct lval polish_op_sub(struct lval x, struct lval y) {
-    if (EITHER_IS_DBL(x,y) && EITHER_IS_BIGNUM(x,y)) {
-        return lval_err(LERR_BAD_NUM);
-    }
+/* Guards: instanciation. */
+const struct guard guard_x_is_negative = {
+    .condition= cnd_x_is_neg,
+    .error= LERR_BAD_NUM
+};
+const struct guard guard_x_too_big = {
+    .condition= cnd_x_too_big_for_ul,
+    .error= LERR_BAD_NUM
+};
+const struct guard guard_div_by_zero = {
+    .condition= cnd_y_is_zero,
+    .error= LERR_DIV_ZERO
+};
+const struct guard guard_either_is_double = {
+    .condition= cnd_either_is_dbl,
+    .error= LERR_BAD_NUM
+};
+const struct guard guard_dbl_and_bignum = {
+    .condition= cnd_dbl_and_bignum,
+    .error= LERR_BAD_NUM
+};
 
-    if (EITHER_IS_DBL(x,y)) {
-        return lval_dbl(lval_as_dbl(x) - lval_as_dbl(y));
-    } else if (EITHER_IS_BIGNUM(x,y)) {
-        mpz_t* a = lval_as_bignum(x);
-        mpz_t* b = lval_as_bignum(y);
-        mpz_t res;
-        mpz_init(res);
-        mpz_sub(res, *a, *b);
-        mpz_clear(*a);
-        mpz_clear(*b);
-        struct lval ret = lval_bignum(res);
-        mpz_clear(res);
-        return ret;
-    } else {
-        long a = x.data.num;
-        long b = y.data.num;
-        if (a <= LONG_MIN + b) {
-            mpz_t* bnx = lval_as_bignum(x);
-            mpz_t* bny = lval_as_bignum(y);
-            struct lval res = polish_op_sub(lval_bignum(*bnx), lval_bignum(*bny));
-            mpz_clear(*bnx);
-            mpz_clear(*bny);
-            return res;
-        }
-        return lval_num(x.data.num - y.data.num);
-    }
-}
+/* Operator: declaration */
+struct op_descriptor op_add;
+struct op_descriptor op_sub;
+struct op_descriptor op_mul;
+struct guard op_div_guards[2];
+struct op_descriptor op_div;
+struct guard op_mod_guards[3];
+struct op_descriptor op_mod;
+struct guard op_fac_guards[3];
+struct op_descriptor op_fac;
 
-static struct lval polish_op_mul(struct lval x, struct lval y) {
-    if (EITHER_IS_DBL(x,y) && EITHER_IS_BIGNUM(x,y)) {
-        return lval_err(LERR_BAD_NUM);
-    }
+void polish_declare_operators() {
+    op_add.symbol = "+";
+    op_add.guards = &guard_dbl_and_bignum;
+    op_add.guardc = 1;
+    op_add.op_num       = op_num_add;
+    op_add.cnd_overflow = cnd_num_add_overflow;
+    op_add.op_bignum    = mpz_add;
+    op_add.op_dbl       = op_dbl_add;
 
-    if (EITHER_IS_DBL(x,y)) {
-        return lval_dbl(lval_as_dbl(x) * lval_as_dbl(y));
-    } else if (EITHER_IS_BIGNUM(x,y)) {
-        mpz_t* a = lval_as_bignum(x);
-        mpz_t* b = lval_as_bignum(y);
-        mpz_t res;
-        mpz_init(res);
-        mpz_mul(res, *a, *b);
-        mpz_clear(*a);
-        mpz_clear(*b);
-        struct lval ret = lval_bignum(res);
-        mpz_clear(res);
-        return ret;
-    } else {
-        long a = x.data.num;
-        long b = y.data.num;
-        if ((b > 0 && ((a > 0 && a > LONG_MAX / b) || (a < 0 && a < LONG_MIN / b))) ||
-                (b == -1 && a == -LONG_MAX) ||
-                (b < -1 && ((a < 0 && a < LONG_MAX / b) || (a > 0 && a > LONG_MIN / b)))) {
-            mpz_t* bnx = lval_as_bignum(x);
-            mpz_t* bny = lval_as_bignum(y);
-            struct lval res = polish_op_mul(lval_bignum(*bnx), lval_bignum(*bny));
-            mpz_clear(*bnx);
-            mpz_clear(*bny);
-            return res;
-        }
-        return lval_num(x.data.num * y.data.num);
-    }
-}
+    op_sub.symbol = "-";
+    op_sub.guards = &guard_dbl_and_bignum;
+    op_sub.guardc = 1;
+    op_sub.op_num = op_num_sub;
+    op_sub.cnd_overflow = cnd_num_sub_overflow;
+    op_sub.op_bignum = mpz_sub;
+    op_sub.op_dbl = op_dbl_sub;
 
-static struct lval polish_op_div(struct lval x, struct lval y) {
-    if (lval_is_zero(y)) {
-        return lval_err(LERR_DIV_ZERO);
-    }
-    if (EITHER_IS_DBL(x,y) && EITHER_IS_BIGNUM(x,y)) {
-        return lval_err(LERR_BAD_NUM);
-    }
+    op_mul.symbol = "*";
+    op_mul.guards = &guard_dbl_and_bignum;
+    op_mul.guardc = 1;
+    op_mul.op_num = op_num_mul;
+    op_mul.cnd_overflow = cnd_num_mul_overflow;
+    op_mul.op_bignum = mpz_mul;
+    op_mul.op_dbl = op_dbl_mul;
 
-    if (EITHER_IS_DBL(x,y)) {
-        return lval_dbl(lval_as_dbl(x) / lval_as_dbl(y));
-    } else if (EITHER_IS_BIGNUM(x,y)) {
-        mpz_t* a = lval_as_bignum(x);
-        mpz_t* b = lval_as_bignum(y);
-        mpz_t res;
-        mpz_init(res);
-        mpz_fdiv_q(res, *a, *b);
-        mpz_clear(*a);
-        mpz_clear(*b);
-        struct lval ret = lval_bignum(res);
-        mpz_clear(res);
-        return ret;
-    } else {
-        return lval_num(x.data.num / y.data.num);
-    }
-}
+    op_div.symbol = "/";
+    op_div.guards = op_div_guards;
+    op_div.guardc = 2;
+    op_div.op_num = op_num_div;
+    op_div.cnd_overflow = NULL;
+    op_div.op_bignum = mpz_fdiv_q;
+    op_div.op_dbl = op_dbl_div;
+    op_div_guards[0] = guard_div_by_zero;
+    op_div_guards[1] = guard_dbl_and_bignum;
 
-static struct lval polish_op_mod(struct lval x, struct lval y) {
-    if (EITHER_IS_DBL(x, y)) {
-        return lval_err(LERR_BAD_NUM);
-    }
-    if (lval_is_zero(y)) {
-        return lval_err(LERR_DIV_ZERO);
-    }
-    if (EITHER_IS_DBL(x,y) && EITHER_IS_BIGNUM(x,y)) {
-        return lval_err(LERR_BAD_NUM);
-    }
+    op_mod.symbol = "%";
+    op_mod.guards = op_mod_guards;
+    op_mod.guardc = 3;
+    op_mod.op_num = op_num_mod;
+    op_mod.cnd_overflow = NULL;
+    op_mod.op_bignum = mpz_mod;
+    op_mod.op_dbl = op_dbl_nop;
+    op_mod_guards[0] = guard_either_is_double;
+    op_mod_guards[1] = guard_div_by_zero;
+    op_mod_guards[2] = guard_dbl_and_bignum;
 
-    if (EITHER_IS_BIGNUM(x,y)) {
-        mpz_t* a = lval_as_bignum(x);
-        mpz_t* b = lval_as_bignum(y);
-        mpz_t res;
-        mpz_init(res);
-        mpz_mod(res, *a, *b);
-        mpz_clear(*a);
-        mpz_clear(*b);
-        struct lval ret = lval_bignum(res);
-        mpz_clear(res);
-        return ret;
-    }
-
-    return lval_num(x.data.num % y.data.num);
-}
-
-static struct lval polish_op_fact(struct lval x) {
-    if (x.type == LVAL_DBL) {
-        return lval_err(LERR_BAD_NUM);
-    }
-    if (x.type == LVAL_NUM && x.data.num < 0) {
-        return lval_err(LERR_BAD_NUM);
-    }
-    if (x.type == LVAL_BIGNUM && mpz_sgn(x.data.bignum) < 0) {
-        return lval_err(LERR_BAD_NUM);
-    }
-    if (x.type == LVAL_BIGNUM && mpz_cmp_si(x.data.bignum, ULONG_MAX) > 0) {
-        return lval_err(LERR_BAD_NUM);
-    }
-
-    if (lval_is_zero(x)) {
-        return lval_num(1);
-    }
-
-    /* Up to long. */
-    if (x.type == LVAL_NUM && x.data.num < 21) {
-        int n = x.data.num;
-        long fact = n;
-        while (n > 2) {
-            fact *= --n;
-        }
-        return lval_num(fact);
-    }
-
-    /* Always use bignum from here. */
-    mpz_t* arg = lval_as_bignum(x);
-    unsigned long n = mpz_get_ui(*arg);
-    mpz_t fact;
-    mpz_init(fact);
-    mpz_fac_ui(fact, n);
-    struct lval ret = lval_bignum(fact);
-    mpz_clear(fact);
-    mpz_clear(*arg);
-    return ret;
+    op_fac.symbol = "!";
+    op_fac.unary = true;
+    op_fac.guards = op_fac_guards;
+    op_fac.guardc = 3;
+    op_fac.op_num = op_num_fact;
+    op_fac.cnd_overflow = cnd_num_fact_overflow;
+    op_fac.op_bignum = op_bignum_fac;
+    op_fac.op_dbl = op_dbl_nop;
+    op_fac_guards[0] = guard_either_is_double;
+    op_fac_guards[1] = guard_x_is_negative;
+    op_fac_guards[2] = guard_x_too_big;
 }
 
 static struct lval polish_eval_op(struct lval x, char* op, struct lval y) {
     if (x.type == LVAL_ERR) return x;
     if (y.type == LVAL_ERR) return y;
 
-    if (strcmp(op, "+") == 0) return polish_op_add(x, y);
-    if (strcmp(op, "-") == 0) return polish_op_sub(x, y);
-    if (strcmp(op, "*") == 0) return polish_op_mul(x, y);
-    if (strcmp(op, "/") == 0) return polish_op_div(x, y);
-    if (strcmp(op, "%") == 0) return polish_op_mod(x, y);
-
-    return lval_err(LERR_BAD_NUM);
-}
-
-static struct lval polish_eval_unary_op(struct lval x, char* op) {
-    if (x.type == LVAL_ERR) return x;
-
-    if (strcmp(op, "!") == 0) return polish_op_fact(x);
+    if (strcmp(op, "+") == 0) return polish_op(op_add, x, y);
+    if (strcmp(op, "-") == 0) return polish_op(op_sub, x, y);
+    if (strcmp(op, "*") == 0) return polish_op(op_mul, x, y);
+    if (strcmp(op, "/") == 0) return polish_op(op_div, x, y);
+    if (strcmp(op, "%") == 0) return polish_op(op_mod, x, y);
+    if (strcmp(op, "!") == 0) {
+        if (y.type != LVAL_NIL) {
+            return lval_err(LERR_TOO_MANY_ARGS);
+        }
+        return polish_op(op_fac, x, lval_nil());
+    }
 
     return lval_err(LERR_BAD_NUM);
 }

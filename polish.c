@@ -15,7 +15,7 @@ static struct lval polish_eval_op(struct lval x, char* op, struct lval y);
 static struct lval polish_eval_expr(mpc_ast_t* ast);
 
 /* Parser */
-mpc_parser_t* Polish    = NULL;
+static mpc_parser_t* Polish    = NULL;
 
 void polish_eval(const char* restrict input) {
     if (!Polish)
@@ -33,10 +33,10 @@ void polish_eval(const char* restrict input) {
 }
 
 /* Init & Cleanup */
-mpc_parser_t* Number    = NULL;
-mpc_parser_t* Double    = NULL;
-mpc_parser_t* Operator  = NULL;
-mpc_parser_t* Expr      = NULL;
+static mpc_parser_t* Number    = NULL;
+static mpc_parser_t* Double    = NULL;
+static mpc_parser_t* Operator  = NULL;
+static mpc_parser_t* Expr      = NULL;
 
 void polish_setup() {
     if (!Polish) {
@@ -56,8 +56,6 @@ void polish_setup() {
                   polish   : /^/ <operator> <expr>+ /$/ ;                       \
                   ",
                   Number, Double, Operator, Expr, Polish);
-
-        polish_declare_operators();
     }
 }
 
@@ -124,11 +122,11 @@ struct guard {
 
 /* Operators: generic */
 struct op_descriptor {
-    const char*         symbol;
-    bool                unary;
-    const struct guard* guards;
-    int                 guardc;
-    struct lval         neutral;
+    const char*          symbol;
+    bool                 unary;
+    const struct guard** guards;
+    int                  guardc;
+    const struct lval*   neutral;
     long   (*op_num)(const long, const long);
     bool   (*cnd_overflow)(const long, const long);
     void   (*op_bignum)(mpz_t r, const mpz_t x, const mpz_t y);
@@ -141,13 +139,13 @@ static struct lval polish_op(
 ) {
 
     if (!descriptor.unary && y.type == LVAL_NIL) {
-        y = descriptor.neutral;
+        y = *descriptor.neutral;
     }
 
     /* Guards */
     for (int i = 0; i < descriptor.guardc; i++) {
-        if ((descriptor.guards[i].condition)(x, y)) {
-            return lval_err(descriptor.guards[i].error);
+        if ((descriptor.guards[i]->condition)(x, y)) {
+            return lval_err(descriptor.guards[i]->error);
         }
     }
 
@@ -189,123 +187,142 @@ static struct lval polish_op(
 }
 
 /* Guards: instanciation. */
-const struct guard guard_x_is_negative = {
+static const struct guard guard_x_is_negative = {
     .condition= cnd_x_is_neg,
     .error= LERR_BAD_NUM
 };
-const struct guard guard_y_is_negative = {
+static const struct guard guard_y_is_negative = {
     .condition= cnd_y_is_neg,
     .error= LERR_BAD_NUM
 };
-const struct guard guard_x_too_big = {
+static const struct guard guard_x_too_big = {
     .condition= cnd_x_too_big_for_ul,
     .error= LERR_BAD_NUM
 };
-const struct guard guard_y_too_big = {
+static const struct guard guard_y_too_big = {
     .condition= cnd_y_too_big_for_ul,
     .error= LERR_BAD_NUM
 };
-const struct guard guard_div_by_zero = {
+static const struct guard guard_div_by_zero = {
     .condition= cnd_y_is_zero,
     .error= LERR_DIV_ZERO
 };
-const struct guard guard_either_is_double = {
+static const struct guard guard_either_is_double = {
     .condition= cnd_either_is_dbl,
     .error= LERR_BAD_NUM
 };
-const struct guard guard_dbl_and_bignum = {
+static const struct guard guard_dbl_and_bignum = {
     .condition= cnd_dbl_and_bignum,
     .error= LERR_BAD_NUM
 };
 
 /* Operator: declaration */
-struct op_descriptor op_add;
-struct op_descriptor op_sub;
-struct op_descriptor op_mul;
-struct guard op_div_guards[2];
-struct op_descriptor op_div;
-struct guard op_mod_guards[3];
-struct op_descriptor op_mod;
-struct guard op_fac_guards[3];
-struct op_descriptor op_fac;
-struct guard op_pow_guards[3];
-struct op_descriptor op_pow;
+#define LENGTH(array) sizeof(array)/sizeof(array[0])
 
-void polish_declare_operators() {
-    op_add.symbol = "+";
-    op_add.guards = &guard_dbl_and_bignum;
-    op_add.guardc = 1;
-    op_add.neutral = lval_num(0);
-    op_add.op_num       = op_num_add;
-    op_add.cnd_overflow = cnd_num_add_overflow;
-    op_add.op_bignum    = mpz_add;
-    op_add.op_dbl       = op_dbl_add;
+static const struct guard* guards_op_add[] = {
+    &guard_dbl_and_bignum
+};
+static const struct op_descriptor op_add = {
+    .symbol       = "+",
+    .guards       = guards_op_add,
+    .guardc       = LENGTH(guards_op_add),
+    .neutral      = &lzero,
+    .op_num       = op_num_add,
+    .cnd_overflow = cnd_num_add_overflow,
+    .op_bignum    = mpz_add,
+    .op_dbl       = op_dbl_add
+};
 
-    op_sub.symbol = "-";
-    op_sub.guards = &guard_dbl_and_bignum;
-    op_sub.guardc = 1;
-    op_sub.neutral = lval_num(0);
-    op_sub.op_num = op_num_sub;
-    op_sub.cnd_overflow = cnd_num_sub_overflow;
-    op_sub.op_bignum = mpz_sub;
-    op_sub.op_dbl = op_dbl_sub;
+static const struct guard* guards_op_sub[] = {
+    &guard_dbl_and_bignum
+};
+static const struct op_descriptor op_sub = {
+    .symbol       = "-",
+    .guards       = guards_op_sub,
+    .guardc       = LENGTH(guards_op_sub),
+    .neutral      = &lzero,
+    .op_num       = op_num_sub,
+    .cnd_overflow = cnd_num_sub_overflow,
+    .op_bignum    = mpz_sub,
+    .op_dbl       = op_dbl_sub
+};
 
-    op_mul.symbol = "*";
-    op_mul.guards = &guard_dbl_and_bignum;
-    op_mul.guardc = 1;
-    op_mul.neutral = lval_num(1);
-    op_mul.op_num = op_num_mul;
-    op_mul.cnd_overflow = cnd_num_mul_overflow;
-    op_mul.op_bignum = mpz_mul;
-    op_mul.op_dbl = op_dbl_mul;
+static const struct guard* guards_op_mul[] = {
+    &guard_dbl_and_bignum
+};
+static const struct op_descriptor op_mul = {
+    .symbol       = "*",
+    .guards       = guards_op_mul,
+    .guardc       = LENGTH(guards_op_mul),
+    .neutral      = &lone,
+    .op_num       = op_num_mul,
+    .cnd_overflow = cnd_num_mul_overflow,
+    .op_bignum    = mpz_mul,
+    .op_dbl       = op_dbl_mul
+};
 
-    op_div.symbol = "/";
-    op_div.guards = op_div_guards;
-    op_div.guardc = 2;
-    op_div.neutral = lval_num(1);
-    op_div.op_num = op_num_div;
-    op_div.cnd_overflow = NULL;
-    op_div.op_bignum = mpz_fdiv_q;
-    op_div.op_dbl = op_dbl_div;
-    op_div_guards[0] = guard_div_by_zero;
-    op_div_guards[1] = guard_dbl_and_bignum;
+static const struct guard* guards_op_div[] = {
+    &guard_div_by_zero,
+    &guard_dbl_and_bignum
+};
+static const struct op_descriptor op_div = {
+    .symbol       = "/",
+    .guards       = guards_op_div,
+    .guardc       = LENGTH(guards_op_div),
+    .neutral      = &lone,
+    .op_num       = op_num_div,
+    .cnd_overflow = NULL,
+    .op_bignum    = mpz_fdiv_q,
+    .op_dbl       = op_dbl_div,
+};
 
-    op_mod.symbol = "%";
-    op_mod.guards = op_mod_guards;
-    op_mod.guardc = 3;
-    op_mod.neutral = lval_num(1);
-    op_mod.op_num = op_num_mod;
-    op_mod.cnd_overflow = NULL;
-    op_mod.op_bignum = mpz_mod;
-    op_mod.op_dbl = op_dbl_nop;
-    op_mod_guards[0] = guard_either_is_double;
-    op_mod_guards[1] = guard_div_by_zero;
-    op_mod_guards[2] = guard_dbl_and_bignum;
+static const struct guard* guards_op_mod[] = {
+    &guard_div_by_zero,
+    &guard_either_is_double,
+    &guard_dbl_and_bignum,
+};
+static const struct op_descriptor op_mod = {
+    .symbol       = "%",
+    .guards       = guards_op_mod,
+    .guardc       = LENGTH(guards_op_mod),
+    .neutral      = &lone,
+    .op_num       = op_num_mod,
+    .cnd_overflow = NULL,
+    .op_bignum    = mpz_mod,
+    .op_dbl       = op_dbl_nop
+};
 
-    op_fac.symbol = "!";
-    op_fac.unary = true;
-    op_fac.guards = op_fac_guards;
-    op_fac.guardc = 3;
-    op_fac.op_num = op_num_fact;
-    op_fac.cnd_overflow = cnd_num_fact_overflow;
-    op_fac.op_bignum = op_bignum_fac;
-    op_fac.op_dbl = op_dbl_nop;
-    op_fac_guards[0] = guard_either_is_double;
-    op_fac_guards[1] = guard_x_is_negative;
-    op_fac_guards[2] = guard_x_too_big;
+static const struct guard* guards_op_fac[] = {
+    &guard_either_is_double,
+    &guard_x_is_negative,
+    &guard_x_too_big
+};
+static const struct op_descriptor op_fac = {
+    .symbol       = "!",
+    .unary        = true,
+    .guards       = guards_op_fac,
+    .guardc       = LENGTH(guards_op_fac),
+    .op_num       = op_num_fact,
+    .cnd_overflow = cnd_num_fact_overflow,
+    .op_bignum    = op_bignum_fac,
+    .op_dbl       = op_dbl_nop
+};
 
-    op_pow.symbol = "^";
-    op_pow.guards = op_pow_guards;
-    op_pow.guardc = 3;
-    op_mod.neutral = lval_num(1);
-    op_pow.op_num = op_num_pow;
-    op_pow.cnd_overflow = cnd_num_pow_overflow;
-    op_pow.op_bignum = op_bignum_pow;
-    op_pow.op_dbl = op_dbl_pow;
-    op_pow_guards[0] = guard_dbl_and_bignum;
-    op_pow_guards[1] = guard_y_is_negative;
-    op_pow_guards[2] = guard_y_too_big;
-}
+static const struct guard *guards_op_pow[] = {
+    &guard_dbl_and_bignum,
+    &guard_y_is_negative,
+    &guard_y_too_big
+};
+static const struct op_descriptor op_pow = {
+    .symbol       = "^",
+    .guards       = guards_op_pow,
+    .guardc       = LENGTH(guards_op_pow),
+    .neutral      = &lzero,
+    .op_num       = op_num_pow,
+    .cnd_overflow = cnd_num_pow_overflow,
+    .op_bignum    = op_bignum_pow,
+    .op_dbl       = op_dbl_pow
+};
 
 static struct lval polish_eval_op(struct lval x, char* op, struct lval y) {
     if (x.type == LVAL_ERR) return x;

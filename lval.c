@@ -3,6 +3,16 @@
 #include <math.h>
 #include <stdlib.h>
 
+/* Special lval definitions. */
+const struct lval lzero = {
+    .type = LVAL_NUM,
+    .data.num = 0
+};
+ const struct lval lone = {
+    .type = LVAL_NUM,
+    .data.num = 1
+};
+
 /* Create a new number type lval. */
 struct lval lval_nil() {
     struct lval v;

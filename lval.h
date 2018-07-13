@@ -33,6 +33,9 @@ struct lval {
     } data;
 };
 
+extern const struct lval lzero;
+extern const struct lval lone;
+
 struct lval lval_nil();
 struct lval lval_num(long x);
 struct lval lval_bignum(mpz_t x);

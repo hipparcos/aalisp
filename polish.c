@@ -128,6 +128,7 @@ struct op_descriptor {
     bool                unary;
     const struct guard* guards;
     int                 guardc;
+    struct lval         neutral;
     long   (*op_num)(const long, const long);
     bool   (*cnd_overflow)(const long, const long);
     void   (*op_bignum)(mpz_t r, const mpz_t x, const mpz_t y);
@@ -136,8 +137,12 @@ struct op_descriptor {
 
 static struct lval polish_op(
     const struct op_descriptor descriptor,
-    const struct lval x, const struct lval y
+    const struct lval x, struct lval y
 ) {
+
+    if (!descriptor.unary && y.type == LVAL_NIL) {
+        y = descriptor.neutral;
+    }
 
     /* Guards */
     for (int i = 0; i < descriptor.guardc; i++) {
@@ -230,6 +235,7 @@ void polish_declare_operators() {
     op_add.symbol = "+";
     op_add.guards = &guard_dbl_and_bignum;
     op_add.guardc = 1;
+    op_add.neutral = lval_num(0);
     op_add.op_num       = op_num_add;
     op_add.cnd_overflow = cnd_num_add_overflow;
     op_add.op_bignum    = mpz_add;
@@ -238,6 +244,7 @@ void polish_declare_operators() {
     op_sub.symbol = "-";
     op_sub.guards = &guard_dbl_and_bignum;
     op_sub.guardc = 1;
+    op_sub.neutral = lval_num(0);
     op_sub.op_num = op_num_sub;
     op_sub.cnd_overflow = cnd_num_sub_overflow;
     op_sub.op_bignum = mpz_sub;
@@ -246,6 +253,7 @@ void polish_declare_operators() {
     op_mul.symbol = "*";
     op_mul.guards = &guard_dbl_and_bignum;
     op_mul.guardc = 1;
+    op_mul.neutral = lval_num(1);
     op_mul.op_num = op_num_mul;
     op_mul.cnd_overflow = cnd_num_mul_overflow;
     op_mul.op_bignum = mpz_mul;
@@ -254,6 +262,7 @@ void polish_declare_operators() {
     op_div.symbol = "/";
     op_div.guards = op_div_guards;
     op_div.guardc = 2;
+    op_div.neutral = lval_num(1);
     op_div.op_num = op_num_div;
     op_div.cnd_overflow = NULL;
     op_div.op_bignum = mpz_fdiv_q;
@@ -264,6 +273,7 @@ void polish_declare_operators() {
     op_mod.symbol = "%";
     op_mod.guards = op_mod_guards;
     op_mod.guardc = 3;
+    op_mod.neutral = lval_num(1);
     op_mod.op_num = op_num_mod;
     op_mod.cnd_overflow = NULL;
     op_mod.op_bignum = mpz_mod;
@@ -287,6 +297,7 @@ void polish_declare_operators() {
     op_pow.symbol = "^";
     op_pow.guards = op_pow_guards;
     op_pow.guardc = 3;
+    op_mod.neutral = lval_num(1);
     op_pow.op_num = op_num_pow;
     op_pow.cnd_overflow = cnd_num_pow_overflow;
     op_pow.op_bignum = op_bignum_pow;

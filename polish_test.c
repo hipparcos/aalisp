@@ -55,6 +55,7 @@ static char* test_polish_op_add() {
         {.x= lval_num(1), .y= lval_dbl(1.1), .expected= lval_dbl(2.1)},
         {.x= lval_dbl(1.1), .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
         {.x= lval_num(9223372036854775807), .y= lval_num(1), .expected= lval_bignum(bn)},
+        {.x= lval_num(2), .y= lval_nil(), .expected= lval_num(2)},
     };
     mpz_clear(bn);
     polish_declare_operators();
@@ -72,6 +73,7 @@ static char* test_polish_op_sub() {
         {.x= lval_num(1), .y= lval_dbl(1.1), .expected= lval_dbl(-0.1)},
         {.x= lval_dbl(1.1), .y= lval_dbl(1.1), .expected= lval_dbl(0.0)},
         {.x= lval_num(-9223372036854775807), .y= lval_num(2), .expected= lval_bignum(bnn)},
+        {.x= lval_num(2), .y= lval_nil(), .expected= lval_num(2)},
     };
     mpz_clear(bn);
     mpz_clear(bnn);
@@ -90,6 +92,7 @@ static char* test_polish_op_mul() {
         {.x= lval_num(2), .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
         {.x= lval_dbl(2.0), .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
         {.x= lval_num(9223372036854775807), .y= lval_num(10), .expected= lval_bignum(bnn)},
+        {.x= lval_num(2), .y= lval_nil(), .expected= lval_num(2)},
     };
     mpz_clear(bn);
     mpz_clear(bnn);
@@ -105,6 +108,7 @@ static char* test_polish_op_div() {
         {.x= lval_dbl(2.0), .y= lval_dbl(2.0), .expected= lval_dbl(1.0)},
         {.x= lval_num(2), .y= lval_num(0), .expected= lval_err(LERR_DIV_ZERO)},
         {.x= lval_num(2), .y= lval_dbl(.0), .expected= lval_err(LERR_DIV_ZERO)},
+        {.x= lval_num(2), .y= lval_nil(), .expected= lval_num(2)},
     };
     polish_declare_operators();
     return test_op_helper("op_div %s / %s = %s got %s", op_div,
@@ -117,6 +121,7 @@ static char* test_polish_op_mod() {
         {.x= lval_num(2), .y= lval_num(0), .expected= lval_err(LERR_DIV_ZERO)},
         {.x= lval_num(2), .y= lval_dbl(2.0), .expected= lval_err(LERR_BAD_NUM)},
         {.x= lval_dbl(2.0), .y= lval_dbl(2.0), .expected= lval_err(LERR_BAD_NUM)},
+        {.x= lval_num(2), .y= lval_nil(), .expected= lval_num(0)},
     };
     polish_declare_operators();
     return test_op_helper("op_mod %s %% %s = %s got %s", op_mod,
@@ -149,6 +154,7 @@ static char* test_polish_op_pow() {
         {.x= lval_num(4), .y= lval_dbl(0.5), .expected= lval_dbl(2.0)},
         {.x= lval_num(10), .y= lval_num(100), .expected= lval_bignum(bn)},
         {.x= lval_num(2), .y= lval_num(-1), .expected= lval_err(LERR_BAD_NUM)},
+        {.x= lval_num(2), .y= lval_nil(), .expected= lval_num(2)},
     };
     mpz_clear(bn);
     polish_declare_operators();

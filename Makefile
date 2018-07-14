@@ -8,10 +8,15 @@ build_file:=buildnumber.mk
 test_file:=test.mk
 version_header:=version.h
 
+CC=gcc
 SHELL:=/bin/bash
 DEBUG?=-ggdb3 -O0
 CFLAGS:=-Wall -std=c99 $(DEBUG)
 LDFLAGS:=-Wall -lreadline -lm
+VGFLAGS?=\
+	--quiet --leak-check=full --show-leak-kinds=all \
+	--track-origins=yes --error-exitcode=1 --error-limit=no \
+	--suppressions=./valgrind-libraryleaks.supp
 
 # Define PROGNAME, VERSION, CODENAME.
 include $(version_file)
@@ -27,6 +32,9 @@ clean::
 
 # test target.
 include $(test_file)
+
+leakcheck: $(out)
+	valgrind $(VGFLAGS) ./$^
 
 # Build executable.
 $(out): $(objects)

@@ -1,0 +1,48 @@
+{
+    /usr/lib/libreadline.so.7.0_malloc
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:malloc
+    ...
+    obj:/usr/lib/libreadline.so.7.0
+}
+{
+    /usr/lib/libreadline.so.7.0_calloc
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:calloc
+    ...
+    obj:/usr/lib/libreadline.so.7.0
+}
+{
+    /usr/lib/libreadline.so.7.0_realloc
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:realloc
+    ...
+    obj:/usr/lib/libreadline.so.7.0
+}
+{
+    mpc_malloc
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:malloc
+    ...
+    fun:mpc_*
+}
+{
+    mpc_calloc
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:calloc
+    ...
+    fun:mpc_*
+}
+{
+    mpc_realloc
+    Memcheck:Leak
+    match-leak-kinds: reachable
+    fun:realloc
+    ...
+    fun:mpc_*
+}

@@ -1,4 +1,4 @@
-#include "builtin.c" // To access module defined functions.
+#include "builtin.h"
 
 #include <limits.h>
 #include <stdbool.h>

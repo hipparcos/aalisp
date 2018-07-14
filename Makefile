@@ -1,12 +1,15 @@
 out=$(PROGNAME)
 sources=$(PROGNAME).c vendor/mpc/mpc.c vendor/mini-gmp/mini-gmp.c lisp.c lval.c builtin.c
 headers=vendor/mpc/mpc.h vendor/mini-gmp/mini-gmp.h lisp.h lval.h builtin.h
-objects=$(sources:%.c=%.o)
 
+build_dir:=build
 version_file:=version.mk
 build_file:=buildnumber.mk
 test_file:=test.mk
 version_header:=version.h
+
+objects=$(addprefix $(build_dir)/,$(sources:%.c=%.o))
+deps=$(addprefix $(build_dir)/,$(sources:%.c=%.d))
 
 CC=gcc
 SHELL:=/bin/bash
@@ -23,12 +26,15 @@ include $(version_file)
 # Define BUILD.
 include $(build_file)
 
+# Use second expansion to create $(build_dir) on demand.
+.SECONDEXPANSION:
+
 all: build
 
 build: $(out)
 
 clean::
-	rm -f *.o *.d $(objects) $(version_header) tags $(out)
+	rm -f $(objects) $(deps) $(version_header) tags $(out)
 
 # test target.
 include $(test_file)
@@ -38,16 +44,21 @@ leakcheck: $(out)
 
 # Build executable.
 $(out): $(objects)
+	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
-# Generate C source files dependancies.
-%.d: %.c $(version_header)
+# Generate O file in $(build_dir); .f is a directory marker.
+$(build_dir)/%.o: %.c $$(@D)/.f
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+# Generate C source files dependancies in $(build_dir); .f is a directory marker.
+$(build_dir)/%.d: %.c $(version_header) $$(@D)/.f
 	@set -e; rm -f $@; \
 		$(CC) -MM $(CFLAGS) $< > $@.$$$$; \
 		sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
 		rm -f $@.$$$$
 
 # Include dependancies makefiles.
-include $(sources:%.c=%.d)
+include $(deps)
 
 # Generate tags file.
 tags:
@@ -73,6 +84,13 @@ $(version_header): $(version_file) $(build_file)
 	@echo -e "#define CODENAME\t\""$(CODENAME)"\"" >> $@
 	@echo -e "#define BUILD\t\t"$(BUILDNUMBER) >> $@
 	@echo -e "\n#endif" >> $@
+
+# Directory marker.
+%/.f:
+	@mkdir -p $(dir $@)
+	@touch $@
+
+.PRECIOUS: %/.f
 
 # List of all special targets (always out-of-date).
 .PHONY: all build clean tags

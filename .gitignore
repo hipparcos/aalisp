@@ -1,4 +1,5 @@
 **.[od]
+/build/
 tags
 version.h
 .gdb_history

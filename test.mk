@@ -1,21 +1,21 @@
 tests:=builtin_test.c lisp_test.c
-testcases:=$(tests:%.c=%)
+test_build_dir:=$(build_dir)
 
-builtin_test: vendor/mpc/mpc.o vendor/mini-gmp/mini-gmp.o lval.o
-lisp_test: vendor/mpc/mpc.o vendor/mini-gmp/mini-gmp.o lval.o builtin.o
+testcases:=$(addprefix $(test_build_dir)/,$(tests:%.c=%))
+testobjects:=$(addprefix $(test_build_dir)/,$(tests:%.c=%.o))
 
 test: $(testcases)
 
-$(testcases): % : %.o
+$(testcases): % : %.o $(filter-out $(build_dir)/$(PROGNAME).o,$(objects))
 	@echo "---- "$@ \
 		&& $(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@ \
 		&& valgrind $(VGFLAGS) ./$@ \
 		&& echo "----"
 
 clean::
-	rm -f $(testcases)
+	rm -f $(testobjects) $(testcases)
 
 # Include dependancies makefiles.
-include $(tests:%.c=%.d)
+include $(tests:%.c=$(build_dir)/%.d)
 
 .PHONY: test $(testcases)

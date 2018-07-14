@@ -6,21 +6,23 @@
 #include <string.h>
 
 #include "vendor/mpc/mpc.h"
-#include "lval.h"
+
 #include "builtin.h"
+#include "lval.h"
+#include "symbol.h"
 
 /* Parser */
 static mpc_parser_t* Lisp      = NULL;
 static mpc_parser_t* Number    = NULL;
 static mpc_parser_t* Double    = NULL;
-static mpc_parser_t* Operator  = NULL;
+static mpc_parser_t* Symbol    = NULL;
 static mpc_parser_t* Expr      = NULL;
 
 void lisp_setup(void) {
     if (!Lisp) {
         Number    = mpc_new("number");
         Double    = mpc_new("double");
-        Operator  = mpc_new("operator");
+        Symbol    = mpc_new("symbol");
         Expr      = mpc_new("expr");
         Lisp      = mpc_new("lisp");
 
@@ -29,11 +31,11 @@ void lisp_setup(void) {
                   "                                                             \
                   double   : /-?[0-9]*\\.[0-9]+/ ;                              \
                   number   : /-?[0-9]+/ ;                                       \
-                  operator : '+' | '-' | '*' | '/' | '%' | '!' | '^' ;          \
-                  expr     : <double> | <number> | '(' <operator> <expr>+ ')' ; \
-                  lisp     : /^/ <operator> <expr>+ /$/ ;                       \
+                  symbol   : '+' | '-' | '*' | '/' | '%' | '!' | '^' ;          \
+                  expr     : <double> | <number> | '(' <symbol> <expr>+ ')' ;   \
+                  lisp     : /^/ <symbol> <expr>+ /$/ ;                         \
                   ",
-                  Number, Double, Operator, Expr, Lisp);
+                  Double, Number, Symbol, Expr, Lisp);
     }
 }
 
@@ -41,17 +43,17 @@ static struct lval lisp_eval_symbol(struct lval x, char* op, struct lval y) {
     if (x.type == LVAL_ERR) return x;
     if (y.type == LVAL_ERR) return y;
 
-    if (strcmp(op, "+") == 0) return lisp_builtin_op(builtin_op_add, x, y);
-    if (strcmp(op, "-") == 0) return lisp_builtin_op(builtin_op_sub, x, y);
-    if (strcmp(op, "*") == 0) return lisp_builtin_op(builtin_op_mul, x, y);
-    if (strcmp(op, "/") == 0) return lisp_builtin_op(builtin_op_div, x, y);
-    if (strcmp(op, "%") == 0) return lisp_builtin_op(builtin_op_mod, x, y);
-    if (strcmp(op, "^") == 0) return lisp_builtin_op(builtin_op_pow, x, y);
+    if (strcmp(op, "+") == 0) return lsym_exec(builtin_op_add, x, y);
+    if (strcmp(op, "-") == 0) return lsym_exec(builtin_op_sub, x, y);
+    if (strcmp(op, "*") == 0) return lsym_exec(builtin_op_mul, x, y);
+    if (strcmp(op, "/") == 0) return lsym_exec(builtin_op_div, x, y);
+    if (strcmp(op, "%") == 0) return lsym_exec(builtin_op_mod, x, y);
+    if (strcmp(op, "^") == 0) return lsym_exec(builtin_op_pow, x, y);
     if (strcmp(op, "!") == 0) {
         if (y.type != LVAL_NIL) {
             return lval_err(LERR_TOO_MANY_ARGS);
         }
-        return lisp_builtin_op(builtin_op_fac, x, lval_nil());
+        return lsym_exec(builtin_op_fac, x, lval_nil());
     }
 
     return lval_err(LERR_BAD_NUM);
@@ -120,10 +122,10 @@ void lisp_eval(const char* restrict input) {
 }
 
 void lisp_teardown(void) {
-    mpc_cleanup(5, Number, Double, Operator, Expr, Lisp);
+    mpc_cleanup(5, Number, Double, Symbol, Expr, Lisp);
     Number = NULL;
     Double = NULL;
-    Operator = NULL;
+    Symbol = NULL;
     Expr = NULL;
     Lisp = NULL;
 }

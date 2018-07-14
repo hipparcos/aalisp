@@ -14,13 +14,13 @@ int tests_run = 0;
 struct testcase {
     struct lval x;
     struct lval y;
-    char* input;
+    char*       input;
     struct lval expected;
 };
 
 static char* test_op_helper(
     const char* format,
-    const struct op_descriptor descriptor,
+    const struct lsym sym,
     struct testcase testcases[],
     unsigned long number_of_cases, bool unary) {
 
@@ -29,7 +29,7 @@ static char* test_op_helper(
 
     for (int i = 0; i < (int)number_of_cases; i++) {
         struct testcase tt = testcases[i];
-        struct lval got = lisp_builtin_op(descriptor, tt.x, tt.y);
+        struct lval got = lsym_exec(sym, tt.x, tt.y);
         lval_to_string(tt.x, temp[0]);
         if (!unary)
             lval_to_string(tt.y, temp[1]);

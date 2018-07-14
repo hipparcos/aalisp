@@ -23,12 +23,11 @@ static char* test_op_helper(
     unsigned long number_of_cases, bool unary) {
 
     char* message = (char*)calloc(sizeof(char), 1024);
-    struct lval got;
     char temp[4][128];
 
     for (int i = 0; i < (int)number_of_cases; i++) {
         struct testcase tt = testcases[i];
-        got = polish_op(descriptor, tt.x, tt.y);
+        struct lval got = polish_op(descriptor, tt.x, tt.y);
         lval_to_string(tt.x, temp[0]);
         if (!unary)
             lval_to_string(tt.y, temp[1]);
@@ -40,6 +39,8 @@ static char* test_op_helper(
             sprintf(message, format, temp[0], temp[2], temp[3]);
         }
         mu_assert(message, lval_equals(got, tt.expected) || lval_err_equals(got, tt.expected));
+        /* Cleanup. */
+        lval_clear(&got);
     }
 
     free(message); // Avoid clang complaint.
@@ -54,8 +55,14 @@ mpz_t bn_minlong_pred;
 mpz_t bn_maxlong_x10;
 mpz_t bn_fac21;
 mpz_t bn_10pow100;
+struct lval maxlong_succ;
+struct lval minlong_pred;
+struct lval maxlong_x10;
+struct lval fac21;
+struct lval v10pow100;
 
 void setup(void) {
+    /* Bignum */
     mpz_init_set_si(bn_maxlong_succ, LONG_MAX);
     mpz_add_ui(bn_maxlong_succ, bn_maxlong_succ, 1);
 
@@ -71,6 +78,13 @@ void setup(void) {
 
     mpz_init(bn_10pow100);
     mpz_ui_pow_ui(bn_10pow100, 10, 100);
+
+    /* lval */
+    maxlong_succ = lval_bignum(bn_maxlong_succ);
+    minlong_pred = lval_bignum(bn_minlong_pred);
+    maxlong_x10  = lval_bignum(bn_maxlong_x10);
+    fac21        = lval_bignum(bn_fac21);
+    v10pow100     = lval_bignum(bn_10pow100);
 }
 
 void teardown(void) {
@@ -79,6 +93,11 @@ void teardown(void) {
     mpz_clear(bn_maxlong_x10);
     mpz_clear(bn_fac21);
     mpz_clear(bn_10pow100);
+    lval_clear(&maxlong_succ);
+    lval_clear(&minlong_pred);
+    lval_clear(&maxlong_x10);
+    lval_clear(&fac21);
+    lval_clear(&v10pow100);
 }
 
 static char* test_polish_op_add() {
@@ -87,7 +106,7 @@ static char* test_polish_op_add() {
         {.x= lval_num(1),   .y= lval_dbl(1.1), .expected= lval_dbl(2.1)},
         {.x= lval_dbl(1.1), .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
         {.x= lval_num(LONG_MAX),
-                            .y= lval_num(1),   .expected= lval_bignum(bn_maxlong_succ)},
+                            .y= lval_num(1),   .expected= maxlong_succ},
         {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
     return test_op_helper("op_add %s + %s = %s got %s", op_add,
@@ -100,7 +119,7 @@ static char* test_polish_op_sub() {
         {.x= lval_num(1),   .y= lval_dbl(1.1), .expected= lval_dbl(-0.1)},
         {.x= lval_dbl(1.1), .y= lval_dbl(1.1), .expected= lval_dbl(0.0)},
         {.x= lval_num(LONG_MIN),
-                            .y= lval_num(1),   .expected= lval_bignum(bn_minlong_pred)},
+                            .y= lval_num(1),   .expected= minlong_pred},
         {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
     return test_op_helper("op_sub %s - %s = %s got %s", op_sub,
@@ -113,7 +132,7 @@ static char* test_polish_op_mul() {
         {.x= lval_num(2),   .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
         {.x= lval_dbl(2.0), .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
         {.x= lval_num(LONG_MAX),
-                            .y= lval_num(10),  .expected= lval_bignum(bn_maxlong_x10)},
+                            .y= lval_num(10),  .expected= maxlong_x10},
         {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
     return test_op_helper("op_mul %s * %s = %s got %s", op_mul,
@@ -150,7 +169,7 @@ static char* test_polish_op_fac() {
         {.x= lval_num(0),  .expected= lval_num(1)},
         {.x= lval_num(1),  .expected= lval_num(1)},
         {.x= lval_num(20), .expected= lval_num(fac20)},
-        {.x= lval_num(21), .expected= lval_bignum(bn_fac21)},
+        {.x= lval_num(21), .expected= fac21},
         {.x= lval_num(-1), .expected= lval_err(LERR_BAD_NUM)},
     };
     return test_op_helper("op_fact %s! = %s got %s", op_fac,
@@ -161,7 +180,7 @@ static char* test_polish_op_pow() {
     struct testcase testcases[] = {
         {.x= lval_num(2),  .y= lval_num(4),   .expected= lval_num(16)},
         {.x= lval_num(4),  .y= lval_dbl(0.5), .expected= lval_dbl(2.0)},
-        {.x= lval_num(10), .y= lval_num(100), .expected= lval_bignum(bn_10pow100)},
+        {.x= lval_num(10), .y= lval_num(100), .expected= v10pow100},
         {.x= lval_num(2),  .y= lval_num(-1),  .expected= lval_err(LERR_BAD_NUM)},
         {.x= lval_num(2),  .y= lval_nil(),    .expected= lval_num(2)},
     };
@@ -192,6 +211,7 @@ static char* test_polish_lang() {
             mpc_ast_delete(r.output);
             sprintf(message, "polish_lang: fail for `%s` = %s got %s", tt.input, temp[0], temp[1]);
             mu_assert(message, lval_equals(got, tt.expected) || lval_err_equals(got, tt.expected));
+            lval_clear(&got);
         } else {
             mpc_err_print(r.error);
             mpc_err_delete(r.error);

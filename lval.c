@@ -17,6 +17,7 @@ const struct lval lzero = {
 struct lval lval_nil() {
     struct lval v;
     v.type = LVAL_NIL;
+    v.data.num = 0;
     return v;
 }
 
@@ -52,6 +53,17 @@ struct lval lval_err(enum lerr err) {
     return v;
 }
 
+void lval_clear(struct lval* val) {
+    if (!val)
+        return;
+
+    if (val->type == LVAL_BIGNUM)
+        mpz_clear(val->data.bignum);
+
+    val->type = LVAL_NIL;
+    val->data.num = 0;
+}
+
 bool lval_is_zero(struct lval v) {
     mpz_t zero;
     mpz_init_set_si(zero, 0);
@@ -72,20 +84,18 @@ double lval_as_dbl(struct lval v) {
     }
 }
 
-mpz_t* lval_as_bignum(struct lval v) {
-    mpz_t* bignum = malloc(sizeof(mpz_t));
+void lval_as_bignum(struct lval v, mpz_t bignum) {
     switch (v.type) {
     case LVAL_NUM:
-        mpz_init_set_si(*bignum, v.data.num);
+        mpz_init_set_si(bignum, v.data.num);
         break;
     case LVAL_BIGNUM:
-        mpz_init_set(*bignum, v.data.bignum);
+        mpz_init_set(bignum, v.data.bignum);
         break;
     default:
-        mpz_init_set_si(*bignum, 0);
+        mpz_init_set_si(bignum, 0);
         break;
     }
-    return bignum;
 }
 
 bool lval_equals(struct lval x, struct lval y) {

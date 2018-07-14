@@ -26,6 +26,7 @@ void polish_eval(const char* restrict input) {
         struct lval result = polish_eval_expr(r.output);
         lval_println(result);
         mpc_ast_delete(r.output);
+        lval_clear(&result);
     } else {
         mpc_err_print(r.error);
         mpc_err_delete(r.error);
@@ -98,17 +99,21 @@ static struct lval polish_eval_expr(mpc_ast_t* ast) {
     /* Eval the remaining children. */
     struct lval x = polish_eval_expr(ast->children[2]);
 
+    struct lval res = lval_nil();
     /* Multiple operand. */
     if (strstr(ast->children[3]->tag, "expr")) {
         for (int i = 3; strstr(ast->children[i]->tag, "expr"); i++) {
-            x = polish_eval_op(x, op, polish_eval_expr(ast->children[i]));
+            struct lval y = polish_eval_expr(ast->children[i]);
+            res = polish_eval_op((res.type == LVAL_NIL) ? x : res, op, y);
+            lval_clear(&y);
         }
     /* One operand. */
     } else {
-        x = polish_eval_op(x, op, lval_nil());
+        res = polish_eval_op(x, op, lval_nil());
     }
+    lval_clear(&x);
 
-    return x;
+    return res;
 }
 
 /* Conditions: eval a condition for the given operands. */
@@ -157,13 +162,14 @@ static struct lval polish_op(
     }
     /* Eval: bignum */
     if (cnd_either_is_bignum(x, y)) {
-        mpz_t* a = lval_as_bignum(x);
-        mpz_t* b = lval_as_bignum(y);
+        mpz_t a, b;
+        lval_as_bignum(x, a);
+        lval_as_bignum(y, b);
         mpz_t r;
         mpz_init(r);
-        descriptor.op_bignum(r, *a, *b);
-        mpz_clear(*a);
-        mpz_clear(*b);
+        descriptor.op_bignum(r, a, b);
+        mpz_clear(a);
+        mpz_clear(b);
         struct lval ret = lval_bignum(r);
         mpz_clear(r);
         return ret;
@@ -173,11 +179,16 @@ static struct lval polish_op(
         long a = x.data.num;
         long b = y.data.num;
         if (descriptor.cnd_overflow && descriptor.cnd_overflow(a, b)) {
-            mpz_t* bna = lval_as_bignum(x);
-            mpz_t* bnb = lval_as_bignum(y);
-            struct lval res = polish_op(descriptor, lval_bignum(*bna), lval_bignum(*bnb));
-            mpz_clear(*bna);
-            mpz_clear(*bnb);
+            mpz_t bna, bnb;
+            lval_as_bignum(x, bna);
+            lval_as_bignum(y, bnb);
+            struct lval vbna = lval_bignum(bna);
+            struct lval vbnb = lval_bignum(bnb);
+            struct lval res = polish_op(descriptor, vbna, vbnb);
+            mpz_clear(bna);
+            mpz_clear(bnb);
+            lval_clear(&vbna);
+            lval_clear(&vbnb);
             return res;
         }
         return lval_num(descriptor.op_num(a, b));

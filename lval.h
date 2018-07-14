@@ -41,10 +41,11 @@ struct lval lval_num(long x);
 struct lval lval_bignum(mpz_t x);
 struct lval lval_dbl(double x);
 struct lval lval_err(enum lerr err);
+void lval_clear(struct lval*);
 
 bool lval_is_zero(struct lval v);
 double lval_as_dbl(struct lval v);
-mpz_t* lval_as_bignum(struct lval v);
+void lval_as_bignum(struct lval v, mpz_t r);
 bool lval_equals(struct lval x, struct lval y);
 bool lval_err_equals(struct lval x, struct lval y);
 

@@ -6,10 +6,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
-#include "vendor/mpc/mpc.h"
-
 #include "version.h"
-#include "polish.h"
+#include "lisp.h"
 
 /* Configurable variables */
 static char* prompt = "> ";
@@ -33,17 +31,17 @@ int main(int argc, char** argv) {
     printf(PROGNAME" "VERSION"-"CODENAME" build %d\n", BUILD);
     puts("Press Ctrl+C to exit.\n");
 
-    polish_setup();
+    lisp_setup();
 
     /* REPL loop */
     while (true) {
         char* input = readline(prompt);
         add_history(input);
-        polish_eval(input);
+        lisp_eval(input);
         free(input);
     }
 
-    polish_cleanup();
+    lisp_teardown();
 
     return EXIT_SUCCESS;
 }

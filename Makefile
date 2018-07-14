@@ -1,6 +1,6 @@
 out=$(PROGNAME)
-sources=$(PROGNAME).c vendor/mpc/mpc.c polish.c lval.c operator.c vendor/mini-gmp/mini-gmp.c
-headers=vendor/mpc/mpc.h polish.h lval.h operator.h vendor/mini-gmp/mini-gmp.h
+sources=$(PROGNAME).c vendor/mpc/mpc.c vendor/mini-gmp/mini-gmp.c lisp.c lval.c builtin.c
+headers=vendor/mpc/mpc.h vendor/mini-gmp/mini-gmp.h lisp.h lval.h builtin.h
 objects=$(sources:%.c=%.o)
 
 version_file:=version.mk

@@ -1,8 +1,10 @@
-#include "polish.c" // To access module defined functions.
+#include "builtin.c" // To access module defined functions.
 
 #include <limits.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <stdio.h>
+
 #include "vendor/minunit/minunit.h"
 
 int tests_run = 0;
@@ -27,7 +29,7 @@ static char* test_op_helper(
 
     for (int i = 0; i < (int)number_of_cases; i++) {
         struct testcase tt = testcases[i];
-        struct lval got = polish_op(descriptor, tt.x, tt.y);
+        struct lval got = lisp_builtin_op(descriptor, tt.x, tt.y);
         lval_to_string(tt.x, temp[0]);
         if (!unary)
             lval_to_string(tt.y, temp[1]);
@@ -100,7 +102,7 @@ void teardown(void) {
     lval_clear(&v10pow100);
 }
 
-static char* test_polish_op_add() {
+static char* test_lisp_op_add() {
     struct testcase testcases[] = {
         {.x= lval_num(1),   .y= lval_num(1),   .expected= lval_num(2)},
         {.x= lval_num(1),   .y= lval_dbl(1.1), .expected= lval_dbl(2.1)},
@@ -109,11 +111,11 @@ static char* test_polish_op_add() {
                             .y= lval_num(1),   .expected= maxlong_succ},
         {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
-    return test_op_helper("op_add %s + %s = %s got %s", op_add,
+    return test_op_helper("op_add %s + %s = %s got %s", builtin_op_add,
                           testcases, LENGTH(testcases), false);
 }
 
-static char* test_polish_op_sub() {
+static char* test_lisp_op_sub() {
     struct testcase testcases[] = {
         {.x= lval_num(1),   .y= lval_num(1),   .expected= lval_num(0)},
         {.x= lval_num(1),   .y= lval_dbl(1.1), .expected= lval_dbl(-0.1)},
@@ -122,11 +124,11 @@ static char* test_polish_op_sub() {
                             .y= lval_num(1),   .expected= minlong_pred},
         {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
-    return test_op_helper("op_sub %s - %s = %s got %s", op_sub,
+    return test_op_helper("op_sub %s - %s = %s got %s", builtin_op_sub,
                           testcases, LENGTH(testcases), false);
 }
 
-static char* test_polish_op_mul() {
+static char* test_lisp_op_mul() {
     struct testcase testcases[] = {
         {.x= lval_num(2),   .y= lval_num(2),   .expected= lval_num(4)},
         {.x= lval_num(2),   .y= lval_dbl(1.1), .expected= lval_dbl(2.2)},
@@ -135,11 +137,11 @@ static char* test_polish_op_mul() {
                             .y= lval_num(10),  .expected= maxlong_x10},
         {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
-    return test_op_helper("op_mul %s * %s = %s got %s", op_mul,
+    return test_op_helper("op_mul %s * %s = %s got %s", builtin_op_mul,
                           testcases, LENGTH(testcases), false);
 }
 
-static char* test_polish_op_div() {
+static char* test_lisp_op_div() {
     struct testcase testcases[] = {
         {.x= lval_num(2),   .y= lval_num(2),   .expected= lval_num(1)},
         {.x= lval_num(2),   .y= lval_dbl(2.0), .expected= lval_dbl(1.0)},
@@ -148,11 +150,11 @@ static char* test_polish_op_div() {
         {.x= lval_num(2),   .y= lval_dbl(.0),  .expected= lval_err(LERR_DIV_ZERO)},
         {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
-    return test_op_helper("op_div %s / %s = %s got %s", op_div,
+    return test_op_helper("op_div %s / %s = %s got %s", builtin_op_div,
                           testcases, LENGTH(testcases), false);
 }
 
-static char* test_polish_op_mod() {
+static char* test_lisp_op_mod() {
     struct testcase testcases[] = {
         {.x= lval_num(8),   .y= lval_num(3),   .expected= lval_num(2)},
         {.x= lval_num(2),   .y= lval_num(0),   .expected= lval_err(LERR_DIV_ZERO)},
@@ -160,11 +162,11 @@ static char* test_polish_op_mod() {
         {.x= lval_dbl(2.0), .y= lval_dbl(2.0), .expected= lval_err(LERR_BAD_NUM)},
         {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(0)},
     };
-    return test_op_helper("op_mod %s %% %s = %s got %s", op_mod,
+    return test_op_helper("op_mod %s %% %s = %s got %s", builtin_op_mod,
                           testcases, LENGTH(testcases), false);
 }
 
-static char* test_polish_op_fac() {
+static char* test_lisp_op_fac() {
     struct testcase testcases[] = {
         {.x= lval_num(0),  .expected= lval_num(1)},
         {.x= lval_num(1),  .expected= lval_num(1)},
@@ -172,11 +174,11 @@ static char* test_polish_op_fac() {
         {.x= lval_num(21), .expected= fac21},
         {.x= lval_num(-1), .expected= lval_err(LERR_BAD_NUM)},
     };
-    return test_op_helper("op_fact %s! = %s got %s", op_fac,
+    return test_op_helper("op_fact %s! = %s got %s", builtin_op_fac,
                           testcases, LENGTH(testcases), true);
 }
 
-static char* test_polish_op_pow() {
+static char* test_lisp_op_pow() {
     struct testcase testcases[] = {
         {.x= lval_num(2),  .y= lval_num(4),   .expected= lval_num(16)},
         {.x= lval_num(4),  .y= lval_dbl(0.5), .expected= lval_dbl(2.0)},
@@ -184,58 +186,19 @@ static char* test_polish_op_pow() {
         {.x= lval_num(2),  .y= lval_num(-1),  .expected= lval_err(LERR_BAD_NUM)},
         {.x= lval_num(2),  .y= lval_nil(),    .expected= lval_num(2)},
     };
-    return test_op_helper("op_mod %s %% %s = %s got %s", op_pow,
+    return test_op_helper("op_mod %s %% %s = %s got %s", builtin_op_pow,
                           testcases, LENGTH(testcases), false);
-}
-
-static char* test_polish_lang() {
-    struct testcase testcases[] = {
-        {.input= "+ 1 1",          .expected= lval_num(2)},
-        {.input= "+ 1 (* 10 2)",   .expected= lval_num(21)},
-        {.input= "+ 1.0 (* 10 2)", .expected= lval_dbl(21)},
-        {.input= "/ 10 0",         .expected= lval_err(LERR_DIV_ZERO)},
-    };
-
-    char* message = (char*)calloc(sizeof(char), 1024);
-    char temp[2][128];
-
-    polish_setup();
-
-    for (int i = 0; i < (int)(LENGTH(testcases)); i++) {
-        struct testcase tt = testcases[i];
-        mpc_result_t r;
-        if (mpc_parse("<stdin>", tt.input, Polish, &r)) {
-            struct lval got = polish_eval_expr(r.output);
-            lval_to_string(tt.expected, temp[0]);
-            lval_to_string(got, temp[1]);
-            mpc_ast_delete(r.output);
-            sprintf(message, "polish_lang: fail for `%s` = %s got %s", tt.input, temp[0], temp[1]);
-            mu_assert(message, lval_equals(got, tt.expected) || lval_err_equals(got, tt.expected));
-            lval_clear(&got);
-        } else {
-            mpc_err_print(r.error);
-            mpc_err_delete(r.error);
-            sprintf(message, "polish_lang: fail for `%s`", tt.input);
-            mu_assert(message, false);
-        }
-    }
-
-    polish_cleanup();
-
-    free(message); // Avoid clang complaint.
-    return 0;
 }
 
 static char* all_tests() {
     setup();
-    mu_run_test(test_polish_op_add);
-    mu_run_test(test_polish_op_sub);
-    mu_run_test(test_polish_op_mul);
-    mu_run_test(test_polish_op_div);
-    mu_run_test(test_polish_op_mod);
-    mu_run_test(test_polish_op_fac);
-    mu_run_test(test_polish_op_pow);
-    mu_run_test(test_polish_lang);
+    mu_run_test(test_lisp_op_add);
+    mu_run_test(test_lisp_op_sub);
+    mu_run_test(test_lisp_op_mul);
+    mu_run_test(test_lisp_op_div);
+    mu_run_test(test_lisp_op_mod);
+    mu_run_test(test_lisp_op_fac);
+    mu_run_test(test_lisp_op_pow);
     teardown();
     return 0;
 }

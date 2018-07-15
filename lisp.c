@@ -7,9 +7,9 @@
 
 #include "vendor/mpc/mpc.h"
 
-#include "builtin.h"
+#include "lbuiltin.h"
 #include "lval.h"
-#include "symbol.h"
+#include "lsym.h"
 
 /* Parser */
 static mpc_parser_t* Lisp      = NULL;
@@ -43,17 +43,17 @@ static struct lval lisp_eval_symbol(struct lval x, char* op, struct lval y) {
     if (x.type == LVAL_ERR) return x;
     if (y.type == LVAL_ERR) return y;
 
-    if (strcmp(op, "+") == 0) return lsym_exec(builtin_op_add, x, y);
-    if (strcmp(op, "-") == 0) return lsym_exec(builtin_op_sub, x, y);
-    if (strcmp(op, "*") == 0) return lsym_exec(builtin_op_mul, x, y);
-    if (strcmp(op, "/") == 0) return lsym_exec(builtin_op_div, x, y);
-    if (strcmp(op, "%") == 0) return lsym_exec(builtin_op_mod, x, y);
-    if (strcmp(op, "^") == 0) return lsym_exec(builtin_op_pow, x, y);
+    if (strcmp(op, "+") == 0) return lsym_exec(lbuiltin_op_add, x, y);
+    if (strcmp(op, "-") == 0) return lsym_exec(lbuiltin_op_sub, x, y);
+    if (strcmp(op, "*") == 0) return lsym_exec(lbuiltin_op_mul, x, y);
+    if (strcmp(op, "/") == 0) return lsym_exec(lbuiltin_op_div, x, y);
+    if (strcmp(op, "%") == 0) return lsym_exec(lbuiltin_op_mod, x, y);
+    if (strcmp(op, "^") == 0) return lsym_exec(lbuiltin_op_pow, x, y);
     if (strcmp(op, "!") == 0) {
         if (y.type != LVAL_NIL) {
             return lval_err(LERR_TOO_MANY_ARGS);
         }
-        return lsym_exec(builtin_op_fac, x, lval_nil());
+        return lsym_exec(lbuiltin_op_fac, x, lval_nil());
     }
 
     return lval_err(LERR_BAD_NUM);

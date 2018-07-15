@@ -1,4 +1,4 @@
-#include "symbol.h"
+#include "lsym.h"
 
 struct lval lsym_exec(
     const struct lsym sym,

@@ -1,8 +1,8 @@
-#include "builtin.h"
+#include "lbuiltin.h"
 
 /* C files included here. This file was split for clarity only. */
-#include "builtin_condition.c"
-#include "builtin_typed_operator.c"
+#include "lbuiltin_condition.inc.c"
+#include "lbuiltin_typed_operator.inc.c"
 
 /* Local macros. */
 #define LENGTH(array) sizeof(array)/sizeof(array[0])
@@ -41,7 +41,7 @@ static const struct lguard guard_dbl_and_bignum = {
 static const struct lguard* guards_op_add[] = {
     &guard_dbl_and_bignum
 };
-const struct lsym builtin_op_add = {
+const struct lsym lbuiltin_op_add = {
     .symbol       = "+",
     .guards       = guards_op_add,
     .guardc       = LENGTH(guards_op_add),
@@ -55,7 +55,7 @@ const struct lsym builtin_op_add = {
 static const struct lguard* guards_op_sub[] = {
     &guard_dbl_and_bignum
 };
-const struct lsym builtin_op_sub = {
+const struct lsym lbuiltin_op_sub = {
     .symbol       = "-",
     .guards       = guards_op_sub,
     .guardc       = LENGTH(guards_op_sub),
@@ -69,7 +69,7 @@ const struct lsym builtin_op_sub = {
 static const struct lguard* guards_op_mul[] = {
     &guard_dbl_and_bignum
 };
-const struct lsym builtin_op_mul = {
+const struct lsym lbuiltin_op_mul = {
     .symbol       = "*",
     .guards       = guards_op_mul,
     .guardc       = LENGTH(guards_op_mul),
@@ -84,7 +84,7 @@ static const struct lguard* guards_op_div[] = {
     &guard_div_by_zero,
     &guard_dbl_and_bignum
 };
-const struct lsym builtin_op_div = {
+const struct lsym lbuiltin_op_div = {
     .symbol       = "/",
     .guards       = guards_op_div,
     .guardc       = LENGTH(guards_op_div),
@@ -100,7 +100,7 @@ static const struct lguard* guards_op_mod[] = {
     &guard_either_is_double,
     &guard_dbl_and_bignum,
 };
-const struct lsym builtin_op_mod = {
+const struct lsym lbuiltin_op_mod = {
     .symbol       = "%",
     .guards       = guards_op_mod,
     .guardc       = LENGTH(guards_op_mod),
@@ -116,7 +116,7 @@ static const struct lguard* guards_op_fac[] = {
     &guard_x_is_negative,
     &guard_x_too_big
 };
-const struct lsym builtin_op_fac = {
+const struct lsym lbuiltin_op_fac = {
     .symbol       = "!",
     .unary        = true,
     .guards       = guards_op_fac,
@@ -132,7 +132,7 @@ static const struct lguard *guards_op_pow[] = {
     &guard_y_is_negative,
     &guard_y_too_big
 };
-const struct lsym builtin_op_pow = {
+const struct lsym lbuiltin_op_pow = {
     .symbol       = "^",
     .guards       = guards_op_pow,
     .guardc       = LENGTH(guards_op_pow),

@@ -1,6 +1,6 @@
 out=$(PROGNAME)
-sources=$(PROGNAME).c vendor/mpc/mpc.c vendor/mini-gmp/mini-gmp.c lisp.c lval.c symbol.c builtin.c
-headers=vendor/mpc/mpc.h vendor/mini-gmp/mini-gmp.h lisp.h lval.h symbol.h builtin.h
+sources=$(PROGNAME).c vendor/mpc/mpc.c vendor/mini-gmp/mini-gmp.c lisp.c lval.c lsym.c lbuiltin.c
+headers=vendor/mpc/mpc.h vendor/mini-gmp/mini-gmp.h lisp.h lval.h lsym.h lbuiltin.h
 
 build_dir:=build
 version_file:=version.mk

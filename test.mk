@@ -1,4 +1,4 @@
-tests:=builtin_test.c lisp_test.c
+tests:=lbuiltin_test.c
 test_build_dir:=$(build_dir)
 
 testcases:=$(addprefix $(test_build_dir)/,$(tests:%.c=%))

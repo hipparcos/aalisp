@@ -1,4 +1,4 @@
-#include "builtin.h"
+#include "lbuiltin.h"
 
 #include <limits.h>
 #include <stdbool.h>
@@ -111,7 +111,7 @@ static char* test_lisp_op_add() {
                             .y= lval_num(1),   .expected= maxlong_succ},
         {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
-    return test_op_helper("op_add %s + %s = %s got %s", builtin_op_add,
+    return test_op_helper("op_add %s + %s = %s got %s", lbuiltin_op_add,
                           testcases, LENGTH(testcases), false);
 }
 
@@ -124,7 +124,7 @@ static char* test_lisp_op_sub() {
                             .y= lval_num(1),   .expected= minlong_pred},
         {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
-    return test_op_helper("op_sub %s - %s = %s got %s", builtin_op_sub,
+    return test_op_helper("op_sub %s - %s = %s got %s", lbuiltin_op_sub,
                           testcases, LENGTH(testcases), false);
 }
 
@@ -137,7 +137,7 @@ static char* test_lisp_op_mul() {
                             .y= lval_num(10),  .expected= maxlong_x10},
         {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
-    return test_op_helper("op_mul %s * %s = %s got %s", builtin_op_mul,
+    return test_op_helper("op_mul %s * %s = %s got %s", lbuiltin_op_mul,
                           testcases, LENGTH(testcases), false);
 }
 
@@ -150,7 +150,7 @@ static char* test_lisp_op_div() {
         {.x= lval_num(2),   .y= lval_dbl(.0),  .expected= lval_err(LERR_DIV_ZERO)},
         {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(2)},
     };
-    return test_op_helper("op_div %s / %s = %s got %s", builtin_op_div,
+    return test_op_helper("op_div %s / %s = %s got %s", lbuiltin_op_div,
                           testcases, LENGTH(testcases), false);
 }
 
@@ -162,7 +162,7 @@ static char* test_lisp_op_mod() {
         {.x= lval_dbl(2.0), .y= lval_dbl(2.0), .expected= lval_err(LERR_BAD_NUM)},
         {.x= lval_num(2),   .y= lval_nil(),    .expected= lval_num(0)},
     };
-    return test_op_helper("op_mod %s %% %s = %s got %s", builtin_op_mod,
+    return test_op_helper("op_mod %s %% %s = %s got %s", lbuiltin_op_mod,
                           testcases, LENGTH(testcases), false);
 }
 
@@ -174,7 +174,7 @@ static char* test_lisp_op_fac() {
         {.x= lval_num(21), .expected= fac21},
         {.x= lval_num(-1), .expected= lval_err(LERR_BAD_NUM)},
     };
-    return test_op_helper("op_fact %s! = %s got %s", builtin_op_fac,
+    return test_op_helper("op_fact %s! = %s got %s", lbuiltin_op_fac,
                           testcases, LENGTH(testcases), true);
 }
 
@@ -186,7 +186,7 @@ static char* test_lisp_op_pow() {
         {.x= lval_num(2),  .y= lval_num(-1),  .expected= lval_err(LERR_BAD_NUM)},
         {.x= lval_num(2),  .y= lval_nil(),    .expected= lval_num(2)},
     };
-    return test_op_helper("op_mod %s %% %s = %s got %s", builtin_op_pow,
+    return test_op_helper("op_mod %s %% %s = %s got %s", lbuiltin_op_pow,
                           testcases, LENGTH(testcases), false);
 }
 

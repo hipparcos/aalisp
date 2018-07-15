@@ -12,30 +12,33 @@
 #include "lsym.h"
 
 /* Parser */
-static mpc_parser_t* Lisp      = NULL;
-static mpc_parser_t* Number    = NULL;
-static mpc_parser_t* Double    = NULL;
-static mpc_parser_t* Symbol    = NULL;
-static mpc_parser_t* Expr      = NULL;
+static mpc_parser_t* Lisp   = NULL;
+static mpc_parser_t* Number = NULL;
+static mpc_parser_t* Double = NULL;
+static mpc_parser_t* Symbol = NULL;
+static mpc_parser_t* Expr   = NULL;
+static mpc_parser_t* Sexpr  = NULL;
 
 void lisp_setup(void) {
     if (!Lisp) {
-        Number    = mpc_new("number");
-        Double    = mpc_new("double");
-        Symbol    = mpc_new("symbol");
-        Expr      = mpc_new("expr");
-        Lisp      = mpc_new("lisp");
+        Double = mpc_new("double");
+        Number = mpc_new("number");
+        Symbol = mpc_new("symbol");
+        Sexpr  = mpc_new("sexpr");
+        Expr   = mpc_new("expr");
+        Lisp   = mpc_new("lisp");
 
         /* double must be matched before number. */
         mpca_lang(MPCA_LANG_DEFAULT,
-                  "                                                             \
-                  double   : /-?[0-9]*\\.[0-9]+/ ;                              \
-                  number   : /-?[0-9]+/ ;                                       \
-                  symbol   : '+' | '-' | '*' | '/' | '%' | '!' | '^' ;          \
-                  expr     : <double> | <number> | '(' <symbol> <expr>+ ')' ;   \
-                  lisp     : /^/ <symbol> <expr>+ /$/ ;                         \
+                  "                                                       \
+                  double   : /-?[0-9]*\\.[0-9]+/ ;                        \
+                  number   : /-?[0-9]+/ ;                                 \
+                  symbol   : '+' | '-' | '*' | '/' | '%' | '!' | '^' ;    \
+                  sexpr    : '(' <expr>* ')' ;                            \
+                  expr     : <double> | <number> | <symbol> | <sexpr> ;   \
+                  lisp     : /^/ <expr>* /$/ ;                            \
                   ",
-                  Double, Number, Symbol, Expr, Lisp);
+                  Double, Number, Symbol, Sexpr, Expr, Lisp);
     }
 }
 
@@ -122,10 +125,11 @@ void lisp_eval(const char* restrict input) {
 }
 
 void lisp_teardown(void) {
-    mpc_cleanup(5, Number, Double, Symbol, Expr, Lisp);
-    Number = NULL;
+    mpc_cleanup(6, Double, Number, Symbol, Sexpr, Expr, Lisp);
     Double = NULL;
+    Number = NULL;
     Symbol = NULL;
-    Expr = NULL;
-    Lisp = NULL;
+    Sexpr  = NULL;
+    Expr   = NULL;
+    Lisp   = NULL;
 }

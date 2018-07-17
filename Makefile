@@ -14,7 +14,7 @@ deps=$(addprefix $(build_dir)/,$(sources:%.c=%.d))
 CC=gcc
 SHELL:=/bin/bash
 DEBUG?=-ggdb3 -O0
-CFLAGS:=-Wall -std=c99 $(DEBUG)
+CFLAGS:=-Wall -std=c11 $(DEBUG)
 LDFLAGS:=-Wall -lreadline -lm
 VGFLAGS?=\
 	--quiet --leak-check=full --show-leak-kinds=all \

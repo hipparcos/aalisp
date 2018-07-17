@@ -1,6 +1,6 @@
 # aalisp
 
-A dialect of Lisp written in C (version C99).
+A dialect of Lisp written in C (version C11).
 WIP...
 
 ## Getting started

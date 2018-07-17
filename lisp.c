@@ -42,27 +42,35 @@ void lisp_setup(void) {
     }
 }
 
-static struct lval lisp_eval_symbol(struct lval x, char* op, struct lval y) {
-    if (x.type == LVAL_ERR) return x;
-    if (y.type == LVAL_ERR) return y;
-
-    if (strcmp(op, "+") == 0) return lsym_exec(lbuiltin_op_add, x, y);
-    if (strcmp(op, "-") == 0) return lsym_exec(lbuiltin_op_sub, x, y);
-    if (strcmp(op, "*") == 0) return lsym_exec(lbuiltin_op_mul, x, y);
-    if (strcmp(op, "/") == 0) return lsym_exec(lbuiltin_op_div, x, y);
-    if (strcmp(op, "%") == 0) return lsym_exec(lbuiltin_op_mod, x, y);
-    if (strcmp(op, "^") == 0) return lsym_exec(lbuiltin_op_pow, x, y);
-    if (strcmp(op, "!") == 0) {
-        if (y.type != LVAL_NIL) {
-            return lval_err(LERR_TOO_MANY_ARGS);
-        }
-        return lsym_exec(lbuiltin_op_fac, x, lval_nil());
+bool lisp_eval_symbol(char* op, const struct lval* x, const struct lval* y, struct lval* r) {
+    if (lval_type(x) == LVAL_ERR) {
+        lval_copy(r, x);
+        return false;
+    }
+    if (lval_type(y) == LVAL_ERR) {
+        lval_copy(r, y);
+        return false;
     }
 
-    return lval_err(LERR_BAD_NUM);
+    if (strcmp(op, "+") == 0) return lsym_exec(lbuiltin_op_add, x, y, r);
+    if (strcmp(op, "-") == 0) return lsym_exec(lbuiltin_op_sub, x, y, r);
+    if (strcmp(op, "*") == 0) return lsym_exec(lbuiltin_op_mul, x, y, r);
+    if (strcmp(op, "/") == 0) return lsym_exec(lbuiltin_op_div, x, y, r);
+    if (strcmp(op, "%") == 0) return lsym_exec(lbuiltin_op_mod, x, y, r);
+    if (strcmp(op, "^") == 0) return lsym_exec(lbuiltin_op_pow, x, y, r);
+    if (strcmp(op, "!") == 0) {
+        if (lval_type(y) != LVAL_NIL) {
+            return lval_mut_err(r, LERR_TOO_MANY_ARGS);
+            return false;
+        }
+        return lsym_exec(lbuiltin_op_fac, x, &lnil, r);
+    }
+
+    lval_mut_err(r, LERR_BAD_SYMBOL);
+    return false;
 }
 
-static struct lval lisp_eval_expr(mpc_ast_t* ast) {
+static bool lisp_eval_expr(mpc_ast_t* ast, struct lval* r) {
     if (strstr(ast->tag, "number")) {
         errno = 0;
         long x = strtol(ast->contents, NULL, 10);
@@ -70,57 +78,62 @@ static struct lval lisp_eval_expr(mpc_ast_t* ast) {
             /* Switch to bignum. */
             mpz_t bignum;
             mpz_init_set_str(bignum, ast->contents, 10);
-            struct lval ret = lval_bignum(bignum);
+            lval_mut_bignum(r, bignum);
             mpz_clear(bignum);
-            return ret;
+            return true;
         }
-        return lval_num(x);
+        lval_mut_num(r, x);
+        return true;
     }
     if (strstr(ast->tag, "double")) {
         errno = 0;
         double x = strtod(ast->contents, NULL);
         if (errno == ERANGE) {
-            return lval_err(LERR_BAD_NUM);
+            lval_mut_err(r, LERR_BAD_OPERAND);
+            return false;
         }
-        return lval_dbl(x);
+        lval_mut_dbl(r, x);
+        return true;
     }
 
     /* Operator always is 2nd child. */
     char* op = ast->children[1]->contents;
 
     /* Eval the remaining children. */
-    struct lval x = lisp_eval_expr(ast->children[2]);
+    struct lval* x = lval_alloc();
+    lisp_eval_expr(ast->children[2], x);
 
-    struct lval res = lval_nil();
+    lval_copy(r, x);
     /* Multiple operand. */
     if (strstr(ast->children[3]->tag, "expr")) {
         for (int i = 3; strstr(ast->children[i]->tag, "expr"); i++) {
-            struct lval y = lisp_eval_expr(ast->children[i]);
-            res = lisp_eval_symbol((res.type == LVAL_NIL) ? x : res, op, y);
-            lval_clear(&y);
+            struct lval* y = lval_alloc();
+            lisp_eval_expr(ast->children[i], y);
+            lisp_eval_symbol(op, r, y, r);
+            lval_free(y);
         }
     /* One operand. */
     } else {
-        res = lisp_eval_symbol(x, op, lval_nil());
+        lisp_eval_symbol(op, x, &lnil, r);
     }
-    lval_clear(&x);
-
-    return res;
+    lval_free(x);
+    return true;
 }
 
 void lisp_eval(const char* restrict input) {
     if (!Lisp)
         lisp_setup();
 
-    mpc_result_t r;
-    if (mpc_parse("<stdin>", input, Lisp, &r)) {
-        struct lval result = lisp_eval_expr(r.output);
-        lval_println(result);
-        mpc_ast_delete(r.output);
-        lval_clear(&result);
+    mpc_result_t ast;
+    if (mpc_parse("<stdin>", input, Lisp, &ast)) {
+        struct lval* r = lval_alloc();
+        lisp_eval_expr(ast.output, r);
+        lval_println(r);
+        lval_free(r);
+        mpc_ast_delete(ast.output);
     } else {
-        mpc_err_print(r.error);
-        mpc_err_delete(r.error);
+        mpc_err_print(ast.error);
+        mpc_err_delete(ast.error);
     }
 }
 

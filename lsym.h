@@ -4,7 +4,7 @@
 #include "lval.h"
 
 /* Condition: eval a condition for the given operands. */
-typedef bool (*lcondition)(struct lval, struct lval);
+typedef bool (*lcondition)(const struct lval*, const struct lval*);
 
 /* Guard: a condition associated with an error. */
 struct lguard {
@@ -25,8 +25,8 @@ struct lsym {
     double (*op_dbl)(const double, const double);
 };
 
-struct lval lsym_exec(
+bool lsym_exec(
     const struct lsym sym,
-    const struct lval x, struct lval y);
+    const struct lval* x, const struct lval* y, struct lval* r);
 
 #endif

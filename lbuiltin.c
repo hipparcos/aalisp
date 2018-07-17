@@ -10,19 +10,19 @@
 /* Guards: instanciation. */
 static const struct lguard guard_x_is_negative = {
     .condition= cnd_x_is_neg,
-    .error= LERR_BAD_NUM
+    .error= LERR_BAD_OPERAND
 };
 static const struct lguard guard_y_is_negative = {
     .condition= cnd_y_is_neg,
-    .error= LERR_BAD_NUM
+    .error= LERR_BAD_OPERAND
 };
 static const struct lguard guard_x_too_big = {
     .condition= cnd_x_too_big_for_ul,
-    .error= LERR_BAD_NUM
+    .error= LERR_BAD_OPERAND
 };
 static const struct lguard guard_y_too_big = {
     .condition= cnd_y_too_big_for_ul,
-    .error= LERR_BAD_NUM
+    .error= LERR_BAD_OPERAND
 };
 static const struct lguard guard_div_by_zero = {
     .condition= cnd_y_is_zero,
@@ -30,11 +30,11 @@ static const struct lguard guard_div_by_zero = {
 };
 static const struct lguard guard_either_is_double = {
     .condition= cnd_either_is_dbl,
-    .error= LERR_BAD_NUM
+    .error= LERR_BAD_OPERAND
 };
 static const struct lguard guard_dbl_and_bignum = {
     .condition= cnd_dbl_and_bignum,
-    .error= LERR_BAD_NUM
+    .error= LERR_BAD_OPERAND
 };
 
 /* Operator: declaration */

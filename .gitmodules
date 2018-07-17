@@ -2,3 +2,6 @@
 	path = vendor/mpc
 	url = https://github.com/orangeduck/mpc.git
     ignore = untracked
+[submodule "vendor/snow"]
+	path = vendor/snow
+	url = https://github.com/mortie/snow.git

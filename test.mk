@@ -1,5 +1,9 @@
-tests:=lval_test.c #lbuiltin_test.c
+# Config: files & dirs.
+tests:=lval_test.c lbuiltin_test.c
 test_build_dir:=$(build_dir)
+
+# Config: options.
+DO_MEMCHECK=true # 0 == true
 
 testobjects:=$(tests:%.c=%.o)
 testobjects_built:=$(addprefix $(test_build_dir)/,$(testobjects))
@@ -15,7 +19,8 @@ $(testcases): %: $(test_build_dir)/%
 $(testcases_built): % : %.o $(filter-out $(build_dir)/$(PROGNAME).o,$(objects))
 # $(test_build_dir)/%_test: $(test_build_dir)/%_test.o $(filter-out $(build_dir)/$(PROGNAME).o,$(objects))
 	@$(CC) $(LDFLAGS) $(LDLIBS) $^ $(TEST_CFLAGS) -o $@
-	@valgrind $(VGFLAGS) ./$@
+	@if [ $$($(DO_MEMCHECK); echo $$?) -eq 0 ]; then valgrind $(VGFLAGS) ./$@; \
+		else ./$@; fi
 
 $(test_build_dir)/%_test.o: %_test.c $$(@D)/.f
 	@$(CC) $(CFLAGS) $(TEST_CFLAGS) -c -o $@ $<

@@ -61,12 +61,16 @@ bool lsym_exec(
             mpz_init_set_si(bna, a);
             struct lval* vbna = lval_alloc();
             lval_mut_bignum(vbna, bna);
-            mpz_init_set_si(bnb, b);
             struct lval* vbnb = lval_alloc();
-            lval_mut_bignum(vbnb, bnb);
+            if (!sym.unary) {
+                mpz_init_set_si(bnb, b);
+                lval_mut_bignum(vbnb, bnb);
+            }
             bool ret = lsym_exec(sym, vbna, vbnb, r);
+            if (!sym.unary) {
+                mpz_clear(bnb);
+            }
             mpz_clear(bna);
-            mpz_clear(bnb);
             lval_free(vbna);
             lval_free(vbnb);
             return ret;

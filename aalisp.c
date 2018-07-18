@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
     while (true) {
         char* input = readline(prompt);
         add_history(input);
-        lisp_eval(input);
+        lisp_eval_from_string(input);
         free(input);
     }
 

@@ -120,21 +120,32 @@ static bool lisp_eval_expr(mpc_ast_t* ast, struct lval* r) {
     return true;
 }
 
-void lisp_eval(const char* restrict input) {
-    if (!Lisp)
+bool lisp_eval(const char* restrict input, struct lval* r) {
+    if (!Lisp) {
         lisp_setup();
-
-    mpc_result_t ast;
-    if (mpc_parse("<stdin>", input, Lisp, &ast)) {
-        struct lval* r = lval_alloc();
-        lisp_eval_expr(ast.output, r);
-        lval_println(r);
-        lval_free(r);
-        mpc_ast_delete(ast.output);
-    } else {
-        mpc_err_print(ast.error);
-        mpc_err_delete(ast.error);
     }
+    mpc_result_t ast;
+    if (!input || strlen(input) == 0) {
+        lval_mut_err(r, LERR_EVAL);
+        return false;
+    }
+    if (!mpc_parse("<stdin>", input, Lisp, &ast)) {
+        lval_mut_err(r, LERR_EVAL);
+        char* err = mpc_err_string(ast.error);
+        free(err);
+        mpc_err_delete(ast.error);
+        return false;
+    }
+    bool ret = lisp_eval_expr(ast.output, r);
+    mpc_ast_delete(ast.output);
+    return ret;
+}
+
+void lisp_eval_from_string(const char* restrict input) {
+    struct lval* r = lval_alloc();
+    lisp_eval(input, r);
+    lval_println(r);
+    lval_free(r);
 }
 
 void lisp_teardown(void) {

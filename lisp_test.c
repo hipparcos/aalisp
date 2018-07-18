@@ -1,90 +1,66 @@
-#include "lisp.c" // To access module defined functions.
+#include "lisp.h"
 
 #include <limits.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include "vendor/mini-gmp/mini-gmp.h"
 
-#include "vendor/minunit/minunit.h"
+#include "lval.h"
 
-int tests_run = 0;
+#include "vendor/snow/snow/snow.h"
 
-/* Tests: start */
+/** Test fixtures */
+const long fac20 = 2432902008176640000;
+mpz_t bn_fac21;
 
-struct testcase {
-    struct lval x;
-    struct lval y;
-    char* input;
-    struct lval expected;
-};
+struct lval* result;
+struct lval* expected;
 
-#define LENGTH(array) sizeof(array)/sizeof(array[0])
+#define it_pass(input, output) \
+    it(input" == "#output, { \
+        output; \
+        assert( lisp_eval(input, result)); \
+        assert(lval_are_equal(result, expected)); \
+    })
+#define it_fail(input, output) \
+    it(input" == "#output, { \
+        output; \
+        assert(!lisp_eval(input, result)); \
+        assert(lval_are_equal(result, expected)); \
+    })
 
-void setup(void) {
-    //...
-}
+describe(lisp_eval, {
+    before_each({
+        result = lval_alloc();
+        expected = lval_alloc();
 
-void teardown(void) {
-    //...
-}
+        mpz_init_set_ui(bn_fac21, fac20);
+        mpz_mul_si(bn_fac21, bn_fac21, 21);
+    });
+    after_each({
+        lval_free(result);
+        lval_free(expected);
 
-static char* test_lisp_lang() {
-    struct testcase testcases[] = {
-        {.input= "+ 1 1",          .expected= lval_num(2)},
-        {.input= "+ 1 (* 10 2)",   .expected= lval_num(21)},
-        {.input= "+ 1.0 (* 10 2)", .expected= lval_dbl(21)},
-        {.input= "/ 10 0",         .expected= lval_err(LERR_DIV_ZERO)},
-    };
+        mpz_clear(bn_fac21);
+    });
 
-    char* message = (char*)calloc(sizeof(char), 1024);
-    char temp[2][128];
+    /* happy path */
+    it_pass("+ 1 1",                     lval_mut_num(expected, 2));
+    it_pass("+ 1",                       lval_mut_num(expected, 1));
+    it_pass("+ 1 1 1 1 1 1",             lval_mut_num(expected, 6));
+    it_pass("/ 10 0",                    lval_mut_err(expected, LERR_DIV_ZERO));
+    it_pass("+ 1 1.0",                   lval_mut_dbl(expected, 2.0));
+    it_pass("! 21",                      lval_mut_bignum(expected, bn_fac21));
+    it_pass("* 10 (- 20 10)",            lval_mut_num(expected, 100));
+    /* nested */
+    it_pass("- (! 21) (! 21) 2.0 1",     lval_mut_dbl(expected, -3.0));
+    it_pass("- 2.0 1 (- (! 21) (! 21))", lval_mut_dbl(expected, 1.0));
 
-    lisp_setup();
+    /* should not be in grammar */
+    it_fail("",          lval_mut_err(expected, LERR_EVAL));
+    /* it_fail("1 + 1",     lval_mut_err(expected, LERR_EVAL)); */
+    it_fail("gibberish", lval_mut_err(expected, LERR_EVAL));
 
-    for (int i = 0; i < (int)(LENGTH(testcases)); i++) {
-        struct testcase tt = testcases[i];
-        mpc_result_t r;
-        if (mpc_parse("<stdin>", tt.input, Lisp, &r)) {
-            struct lval got = lisp_eval_expr(r.output);
-            lval_to_string(tt.expected, temp[0]);
-            lval_to_string(got, temp[1]);
-            mpc_ast_delete(r.output);
-            sprintf(message, "lisp_lang: fail for `%s` = %s got %s", tt.input, temp[0], temp[1]);
-            mu_assert(message, lval_equals(got, tt.expected) || lval_err_equals(got, tt.expected));
-            lval_clear(&got);
-        } else {
-            mpc_err_print(r.error);
-            mpc_err_delete(r.error);
-            sprintf(message, "lisp_lang: fail for `%s`", tt.input);
-            mu_assert(message, false);
-        }
-    }
+});
 
-    lisp_teardown();
-
-    free(message); // Avoid clang complaint.
-    return 0;
-}
-
-static char* all_tests() {
-    setup();
-    mu_run_test(test_lisp_lang);
-    teardown();
-    return 0;
-}
-
-/* Tests: end */
-
-int main(void) {
-    char *result = all_tests();
-    if (result != 0) {
-        printf("%s\n", result);
-    } else {
-        printf("ALL TESTS PASSED\n");
-    }
-    printf("Tests run: %d\n", tests_run);
-
-    int code = result != 0;
-    if (result) free(result); // Avoid clang complaint.
-
-    return code;
-}
+snow_main();

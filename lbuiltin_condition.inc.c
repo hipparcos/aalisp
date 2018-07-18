@@ -29,7 +29,7 @@ inline static bool cnd_are_num(const struct lval* x, const struct lval* y) {
 }
 
 inline static bool _is_neg(const struct lval* x) {
-    return lval_sign(x);
+    return lval_sign(x) < 0;
 }
 inline static bool cnd_x_is_neg(const struct lval* x, const struct lval* y) {
     UNUSED(y);
@@ -47,9 +47,9 @@ static bool _too_big_for_ul(const struct lval* x) {
     mpz_t r;
     mpz_init(r);
     lval_as_bignum(x, r);
-    bool result = mpz_cmp_ui(r, ULONG_MAX);
+    bool result = mpz_cmp_ui(r, ULONG_MAX) < 0;
     mpz_clear(r);
-    return result > 0;
+    return result;
 }
 static bool cnd_x_too_big_for_ul(const struct lval* x, const struct lval* y) {
     UNUSED(y);

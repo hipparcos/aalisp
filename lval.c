@@ -374,20 +374,33 @@ bool lval_as_num(const struct lval* v, long* r) {
 }
 
 bool lval_as_bignum(const struct lval* v, mpz_t r) {
-    if (!lval_is_alive(v) || lval_type(v) != LVAL_BIGNUM) {
+    if (!lval_is_alive(v) || !lval_is_numeric(v)) {
         mpz_set_ui(r, 0);
         return false;
     }
-    mpz_set(r, v->data->payload.bignum);
+    /* Automatic casting */
+    switch (v->data->type) {
+    case LVAL_DBL: mpz_set_d(r, v->data->payload.dbl); break;
+    case LVAL_NUM: mpz_set_si(r, v->data->payload.num); break;
+    case LVAL_BIGNUM: mpz_set(r, v->data->payload.bignum); break;
+    default: break;
+    }
     return true;
 }
 
 bool lval_as_dbl(const struct lval* v, double* r) {
-    if (!lval_is_alive(v) || lval_type(v) != LVAL_DBL) {
+    if (!lval_is_alive(v) || !lval_is_numeric(v)) {
         *r = .0;
         return false;
     }
-    *r = v->data->payload.dbl;
+    /* Automatic casting */
+    switch (v->data->type) {
+    case LVAL_DBL: *r = v->data->payload.dbl; break;
+    case LVAL_NUM: *r = (double) v->data->payload.num; break;
+    /* No warranty. */
+    case LVAL_BIGNUM: *r = mpz_get_d(v->data->payload.bignum); break;
+    default: break;
+    }
     return true;
 }
 
@@ -448,7 +461,7 @@ bool lval_is_zero(const struct lval* v) {
     if (!lval_is_numeric(v)) {
         return false;
     }
-    mpz_t zero;
+    static mpz_t zero;
     mpz_init_set_si(zero, 0);
     switch (v->data->type) {
     case LVAL_NUM:    return v->data->payload.num == 0;
@@ -463,16 +476,16 @@ int lval_sign(const struct lval* v) {
         return 0;
     }
     switch (v->data->type) {
-    case LVAL_NUM:    return (v->data->payload.num > 0) | -(v->data->payload.num < 0);
-    case LVAL_DBL:    return (v->data->payload.dbl > .0) | -(v->data->payload.dbl < .0);
+    case LVAL_NUM:    return (v->data->payload.num > 0) - (v->data->payload.num < 0);
+    case LVAL_DBL:    return (v->data->payload.dbl > .0) - (v->data->payload.dbl < .0);
     case LVAL_BIGNUM: return mpz_sgn(v->data->payload.bignum);
     default:          return false;
     };
 }
 
 bool lval_are_equal(const struct lval* x, const struct lval* y) {
-    if (!lval_is_alive(x))           return false;
-    if (!lval_is_alive(y))           return false;
+    if (!lval_is_alive(x))              return false;
+    if (!lval_is_alive(y))              return false;
     if (x->data == y->data)             return true;
     if (x->data->type != y->data->type) return false;
     static const double epsilon = 0.000001;

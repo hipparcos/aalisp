@@ -5,7 +5,19 @@ bool lsym_exec(
     const struct lval* x, const struct lval* y, struct lval* r
 ) {
     /* local y operand */
-    const struct lval* ly = (!sym.unary && lval_type(y) == LVAL_NIL) ? sym.neutral : y;
+    const struct lval* ly;
+    if (sym.unary) {
+        if (lval_type(y) != LVAL_NIL) {
+            lval_mut_err(r, LERR_TOO_MANY_ARGS);
+            return false;
+        }
+        ly = (struct lval*) &lnil;
+    } else {
+        ly = y;
+        if (lval_type(y) == LVAL_NIL) {
+            ly = sym.neutral;
+        }
+    }
 
     /* Guards */
     for (int i = 0; i < sym.guardc; i++) {
@@ -26,6 +38,8 @@ bool lsym_exec(
     /* Eval: bignum */
     if (lval_type(x) == LVAL_BIGNUM || lval_type(ly) == LVAL_BIGNUM) {
         mpz_t a, b;
+        mpz_init(a);
+        mpz_init(b);
         lval_as_bignum(x, a);
         lval_as_bignum(ly, b);
         mpz_t rbn;

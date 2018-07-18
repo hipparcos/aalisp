@@ -12,10 +12,6 @@ static const struct lguard guard_x_is_negative = {
     .condition= cnd_x_is_neg,
     .error= LERR_BAD_OPERAND
 };
-static const struct lguard guard_y_is_negative = {
-    .condition= cnd_y_is_neg,
-    .error= LERR_BAD_OPERAND
-};
 static const struct lguard guard_x_too_big = {
     .condition= cnd_x_too_big_for_ul,
     .error= LERR_BAD_OPERAND
@@ -32,14 +28,9 @@ static const struct lguard guard_either_is_double = {
     .condition= cnd_either_is_dbl,
     .error= LERR_BAD_OPERAND
 };
-static const struct lguard guard_dbl_and_bignum = {
-    .condition= cnd_dbl_and_bignum,
-    .error= LERR_BAD_OPERAND
-};
 
 /* Operator: declaration */
 static const struct lguard* guards_op_add[] = {
-    &guard_dbl_and_bignum
 };
 const struct lsym lbuiltin_op_add = {
     .symbol       = "+",
@@ -53,7 +44,6 @@ const struct lsym lbuiltin_op_add = {
 };
 
 static const struct lguard* guards_op_sub[] = {
-    &guard_dbl_and_bignum
 };
 const struct lsym lbuiltin_op_sub = {
     .symbol       = "-",
@@ -67,7 +57,6 @@ const struct lsym lbuiltin_op_sub = {
 };
 
 static const struct lguard* guards_op_mul[] = {
-    &guard_dbl_and_bignum
 };
 const struct lsym lbuiltin_op_mul = {
     .symbol       = "*",
@@ -82,7 +71,6 @@ const struct lsym lbuiltin_op_mul = {
 
 static const struct lguard* guards_op_div[] = {
     &guard_div_by_zero,
-    &guard_dbl_and_bignum
 };
 const struct lsym lbuiltin_op_div = {
     .symbol       = "/",
@@ -98,7 +86,6 @@ const struct lsym lbuiltin_op_div = {
 static const struct lguard* guards_op_mod[] = {
     &guard_div_by_zero,
     &guard_either_is_double,
-    &guard_dbl_and_bignum,
 };
 const struct lsym lbuiltin_op_mod = {
     .symbol       = "%",
@@ -128,8 +115,6 @@ const struct lsym lbuiltin_op_fac = {
 };
 
 static const struct lguard *guards_op_pow[] = {
-    &guard_dbl_and_bignum,
-    &guard_y_is_negative,
     &guard_y_too_big
 };
 const struct lsym lbuiltin_op_pow = {

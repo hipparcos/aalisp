@@ -30,6 +30,8 @@ Included under vendor/:
 ```bash
 git clone https://github.com/hipparcos/aalisp.git
 cd aalisp
+git submodule init
+git submodule update
 make
 ./aalisp
 ```

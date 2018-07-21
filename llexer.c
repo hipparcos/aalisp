@@ -47,7 +47,7 @@ static inline bool llex_is_letter(char c) {
 static bool llex_is_letter(char c);
 
 static inline bool llex_is_sign(char c) {
-    return strchr("+-*/%^?!:;,._#~", c);
+    return strchr("+-*/%^?!:;,._#~<>=$§£¤µ", c);
 }
 static bool llex_is_sign(char c);
 
@@ -65,7 +65,7 @@ static void llex_skip(struct lscanner* scanner) {
         scanner->line++;
         scanner->col = 1;
     } else {
-        scanner->col += scanner->width + 1;
+        scanner->col++;
     }
     scanner->pos++;
     scanner->width = 0;
@@ -73,8 +73,8 @@ static void llex_skip(struct lscanner* scanner) {
 
 static void llex_reset(struct lscanner* scanner) {
     scanner->tok = LTOK_EOF;
-    scanner->start = scanner->pos;
     scanner->col += scanner->width;
+    scanner->start = scanner->pos;
     scanner->width = 0;
 }
 
@@ -87,8 +87,10 @@ static void llex_skip_whitespaces(struct lscanner* scanner) {
 
 static bool llex_scan_string(struct lscanner* scanner) {
     const char* c = &scanner->input[scanner->pos];
-    c++; // Pass first quote.
-    llex_retain(scanner);
+    if (*c == '\"') {
+        llex_retain(scanner);
+        c++; // Pass first quote.
+    }
     /* Skip escaped quotes. */
     while (*c != '"' || *(c-1) == '\\') {
         llex_retain(scanner);
@@ -112,7 +114,11 @@ static bool llex_scan_number(struct lscanner* scanner) {
         llex_retain(scanner);
         c++;
     }
-    scanner->tok = LTOK_NUM;
+    if (once) {
+        scanner->tok = LTOK_DBL;
+    } else {
+        scanner->tok = LTOK_NUM;
+    }
     return true;
 }
 
@@ -126,28 +132,31 @@ static bool llex_scan_symbol(struct lscanner* scanner) {
     return true;
 }
 
-static char llex_peek(struct lscanner* scanner) {
+static inline char llex_peek(struct lscanner* scanner) {
     return scanner->input[scanner->pos+1];
 }
+static char llex_peek(struct lscanner* scanner);
 
 static bool llex_next(struct lscanner* scanner) {
+    llex_reset(scanner);
     llex_skip_whitespaces(scanner);
     char c = scanner->input[scanner->pos];
     /* Match special characters. */
     switch (c) {
     case '(':
         scanner->tok = LTOK_OPAR;
-        scanner->width = 1;
+        llex_retain(scanner);
         return true;
     case ')':
         scanner->tok = LTOK_CPAR;
-        scanner->width = 1;
+        llex_retain(scanner);
         return true;
     case '"':
         return llex_scan_string(scanner);
     case '\0':
     case EOF:
         scanner->tok = LTOK_EOF;
+        llex_retain(scanner);
         return false;
     }
     /* Match numbers. */
@@ -180,8 +189,6 @@ static struct ltok* llex_emit(struct lscanner* scanner) {
     }
     tok->content = calloc(sizeof(char), scanner->width + 1);
     strncpy(tok->content, &scanner->input[scanner->start], scanner->width);
-    llex_skip(scanner);
-    llex_reset(scanner);
     return tok;
 }
 
@@ -213,6 +220,9 @@ struct ltok* lisp_lex(const char* input, struct ltok* last) {
         last = llex_append(last, curr);
     }
     last = llex_append(last, llex_emit(&scanner));
+    if (!first) {
+        first = last;
+    }
     return first;
 }
 

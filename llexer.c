@@ -241,14 +241,14 @@ void llex_free(struct ltok* tokens) {
     free(curr); // free LTOK_EOS.
 }
 
-bool llex_are_equals(struct ltok* left, struct ltok* right) {
+bool llex_are_equal(struct ltok* left, struct ltok* right) {
     if (!left || !right) {
         return false;
     }
     return left->type == right->type && strcmp(left->content, right->content) == 0;
 }
 
-bool llex_are_all_equals(struct ltok* left, struct ltok* right) {
+bool llex_are_all_equal(struct ltok* left, struct ltok* right) {
     if (!left || !right) {
         return false;
     }
@@ -258,7 +258,7 @@ bool llex_are_all_equals(struct ltok* left, struct ltok* right) {
          && lcurr->type != LTOK_EOF && rcurr->type != LTOK_EOF) {
         lnext = lcurr->next;
         rnext = rcurr->next;
-        if (!llex_are_equals(lcurr, rcurr)) {
+        if (!llex_are_equal(lcurr, rcurr)) {
             return false;
         }
     }

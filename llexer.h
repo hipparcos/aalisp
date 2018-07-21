@@ -37,10 +37,10 @@ struct ltok* lisp_lex(const char* input, struct ltok* last);
  ** tokens must not be used afterwards */
 void llex_free(struct ltok* tokens);
 
-/** llex_are_equals tells if two tokens are equal. */
-bool llex_are_equals(struct ltok* left, struct ltok* right);
-/** llex_are_all_equals tells if two list of tokens are equal. */
-bool llex_are_all_equals(struct ltok* left, struct ltok* right);
+/** llex_are_equal tells if two tokens are equal. */
+bool llex_are_equal(struct ltok* left, struct ltok* right);
+/** llex_are_all_equal tells if two list of tokens are equal. */
+bool llex_are_all_equal(struct ltok* left, struct ltok* right);
 
 /** llex_print prints a token.
  ** Caller is responsible for allocating the out string (see llex_printlen). */

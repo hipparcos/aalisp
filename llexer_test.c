@@ -6,7 +6,7 @@ bool test_helper(const char* input, struct ltok* expected) {
     struct ltok *first = NULL, *last = NULL;
     first = lisp_lex(input, last);
     bool ret = false;
-    if (!(ret = llex_are_all_equals(first, expected))) {
+    if (!(ret = llex_are_all_equal(first, expected))) {
         fputs("\nInput:", stdout);
         fputs(input, stdout);
         fputc('\n', stdout);

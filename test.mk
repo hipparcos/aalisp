@@ -1,5 +1,5 @@
 # Config: files & dirs.
-tests:=lval_test.c lbuiltin_test.c lisp_test.c llexer_test.c
+tests:=lval_test.c lbuiltin_test.c lisp_test.c llexer_test.c lparser_test.c
 test_build_dir:=$(build_dir)
 
 # Config: options.

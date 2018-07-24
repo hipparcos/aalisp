@@ -60,9 +60,25 @@ static struct last* lparse_string(struct ltok* tokens) {
     if (tokens->type != LTOK_STR) {
         return NULL;
     }
-    /* Remove opening and closing ". */
-    /* Remove escaped ". */
-    return last_alloc(LTAG_STR, tokens->content, tokens);
+    char* content = tokens->content;
+    content++; // skip opening ".
+    size_t len = strlen(content);
+    len--; // skip closing ".
+    char* buffer = calloc(len + 1, sizeof(char));
+    /* Remove opening and closing " and escape \. */
+    size_t lencpy = 0;
+    char *curr = buffer, *end = NULL;
+    while (NULL != (end = strstr(content, "\\\""))) {
+        lencpy = end - content;
+        strncpy(curr, content, lencpy);
+        curr += lencpy;
+        content += lencpy + 1; // skip \.
+        len -= lencpy + 1;
+    }
+    strncpy(curr, content, len);
+    struct last* node = last_alloc(LTAG_STR, buffer, tokens);
+    free(buffer);
+    return node;
 }
 
 static struct last* lparse_expr(struct ltok* first, struct ltok** last);

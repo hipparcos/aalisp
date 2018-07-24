@@ -115,6 +115,36 @@ describe(lparse, {
         assert(test_helper_pass(&tok1, &prgm));
     });
 
+    it("works for strings", {
+        /* Input */
+        struct ltok tok1 = {.type= LTOK_SYM, .content= "concat"};
+        struct ltok tok2 = {.type= LTOK_STR, .content= "\"test\""};
+        struct ltok tok3 = {.type= LTOK_STR, .content= "\"esc\\\"aped\""};
+        struct ltok tEOF = {.type= LTOK_EOF, .content= NULL};
+        tok1.next = &tok2;
+        tok2.next = &tok3;
+        tok3.next = &tEOF;
+
+        /* Expected */
+        struct last symb = {.tag= LTAG_SYM, .content= "concat"};
+        struct last opr1 = {.tag= LTAG_STR, .content= "test"};
+        struct last opr2 = {.tag= LTAG_STR, .content= "esc\"aped"};
+        struct last *expr_children[] = { &symb, &opr1, &opr2 };
+        struct last expr = {
+            .tag= LTAG_EXPR, .content= "",
+            .children= (struct last**) &expr_children,
+            .childrenc = 3,
+        };
+        struct last *prgm_children[] = { &expr };
+        struct last prgm = {
+            .tag= LTAG_PROG, .content= "",
+            .children= (struct last**) &prgm_children,
+            .childrenc = 1,
+        };
+
+        assert(test_helper_pass(&tok1, &prgm));
+    });
+
     it("works for a s-expression `(+ 1 2)`", {
         /* Input */
         struct ltok tok1 = {.type= LTOK_OPAR, .content= "("};

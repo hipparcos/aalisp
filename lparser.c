@@ -133,12 +133,15 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
             switch (curr->type) {
             case LTOK_NUM:
                 operand = lparse_number(curr);
+                curr = curr->next;
                 break;
             case LTOK_DBL:
                 operand = lparse_double(curr);
+                curr = curr->next;
                 break;
             case LTOK_STR:
                 operand = lparse_string(curr);
+                curr = curr->next;
                 break;
             case LTOK_OPAR:
                 operand = lparse_sexpr(curr, &curr);
@@ -151,7 +154,6 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
             default: break;
             }
             last_attach(operand, expr);
-            curr = curr->next;
         }
         break;
     case LTOK_EOF:

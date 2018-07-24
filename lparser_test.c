@@ -191,6 +191,75 @@ describe(lparse, {
         assert(test_helper_pass(&tok1, &prgm));
     });
 
+    it("works for nested s-expressions `(+ 1 (! 2))`", {
+        /* Input */
+        /* struct ltok tok1 = {.type= LTOK_OPAR, .content= "("}; */
+        /* struct ltok tok2 = {.type= LTOK_SYM, .content= "+"}; */
+        /* struct ltok tok3 = {.type= LTOK_NUM, .content= "1"}; */
+        /* struct ltok tok4 = {.type= LTOK_OPAR, .content= "("}; */
+        /* struct ltok tok5 = {.type= LTOK_SYM, .content= "!"}; */
+        /* struct ltok tok6 = {.type= LTOK_NUM, .content= "2"}; */
+        /* struct ltok tok7 = {.type= LTOK_CPAR, .content= ")"}; */
+        /* struct ltok tok8 = {.type= LTOK_CPAR, .content= ")"}; */
+        /* struct ltok tEOF = {.type= LTOK_EOF, .content= NULL}; */
+        /* tok1.next = &tok2; */
+        /* tok2.next = &tok3; */
+        /* tok3.next = &tok4; */
+        /* tok4.next = &tok5; */
+        /* tok5.next = &tok6; */
+        /* tok6.next = &tok7; */
+        /* tok7.next = &tok8; */
+        /* tok8.next = &tEOF; */
+        const char* lexer_input = "(+ 1 (! 2))";
+        struct ltok* lexer_error = NULL;
+        struct ltok* tokens = lisp_lex(lexer_input, lexer_error);
+
+        /* Expected */
+        struct last symb2 = {.tag= LTAG_SYM, .content= "!"};
+        struct last opr2 = {.tag= LTAG_NUM, .content= "2"};
+        struct last *expr3_children[] = { &symb2, &opr2 };
+        struct last expr3 = {
+            .tag= LTAG_EXPR, .content= "",
+            .children= (struct last**) &expr3_children,
+            .childrenc = 2,
+        };
+        struct last *sexpr2_children[] = { &expr3 };
+        struct last sexpr2 = {
+            .tag= LTAG_SEXPR, .content= "",
+            .children= (struct last**) &sexpr2_children,
+            .childrenc = 1,
+        };
+        struct last symb1 = {.tag= LTAG_SYM, .content= "+"};
+        struct last opr1 = {.tag= LTAG_NUM, .content= "1"};
+        struct last *expr2_children[] = { &symb1, &opr1, &sexpr2 };
+        struct last expr2 = {
+            .tag= LTAG_EXPR, .content= "",
+            .children= (struct last**) &expr2_children,
+            .childrenc = 3,
+        };
+        struct last *sexpr1_children[] = { &expr2 };
+        struct last sexpr1 = {
+            .tag= LTAG_SEXPR, .content= "",
+            .children= (struct last**) &sexpr1_children,
+            .childrenc = 1,
+        };
+        struct last *expr1_children[] = { &sexpr1 };
+        struct last expr1 = {
+            .tag= LTAG_EXPR, .content= "",
+            .children= (struct last**) &expr1_children,
+            .childrenc = 1,
+        };
+        struct last *prgm_children[] = { &expr1 };
+        struct last prgm = {
+            .tag= LTAG_PROG, .content= "",
+            .children= (struct last**) &prgm_children,
+            .childrenc = 1,
+        };
+
+        assert(test_helper_pass(tokens, &prgm));
+        llex_free(tokens);
+    });
+
     it("fails for an expression which does not begin by a symbol `1 + 2`", {
         /* Input */
         struct ltok tok1 = {.type= LTOK_NUM, .content= "1"};

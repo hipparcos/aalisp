@@ -38,24 +38,24 @@ struct last* lisp_parse(struct ltok* tokens);
 void last_free(struct last* ast);
 
 /** last_are_equal tells if two ast nodes are equal. */
-bool last_are_equal(struct last* left, struct last* right);
+bool last_are_equal(const struct last* left, const struct last* right);
 /** last_are_all_equal tells if two ast are equal. */ 
-bool last_are_all_equal(struct last* left, struct last* right);
+bool last_are_all_equal(const struct last* left, const struct last* right);
 
 /** last_to_string prints the ast node to a string.
  ** Caller is responsible for allocating the out string (see last_printlen). */
-void last_to_string(struct last* ast, char* out);
+void last_to_string(const struct last* ast, char* out);
 /** last_printlen returns the len of the string that would be generated for
  ** ast be last_to_string. */
-size_t last_printlen(struct last* ast);
+size_t last_printlen(const struct last* ast);
 /** last_print_to prints the ast node to the file out. */
-void last_print_to(struct last* ast, FILE* out);
+void last_print_to(const struct last* ast, FILE* out);
 /** last_println prints the ast node to stdout. */
 #define last_print(ast) last_print_to(ast, stdout);
 /** last_println prints the ast node to stdout. A newline is added. */
 #define last_println(ast) last_print_to(ast, stdout); putchar('\n');
 /** last_print_all_to prints the ast to the file out. */
-void last_print_all_to(struct last* ast, FILE* out);
+void last_print_all_to(const struct last* ast, FILE* out);
 /** last_print_all prints the ast to stdout. */
 #define last_print_all(ast) last_print_all_to(ast, stdout);
 

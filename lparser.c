@@ -172,14 +172,14 @@ void last_free(struct last* ast) {
     free(ast);
 }
 
-bool last_are_equal(struct last* left, struct last* right) {
+bool last_are_equal(const struct last* left, const struct last* right) {
     if (!left || !right) {
         return false;
     }
     return left->tag == right->tag && strcmp(left->content, right->content) == 0;
 }
 
-bool last_are_all_equal(struct last* left, struct last* right) {
+bool last_are_all_equal(const struct last* left, const struct last* right) {
     if (!left || !right) {
         return false;
     }
@@ -199,7 +199,7 @@ bool last_are_all_equal(struct last* left, struct last* right) {
 
 static const char last_to_string_format_simple[] = "tag: %si, %d:%d";
 static const char last_to_string_format[] = "tag: %s, %d:%d, content: \"%s\"";
-void last_to_string(struct last* ast, char* out) {
+void last_to_string(const struct last* ast, char* out) {
     if (!ast) {
         return;
     }
@@ -212,7 +212,7 @@ void last_to_string(struct last* ast, char* out) {
     }
 }
 
-size_t last_printlen(struct last* ast) {
+size_t last_printlen(const struct last* ast) {
     if (!ast) {
         return 0;
     }
@@ -227,7 +227,7 @@ size_t last_printlen(struct last* ast) {
     return len;
 }
 
-static void last_print_to_indent(struct last* ast, FILE* out, unsigned int indent) {
+static void last_print_to_indent(const struct last* ast, FILE* out, unsigned int indent) {
     if (!ast) {
         return;
     }
@@ -241,14 +241,14 @@ static void last_print_to_indent(struct last* ast, FILE* out, unsigned int inden
     free(buffer);
 }
 
-void last_print_to(struct last* ast, FILE* out) {
+void last_print_to(const struct last* ast, FILE* out) {
     if (!ast) {
         return;
     }
     last_print_to_indent(ast, out, 0);
 }
 
-static void last_print_all_to_rec(struct last* ast, FILE* out, unsigned int level) {
+static void last_print_all_to_rec(const struct last* ast, FILE* out, unsigned int level) {
     if (!ast) {
         return;
     }
@@ -259,7 +259,7 @@ static void last_print_all_to_rec(struct last* ast, FILE* out, unsigned int leve
     }
 }
 
-void last_print_all_to(struct last* ast, FILE* out) {
+void last_print_all_to(const struct last* ast, FILE* out) {
     if (!ast) {
         return;
     }

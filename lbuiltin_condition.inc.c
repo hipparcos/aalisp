@@ -47,7 +47,7 @@ static bool _too_big_for_ul(const struct lval* x) {
     mpz_t r;
     mpz_init(r);
     lval_as_bignum(x, r);
-    bool result = mpz_cmp_ui(r, ULONG_MAX) < 0;
+    bool result = mpz_cmp_ui(r, ULONG_MAX) > 0;
     mpz_clear(r);
     return result;
 }

@@ -69,15 +69,22 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last);
 
 static struct last* lparse_sexpr(struct ltok* first, struct ltok** last) {
     struct ltok* curr = first;
-    struct last* sexpr = last_alloc(LTAG_SEXPR, "", curr);
+    struct last* sexpr;
+    struct last* expr = NULL;
+    // (.
     curr = curr->next; // Skip (.
-    last_attach(lparse_expr(curr, &curr), sexpr);
+    // Inner expr.
+    expr = lparse_expr(curr, &curr);
+    // ) or error.
     if (curr->type != LTOK_CPAR) {
-        struct last* err = last_alloc(LTAG_ERR,
+        sexpr = last_alloc(LTAG_ERR,
                 "Error parsing s-expression: a s-expression must end with a ).",
                 curr);
-        last_attach(err, sexpr);
+    } else {
+        sexpr = last_alloc(LTAG_SEXPR, "", curr);
+        curr = curr->next; // Skip ).
     }
+    last_attach(expr, sexpr);
     *last = curr;
     return sexpr;
 }
@@ -85,10 +92,16 @@ static struct last* lparse_sexpr(struct ltok* first, struct ltok** last) {
 static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
     struct ltok* curr = first;
     struct last* expr = NULL;
+    struct last* sexpr = NULL;
     switch (curr->type) {
     case LTOK_OPAR: // Start of SEXPR.
+        sexpr = lparse_sexpr(curr, &curr);
+        if (sexpr->tag == LTAG_ERR) {
+            expr = sexpr;
+            break;
+        }
         expr = last_alloc(LTAG_EXPR, "", curr);
-        last_attach(lparse_sexpr(curr, last), expr);
+        last_attach(sexpr, expr);
         break;
     case LTOK_SYM:
         expr = last_alloc(LTAG_EXPR, "", curr);
@@ -113,6 +126,11 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
                 break;
             case LTOK_OPAR:
                 operand = lparse_sexpr(curr, &curr);
+                if (operand->tag == LTAG_ERR) {
+                    last_attach(expr, operand);
+                    expr = operand;
+                    break;
+                }
                 break;
             default: break;
             }
@@ -132,27 +150,29 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
     return expr;
 }
 
-static struct last* lparse_program(struct ltok* tokens) {
+static struct last* lparse_program(struct ltok* tokens, struct last** error) {
     if (tokens->type == LTOK_EOF) {
         return NULL;
     }
     struct last* prg = last_alloc(LTAG_PROG, "", NULL);
     struct ltok* curr = tokens;
     struct last* expr = NULL;
+    *error = NULL;
     while ((expr = lparse_expr(curr, &curr))) {
         last_attach(expr, prg);
         if (expr->tag == LTAG_ERR) {
+            *error = expr;
             break;
         }
     }
     return prg;
 }
 
-struct last* lisp_parse(struct ltok* tokens) {
+struct last* lisp_parse(struct ltok* tokens, struct last** error) {
     if (!tokens) {
         return NULL;
     }
-    return lparse_program(tokens);
+    return lparse_program(tokens, error);
 }
 
 void last_free(struct last* ast) {

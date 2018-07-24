@@ -31,8 +31,9 @@ struct last {
 
 /** lisp_parse transforms a list of tokens into an ast.
  ** Returns the root of the ast.
+ ** error is set to the node containing an error or to NULL.
  ** Caller is responsible for calling last_free() on ast. */
-struct last* lisp_parse(struct ltok* tokens);
+struct last* lisp_parse(struct ltok* tokens, struct last** error);
 /** last_free clears ast.
  ** ast must not be used afterwards. */
 void last_free(struct last* ast);

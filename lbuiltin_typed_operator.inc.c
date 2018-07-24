@@ -1,5 +1,6 @@
 #include <limits.h>
 #include <math.h>
+#include <stdlib.h>
 
 #include "vendor/mini-gmp/mini-gmp.h"
 #include "lval.h"
@@ -22,7 +23,7 @@ inline static bool cnd_num_mul_overflow(const long a, const long b) {
             (b < -1 && ((a < 0 && a < LONG_MAX / b) || (a > 0 && a > LONG_MIN / b))));
 }
 inline static bool cnd_num_pow_overflow(const long a, const long b) {
-    long base = (a < 0) ? -a : a;
+    long base = labs(a);
     return (double)(b) > log2((double)LONG_MAX)/log2((double)base);
 }
 

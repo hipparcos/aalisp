@@ -171,6 +171,7 @@ static bool llex_next(struct lscanner* scanner) {
     return false;
 }
 
+static const char llex_err_format[] = "Lexing error: unknow character '%c'.";
 /** llex_emit allocates a token and fills it using the last scan token. */
 static struct ltok* llex_emit(struct lscanner* scanner) {
     struct ltok* tok = calloc(sizeof(struct ltok), 1);
@@ -182,13 +183,19 @@ static struct ltok* llex_emit(struct lscanner* scanner) {
         return tok;
     }
     if (tok->type == LTOK_ERR) {
-        const char format[] = "Lexing error at line %d, col %d.";
-        tok->content = calloc(sizeof(char), sizeof(format) + 10 * 2 + 1);
-        sprintf(tok->content, format, scanner->line, scanner->col);
+        tok->content = calloc(sizeof(llex_err_format)+10+1, sizeof(char));
+        sprintf(tok->content, llex_err_format, scanner->input[scanner->pos]);
         return tok;
     }
     tok->content = calloc(sizeof(char), scanner->width + 1);
     strncpy(tok->content, &scanner->input[scanner->start], scanner->width);
+    return tok;
+}
+
+static struct ltok* llex_emitEOF() {
+    struct ltok* tok = calloc(1, sizeof(struct ltok));
+    tok->type = LTOK_EOF;
+    tok->content = NULL;
     return tok;
 }
 
@@ -205,23 +212,34 @@ static struct ltok* llex_append(struct ltok* last, struct ltok* curr) {
     return curr;
 }
 
-struct ltok* lisp_lex(const char* input, struct ltok* last) {
+struct ltok* lisp_lex(const char* input, struct ltok** error) {
     struct lscanner scanner = {0};
     scanner.input = input;
     scanner.line = 1;
     scanner.col = 1;
-    struct ltok *first = NULL, *curr = NULL;
-    last = NULL;
+    struct ltok *first = NULL, *curr = NULL, *last = NULL;
+    *error = NULL;
     while (llex_next(&scanner)) {
         curr = llex_emit(&scanner);
-        if (!last) {
+        if (!first) {
             first = curr;
         }
         last = llex_append(last, curr);
     }
-    last = llex_append(last, llex_emit(&scanner));
+    /* Check for lexing error & append EOF. */
+    curr = llex_emit(&scanner);
+    if (curr->type == LTOK_ERR) {
+        *error = curr;
+        last = llex_append(last, curr);
+        /* Force EOF emission. */
+        llex_append(last, llex_emitEOF());
+    } else {
+        /* Last call to emit returns a LTOK_EOF. */
+        llex_append(last, curr);
+    }
+    /* Corner case: empty string or the first character gives an error. */
     if (!first) {
-        first = last;
+        first = curr;
     }
     return first;
 }

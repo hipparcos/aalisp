@@ -28,10 +28,11 @@ struct ltok {
 };
 
 /** lisp_lex transforms the input into a list of tokens.
- ** last element is always of type LTOK_EOS.
  ** Returns the first element of the list of ltok.
+ ** The returned list always end with a LTOK_EOF token.
+ ** error is set to the node containing an error or to NULL.
  ** Caller is responsible for calling llex_free() on tokens. */
-struct ltok* lisp_lex(const char* input, struct ltok* last);
+struct ltok* lisp_lex(const char* input, struct ltok** error);
 /** llex_free clears a list of tokens.
  ** The list of tokens must end with a token of type LTOK_EOS.
  ** tokens must not be used afterwards */

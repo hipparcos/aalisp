@@ -3,10 +3,10 @@
 #include "vendor/snow/snow/snow.h"
 
 bool test_helper(const char* input, struct ltok* expected) {
-    struct ltok *first = NULL, *last = NULL;
-    first = lisp_lex(input, last);
+    struct ltok *first = NULL, *error = NULL;
+    first = lisp_lex(input, &error);
     bool ret = false;
-    if (!(ret = llex_are_all_equal(first, expected))) {
+    if (error != NULL || !(ret = llex_are_all_equal(first, expected))) {
         fputs("\nInput:", stdout);
         fputs(input, stdout);
         fputc('\n', stdout);
@@ -26,6 +26,14 @@ describe(llex, {
         struct ltok tEOF = {.type= LTOK_EOF, .content= NULL};
         struct ltok* expected = &tEOF;
         assert(test_helper(input, expected));
+    });
+
+    it("fails for unknwon characters", {
+        const char* input = "[]";
+        struct ltok *first = NULL, *error = NULL;
+        first = lisp_lex(input, &error);
+        defer(llex_free(first));
+        assert(error != NULL);
     });
 
     it("skip spaces", {

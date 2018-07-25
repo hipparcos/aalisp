@@ -212,7 +212,7 @@ describe(lparse, {
         /* tok8.next = &tEOF; */
         const char* lexer_input = "(+ 1 (! 2))";
         struct ltok* lexer_error = NULL;
-        struct ltok* tokens = lisp_lex(lexer_input, lexer_error);
+        struct ltok* tokens = lisp_lex(lexer_input, &lexer_error);
 
         /* Expected */
         struct last symb2 = {.tag= LTAG_SYM, .content= "!"};

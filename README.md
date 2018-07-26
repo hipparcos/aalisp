@@ -22,7 +22,7 @@ Testing:
 Included under vendor/:
 
 - mini-gmp: bignum arithmetic;
-- minunit: minimal unit testing header only library;
+- [mortie/snow](https://github.com/mortie/snow): unit testing.
 
 ### Building & running
 

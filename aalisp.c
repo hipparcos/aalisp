@@ -31,8 +31,6 @@ int main(int argc, char** argv) {
     printf(PROGNAME" "VERSION"-"CODENAME" build %d\n", BUILD);
     puts("Press Ctrl+C to exit.\n");
 
-    lisp_setup();
-
     /* REPL loop */
     while (true) {
         char* input = readline(prompt);
@@ -40,8 +38,6 @@ int main(int argc, char** argv) {
         lisp_eval_from_string(input);
         free(input);
     }
-
-    lisp_teardown();
 
     return EXIT_SUCCESS;
 }

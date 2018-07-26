@@ -19,15 +19,31 @@ struct lval* expected;
 #define it_pass(input, output) \
     it(input" == "#output, { \
         output; \
+        defer(cleanup()); \
         assert( lisp_eval(input, result)); \
-        assert(lval_are_equal(result, expected)); \
+        if (!lval_are_equal(result, expected)) { \
+            fputs("\nGot: ", stdout); \
+            lval_println(result); \
+            fail("got != expected"); \
+        } \
     })
 #define it_fail(input, output) \
     it(input" == "#output, { \
         output; \
+        defer(cleanup()); \
         assert(!lisp_eval(input, result)); \
-        assert(lval_are_equal(result, expected)); \
+        if (!lval_are_equal(result, expected)) { \
+            fputs("\nGot: ", stdout); \
+            lval_println(result); \
+            fail("got != expected"); \
+        } \
     })
+
+void cleanup(void) {
+        lval_free(result);
+        lval_free(expected);
+        mpz_clear(bn_fac21);
+}
 
 describe(lisp_eval, {
     before_each({
@@ -36,12 +52,6 @@ describe(lisp_eval, {
 
         mpz_init_set_ui(bn_fac21, fac20);
         mpz_mul_si(bn_fac21, bn_fac21, 21);
-    });
-    after_each({
-        lval_free(result);
-        lval_free(expected);
-
-        mpz_clear(bn_fac21);
     });
 
     /* happy path */
@@ -58,7 +68,7 @@ describe(lisp_eval, {
 
     /* should not be in grammar */
     it_fail("",          lval_mut_err(expected, LERR_EVAL));
-    /* it_fail("1 + 1",     lval_mut_err(expected, LERR_EVAL)); */
+    it_fail("1 + 1",     lval_mut_err(expected, LERR_EVAL));
     it_fail("gibberish", lval_mut_err(expected, LERR_EVAL));
 
 });

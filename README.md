@@ -23,7 +23,6 @@ Included under vendor/:
 
 - mini-gmp: bignum arithmetic;
 - minunit: minimal unit testing header only library;
-- mpc: a parser combinator library for C.
 
 ### Building & running
 
@@ -48,7 +47,7 @@ For now, it's only a [normal Polish notation](https://en.wikipedia.org/wiki/Poli
 
 ## TODO
 
-    - [ ] Rewrite the parser myself.
+    - [x] Rewrite the parser myself (see llexer & lparser).
     - [ ] Support bigdouble.
     - [ ] Support rational numbers.
 

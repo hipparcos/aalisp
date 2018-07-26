@@ -1,7 +1,7 @@
 out=$(PROGNAME)
-sources=$(PROGNAME).c vendor/mpc/mpc.c vendor/mini-gmp/mini-gmp.c \
+sources=$(PROGNAME).c vendor/mini-gmp/mini-gmp.c \
 		lisp.c lval.c lsym.c lbuiltin.c llexer.c lparser.c
-headers=vendor/mpc/mpc.h vendor/mini-gmp/mini-gmp.h \
+headers=vendor/mini-gmp/mini-gmp.h \
 		lisp.h lval.h lsym.h lbuiltin.h llexer.h lparser.h
 
 build_dir:=build

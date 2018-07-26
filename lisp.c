@@ -1,48 +1,18 @@
 #include "lisp.h"
 
+#include <errno.h>
 #include <limits.h>
 #include <math.h>
 #include <stdbool.h>
 #include <string.h>
 
-#include "vendor/mpc/mpc.h"
-
 #include "lbuiltin.h"
 #include "lval.h"
 #include "lsym.h"
+#include "llexer.h"
+#include "lparser.h"
 
-/* Parser */
-static mpc_parser_t* Lisp   = NULL;
-static mpc_parser_t* Number = NULL;
-static mpc_parser_t* Double = NULL;
-static mpc_parser_t* Symbol = NULL;
-static mpc_parser_t* Expr   = NULL;
-static mpc_parser_t* Sexpr  = NULL;
-
-void lisp_setup(void) {
-    if (!Lisp) {
-        Double = mpc_new("double");
-        Number = mpc_new("number");
-        Symbol = mpc_new("symbol");
-        Sexpr  = mpc_new("sexpr");
-        Expr   = mpc_new("expr");
-        Lisp   = mpc_new("lisp");
-
-        /* double must be matched before number. */
-        mpca_lang(MPCA_LANG_DEFAULT,
-                  "                                                       \
-                  double   : /-?[0-9]*\\.[0-9]+/ ;                        \
-                  number   : /-?[0-9]+/ ;                                 \
-                  symbol   : '+' | '-' | '*' | '/' | '%' | '!' | '^' ;    \
-                  sexpr    : '(' <expr>* ')' ;                            \
-                  expr     : <double> | <number> | <symbol> | <sexpr> ;   \
-                  lisp     : /^/ <expr>* /$/ ;                            \
-                  ",
-                  Double, Number, Symbol, Sexpr, Expr, Lisp);
-    }
-}
-
-bool lisp_eval_symbol(char* op, const struct lval* x, const struct lval* y, struct lval* r) {
+static bool leval_exec(char* op, const struct lval* x, const struct lval* y, struct lval* r) {
     if (lval_type(x) == LVAL_ERR) {
         lval_copy(r, x);
         return false;
@@ -70,74 +40,110 @@ bool lisp_eval_symbol(char* op, const struct lval* x, const struct lval* y, stru
     return false;
 }
 
-static bool lisp_eval_expr(mpc_ast_t* ast, struct lval* r) {
-    if (strstr(ast->tag, "number")) {
-        errno = 0;
-        long x = strtol(ast->contents, NULL, 10);
-        if (errno == ERANGE) {
-            /* Switch to bignum. */
-            mpz_t bignum;
-            mpz_init_set_str(bignum, ast->contents, 10);
-            lval_mut_bignum(r, bignum);
-            mpz_clear(bignum);
-            return true;
-        }
-        lval_mut_num(r, x);
+static bool leval_num(struct last* ast, struct lval* r) {
+    errno = 0;
+    long n = strtol(ast->content, NULL, 10);
+    if (errno == ERANGE) {
+        /* Switch to bignum. */
+        mpz_t bignum;
+        mpz_init_set_str(bignum, ast->content, 10);
+        lval_mut_bignum(r, bignum);
+        mpz_clear(bignum);
         return true;
     }
-    if (strstr(ast->tag, "double")) {
-        errno = 0;
-        double x = strtod(ast->contents, NULL);
-        if (errno == ERANGE) {
-            lval_mut_err(r, LERR_BAD_OPERAND);
-            return false;
-        }
-        lval_mut_dbl(r, x);
-        return true;
-    }
-
-    /* Operator always is 2nd child. */
-    char* op = ast->children[1]->contents;
-
-    /* Eval the remaining children. */
-    struct lval* x = lval_alloc();
-    lisp_eval_expr(ast->children[2], x);
-
-    lval_copy(r, x);
-    /* Multiple operand. */
-    if (strstr(ast->children[3]->tag, "expr")) {
-        for (int i = 3; strstr(ast->children[i]->tag, "expr"); i++) {
-            struct lval* y = lval_alloc();
-            lisp_eval_expr(ast->children[i], y);
-            lisp_eval_symbol(op, r, y, r);
-            lval_free(y);
-        }
-    /* One operand. */
-    } else {
-        lisp_eval_symbol(op, x, &lnil, r);
-    }
-    lval_free(x);
+    lval_mut_num(r, n);
     return true;
 }
 
+static bool leval_dbl(struct last* ast, struct lval* r) {
+    errno = 0;
+    double d = strtod(ast->content, NULL);
+    if (errno == ERANGE) {
+        lval_mut_err(r, LERR_BAD_OPERAND);
+        return false;
+    }
+    lval_mut_dbl(r, d);
+    return true;
+}
+
+static bool leval_ast(struct last* ast, struct lval* r);
+
+static bool leval_expr(struct last* ast, struct lval* r) {
+    char* op = ast->children[0]->content;
+    struct lval *x = NULL, *y = NULL;
+    switch (ast->childrenc - 1) {
+    case 0: // no arguments.
+        leval_exec(op, &lnil, &lnil, r);
+        break;
+    case 1: // 1 argument.
+        x = lval_alloc();
+        leval_ast(ast->children[1], x);
+        leval_exec(op, x, &lnil, r);
+        lval_free(x);
+        break;
+    default: // >= 2
+        x = lval_alloc();
+        leval_ast(ast->children[1], x);
+        lval_copy(r, x);
+        for (size_t i = 2; i < ast->childrenc; i++) {
+            y = lval_alloc();
+            leval_ast(ast->children[i], y);
+            leval_exec(op, r, y, r);
+            lval_free(y);
+        }
+        lval_free(x);
+        break;
+    }
+    return true;
+}
+
+static bool leval_ast(struct last* ast, struct lval* r) {
+    if (!ast) {
+        lval_mut_err(r, LERR_EVAL);
+        return false;
+    }
+    switch (ast->tag) {
+    case LTAG_PROG:
+        return leval_ast(ast->children[0], r);
+    case LTAG_NUM:
+        return leval_num(ast, r);
+    case LTAG_DBL:
+        return leval_dbl(ast, r);
+    case LTAG_SEXPR:
+        return leval_expr(ast->children[0], r);
+    case LTAG_EXPR:
+        return leval_expr(ast, r);
+    default: break;
+    }
+    lval_mut_err(r, LERR_EVAL);
+    return false;
+}
+
 bool lisp_eval(const char* restrict input, struct lval* r) {
-    if (!Lisp) {
-        lisp_setup();
-    }
-    mpc_result_t ast;
-    if (!input || strlen(input) == 0) {
-        lval_mut_err(r, LERR_EVAL);
+    /* Lex input. */
+    struct ltok *tokens = NULL, *lexer_error = NULL;
+    tokens = lisp_lex(input, &lexer_error);
+    if (lexer_error != NULL) {
+        fprintf(stderr, "Error: %d:%d %s\n",
+                lexer_error->line, lexer_error->col, lexer_error->content);
+        llex_free(tokens);
         return false;
     }
-    if (!mpc_parse("<stdin>", input, Lisp, &ast)) {
-        lval_mut_err(r, LERR_EVAL);
-        char* err = mpc_err_string(ast.error);
-        free(err);
-        mpc_err_delete(ast.error);
+    /* Parse input. */
+    struct last *ast, *parser_error = NULL;
+    ast = lisp_parse(tokens, &parser_error);
+    if (parser_error != NULL) {
+        fprintf(stderr, "Error: %d:%d %s\n",
+                parser_error->line, parser_error->col, parser_error->content);
+        llex_free(tokens);
+        last_free(ast);
         return false;
     }
-    bool ret = lisp_eval_expr(ast.output, r);
-    mpc_ast_delete(ast.output);
+    bool ret = false;
+    ret = leval_ast(ast, r); // Skip program node.
+    /* Cleanup */
+    llex_free(tokens);
+    last_free(ast);
     return ret;
 }
 
@@ -146,14 +152,4 @@ void lisp_eval_from_string(const char* restrict input) {
     lisp_eval(input, r);
     lval_println(r);
     lval_free(r);
-}
-
-void lisp_teardown(void) {
-    mpc_cleanup(6, Double, Number, Symbol, Sexpr, Expr, Lisp);
-    Double = NULL;
-    Number = NULL;
-    Symbol = NULL;
-    Sexpr  = NULL;
-    Expr   = NULL;
-    Lisp   = NULL;
 }

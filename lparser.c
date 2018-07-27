@@ -125,10 +125,7 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
         last_attach(lparse_symbol(curr), expr);
         curr = curr->next;
         /* Operands. */
-        while (curr->type == LTOK_NUM
-                || curr->type == LTOK_DBL
-                || curr->type == LTOK_STR
-                || curr->type == LTOK_OPAR) {
+        while (curr->type != LTOK_CPAR && curr->type != LTOK_EOF) {
             struct last* operand = NULL;
             switch (curr->type) {
             case LTOK_NUM:
@@ -143,15 +140,22 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
                 operand = lparse_string(curr);
                 curr = curr->next;
                 break;
+            case LTOK_SYM:
+                operand = lparse_symbol(curr);
+                break;
             case LTOK_OPAR:
                 operand = lparse_sexpr(curr, &curr);
-                if (operand->tag == LTAG_ERR) {
-                    last_attach(expr, operand);
-                    expr = operand;
-                    break;
-                }
                 break;
-            default: break;
+            default:
+                operand = last_alloc(LTAG_ERR,
+                        "Error parsing expression: operands must be of types num|double|string|symbol|sexpr.",
+                        curr);
+                break;
+            }
+            if (operand->tag == LTAG_ERR) {
+                last_attach(expr, operand);
+                expr = operand;
+                break;
             }
             last_attach(operand, expr);
         }

@@ -1,5 +1,5 @@
-#ifndef _H_LISP_
-#define _H_LISP_
+#ifndef _H_LEVAL_
+#define _H_LEVAL_
 
 #include <stdbool.h>
 

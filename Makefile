@@ -1,8 +1,8 @@
 out=$(PROGNAME)
 sources=$(PROGNAME).c vendor/mini-gmp/mini-gmp.c \
-		lisp.c lval.c lsym.c lbuiltin.c llexer.c lparser.c
+		leval.c lval.c lsym.c lbuiltin.c llexer.c lparser.c
 headers=vendor/mini-gmp/mini-gmp.h \
-		lisp.h lval.h lsym.h lbuiltin.h llexer.h lparser.h
+		leval.h lval.h lsym.h lbuiltin.h llexer.h lparser.h
 
 build_dir:=build
 version_file:=version.mk

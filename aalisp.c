@@ -7,7 +7,7 @@
 #include <readline/history.h>
 
 #include "version.h"
-#include "lisp.h"
+#include "leval.h"
 
 /* Configurable variables */
 static char* prompt = "> ";

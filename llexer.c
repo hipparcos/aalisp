@@ -47,7 +47,7 @@ static inline bool llex_is_letter(char c) {
 static bool llex_is_letter(char c);
 
 static inline bool llex_is_sign(char c) {
-    return strchr("+-*/%^?!:;,._#~<>=$§£¤µ", c);
+    return c != '\0' && strchr("+-*/%^?!:;,._#~<>=$§£¤µ", c);
 }
 static bool llex_is_sign(char c);
 

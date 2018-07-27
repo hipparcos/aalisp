@@ -114,7 +114,7 @@ describe(llex, {
     });
 
     it("passes for symbols", {
-        const char* input = " symbol  + == $ ";
+        const char* input = " symbol  + == $";
         struct ltok tok1 = {.type= LTOK_SYM, .content="symbol"};
         struct ltok tok2 = {.type= LTOK_SYM, .content="+"};
         struct ltok tok3 = {.type= LTOK_SYM, .content="=="};

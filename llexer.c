@@ -92,9 +92,14 @@ static bool llex_scan_string(struct lscanner* scanner) {
         c++; // Pass first quote.
     }
     /* Skip escaped quotes. */
-    while (*c != '"' || *(c-1) == '\\') {
+    while ((*c != '"' || *(c-1) == '\\') && *c != '\0') {
         llex_retain(scanner);
         c++;
+    }
+    // No closing " seen before EOF.
+    if (*c == '\0') {
+        scanner->tok = LTOK_ERR;
+        return false;
     }
     // Include last quote.
     llex_retain(scanner);

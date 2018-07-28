@@ -14,6 +14,15 @@ const char* ltok_type_string[] = {
     "string",
 };
 
+enum llex_error {
+    LLEX_ERR_MISSING_QUOTE,
+    LLEX_ERR_UNKNOWN_CHARACTER,
+};
+static const char* llex_error_format[] = {
+    "missing closing quotation mark",
+    "unknown character '%c'",
+};
+
 struct lscanner {
     const char* input;
     size_t start;
@@ -22,6 +31,7 @@ struct lscanner {
     int line;
     int col;
     enum ltok_type tok;
+    enum llex_error err;
 };
 
 static inline bool llex_is_whitespace(char c) {
@@ -47,7 +57,7 @@ static inline bool llex_is_letter(char c) {
 static bool llex_is_letter(char c);
 
 static inline bool llex_is_sign(char c) {
-    return c != '\0' && strchr("+-*/%^?!:;,._#~<>=$§£¤µ", c);
+    return c != '\0' && strchr("+-*/%^?!:;,._#~<>=$§£¤µ", c); // strchr matches '\0'.
 }
 static bool llex_is_sign(char c);
 
@@ -99,6 +109,7 @@ static bool llex_scan_string(struct lscanner* scanner) {
     // No closing " seen before EOF.
     if (*c == '\0') {
         scanner->tok = LTOK_ERR;
+        scanner->err = LLEX_ERR_MISSING_QUOTE;
         return false;
     }
     // Include last quote.
@@ -173,10 +184,10 @@ static bool llex_next(struct lscanner* scanner) {
         return llex_scan_symbol(scanner);
     }
     scanner->tok = LTOK_ERR;
+    scanner->err = LLEX_ERR_UNKNOWN_CHARACTER;
     return false;
 }
 
-static const char llex_err_format[] = "Lexing error: unknow character '%c'.";
 /** llex_emit allocates a token and fills it using the last scan token. */
 static struct ltok* llex_emit(struct lscanner* scanner) {
     struct ltok* tok = calloc(sizeof(struct ltok), 1);
@@ -188,8 +199,10 @@ static struct ltok* llex_emit(struct lscanner* scanner) {
         return tok;
     }
     if (tok->type == LTOK_ERR) {
-        tok->content = calloc(sizeof(llex_err_format)+10+1, sizeof(char));
-        sprintf(tok->content, llex_err_format, scanner->input[scanner->pos]);
+        const char* err_format = llex_error_format[scanner->err];
+        size_t len = strlen(err_format) + 10 + 1;
+        tok->content = calloc(sizeof(char), len);
+        sprintf(tok->content, err_format, scanner->input[scanner->pos]);
         return tok;
     }
     tok->content = calloc(sizeof(char), scanner->width + 1);

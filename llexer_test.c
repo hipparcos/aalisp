@@ -105,11 +105,10 @@ describe(llex, {
     });
 
     it("fails for unclosed strings", {
-        const char* input = "\"string not closed";
+        const char* input = "    \"string not closed";
         struct ltok *first = NULL, *error = NULL;
         first = lisp_lex(input, &error);
         defer(llex_free(first));
-        llex_printlen(error);
         assert(error != NULL);
     });
 

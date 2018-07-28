@@ -124,7 +124,7 @@ bool lisp_eval(const char* restrict input, struct lval* r) {
     struct ltok *tokens = NULL, *lexer_error = NULL;
     tokens = lisp_lex(input, &lexer_error);
     if (lexer_error != NULL) {
-        fprintf(stderr, "Error: %d:%d %s\n",
+        fprintf(stderr, "Lexing error at line %d column %d: %s.\n",
                 lexer_error->line, lexer_error->col, lexer_error->content);
         llex_free(tokens);
         return false;

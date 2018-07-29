@@ -159,6 +159,7 @@ bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len) {
         fprintf(stderr, "<stdin>:%d:%d: lexing error: %s.\n",
                 lexer_error->line, lexer_error->col, lexer_error->content);
         llex_free(tokens);
+        lval_mut_err(r, LERR_EVAL);
         return false;
     }
     /* Parse input. */
@@ -170,6 +171,7 @@ bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len) {
                 parser_error->line, parser_error->col, parser_error->content);
         llex_free(tokens);
         last_free(ast);
+        lval_mut_err(r, LERR_EVAL);
         return false;
     }
     bool ret = false;

@@ -119,12 +119,44 @@ static bool leval_ast(struct last* ast, struct lval* r) {
     return false;
 }
 
-bool lisp_eval(const char* restrict input, struct lval* r) {
+/* static void pretty_print_error(FILE* out, const char* input, int col) { */
+/*     int ctx = 10; */
+/*     /1* In this function col starts at 0. *1/ */
+/*     col = col - 1; */
+/*     size_t starti = (col < ctx) ? 0 : col - ctx; */
+/*     const char* start = input + starti; */
+/*     size_t endi = col + ctx; */
+/*     size_t inputlen = strlen(input); */
+/*     if (endi > inputlen) { */
+/*         endi = inputlen; */
+/*     } */
+/*     size_t len = endi - starti; */
+/*     char* buf = calloc(1, len + 1); */
+/*     strncpy(buf, start, len); */
+/*     fputs(buf, out); */
+/*     fputc('\n', out); */
+/*     for (int i = starti; i < col; i++) */
+/*         fputc(' ', out); */
+/*     fputc('^', out); */
+/*     fputc('\n', out); */
+/*     free(buf); */
+/* } */
+
+static void print_error_marker(FILE* out, int indent, int col) {
+    col--; // col starts at 0 in this function.
+    for (int i = -indent; i < col; i++)
+        fputc(' ', out);
+    fputc('^', out);
+    fputc('\n', out);
+}
+
+bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len) {
     /* Lex input. */
     struct ltok *tokens = NULL, *lexer_error = NULL;
     tokens = lisp_lex(input, &lexer_error);
     if (lexer_error != NULL) {
-        fprintf(stderr, "Lexing error at line %d column %d: %s.\n",
+        print_error_marker(stderr, prompt_len, lexer_error->col);
+        fprintf(stderr, "<stdin>:%d:%d: lexing error: %s.\n",
                 lexer_error->line, lexer_error->col, lexer_error->content);
         llex_free(tokens);
         return false;
@@ -133,7 +165,8 @@ bool lisp_eval(const char* restrict input, struct lval* r) {
     struct last *ast, *parser_error = NULL;
     ast = lisp_parse(tokens, &parser_error);
     if (parser_error != NULL) {
-        fprintf(stderr, "Parsing error at line %d column %d: %s.\n",
+        print_error_marker(stderr, prompt_len, parser_error->col);
+        fprintf(stderr, "<stdin>:%d:%d: parsing error: %s.\n",
                 parser_error->line, parser_error->col, parser_error->content);
         llex_free(tokens);
         last_free(ast);
@@ -147,9 +180,9 @@ bool lisp_eval(const char* restrict input, struct lval* r) {
     return ret;
 }
 
-void lisp_eval_from_string(const char* restrict input) {
+void lisp_eval_from_string(const char* restrict input, int prompt_len) {
     struct lval* r = lval_alloc();
-    lisp_eval(input, r);
+    lisp_eval(input, r, prompt_len);
     lval_println(r);
     lval_free(r);
 }

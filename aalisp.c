@@ -31,11 +31,12 @@ int main(int argc, char** argv) {
     printf(PROGNAME" "VERSION"-"CODENAME" build %d\n", BUILD);
     puts("Press Ctrl+C to exit.\n");
 
+    size_t prompt_len = strlen(prompt);
     /* REPL loop */
     while (true) {
         char* input = readline(prompt);
         add_history(input);
-        lisp_eval_from_string(input);
+        lisp_eval_from_string(input, prompt_len);
         free(input);
     }
 

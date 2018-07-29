@@ -13,6 +13,17 @@ const char* ltag_string[] = {
     "sexpr",
 };
 
+enum lparser_error {
+    LPARSER_ERR_MISSING_PAR,
+    LPARSER_ERR_BAD_OPERAND,
+    LPARSER_ERR_BAD_EXPR,
+};
+static const char* lparser_error_string[] = {
+    "missing closing paranthesis",
+    "operands must be of types num|double|string|symbol|sexpr",
+    "an expression must start with a symbol or a `(`",
+};
+
 static struct last* last_alloc(enum ltag tag, const char* content, struct ltok* tok) {
     struct last* ast = calloc(1, sizeof(struct last));
     ast->tag = tag;
@@ -94,7 +105,7 @@ static struct last* lparse_sexpr(struct ltok* first, struct ltok** last) {
     // ) or error.
     if (curr->type != LTOK_CPAR) {
         sexpr = last_alloc(LTAG_ERR,
-                "Error parsing s-expression: a s-expression must end with a ).",
+                lparser_error_string[LPARSER_ERR_MISSING_PAR],
                 curr);
     } else {
         sexpr = last_alloc(LTAG_SEXPR, "", curr);
@@ -148,7 +159,7 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
                 break;
             default:
                 operand = last_alloc(LTAG_ERR,
-                        "Error parsing expression: operands must be of types num|double|string|symbol|sexpr.",
+                        lparser_error_string[LPARSER_ERR_BAD_OPERAND],
                         curr);
                 break;
             }
@@ -164,7 +175,7 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
         break;
     default:
         expr = last_alloc(LTAG_ERR,
-                "Error parsing expression: an expression must start with a symbol or a `(`.",
+                lparser_error_string[LPARSER_ERR_BAD_EXPR],
                 curr);
         break;
     }

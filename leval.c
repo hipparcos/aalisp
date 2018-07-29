@@ -133,7 +133,7 @@ bool lisp_eval(const char* restrict input, struct lval* r) {
     struct last *ast, *parser_error = NULL;
     ast = lisp_parse(tokens, &parser_error);
     if (parser_error != NULL) {
-        fprintf(stderr, "Error: %d:%d %s\n",
+        fprintf(stderr, "Parsing error at line %d column %d: %s.\n",
                 parser_error->line, parser_error->col, parser_error->content);
         llex_free(tokens);
         last_free(ast);

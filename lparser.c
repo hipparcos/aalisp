@@ -102,6 +102,10 @@ static struct last* lparse_sexpr(struct ltok* first, struct ltok** last) {
     curr = curr->next; // Skip (.
     // Inner expr.
     expr = lparse_expr(curr, &curr);
+    // Error = break.
+    if (expr->tag == LTAG_ERR) {
+        return expr;
+    }
     // ) or error.
     if (curr->type != LTOK_CPAR) {
         sexpr = last_alloc(LTAG_ERR,
@@ -163,6 +167,7 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
                         curr);
                 break;
             }
+            // Error = break.
             if (operand->tag == LTAG_ERR) {
                 last_attach(expr, operand);
                 expr = operand;

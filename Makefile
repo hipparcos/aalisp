@@ -52,6 +52,8 @@ $(out): $(objects)
 $(build_dir)/%.o: %.c $$(@D)/.f
 	$(CC) $(CFLAGS) -c -o $@ $<
 
+$(build_dir)/lbuiltin.o: lbuiltin_condition.inc.c lbuiltin_typed_operator.inc.c
+
 # Generate C source files dependancies in $(build_dir); .f is a directory marker.
 $(build_dir)/%.d: %.c $(version_header) $$(@D)/.f
 	@set -e; rm -f $@; \

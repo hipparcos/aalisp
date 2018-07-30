@@ -114,6 +114,12 @@ static bool leval_ast(struct last* ast, struct lval* r) {
         return leval_expr(ast->children[0], r);
     case LTAG_EXPR:
         return leval_expr(ast, r);
+    case LTAG_STR:
+        lval_mut_str(r, ast->content);
+        return true;
+    case LTAG_SYM:
+        lval_mut_sym(r, ast->content);
+        return true;
     default: break;
     }
     lval_mut_err(r, LERR_EVAL);

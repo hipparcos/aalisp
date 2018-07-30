@@ -40,6 +40,13 @@ inline static bool cnd_y_is_neg(const struct lval* x, const struct lval* y) {
     return _is_neg(y);
 }
 
+inline static bool cnd_x_is_not_numeric(const struct lval* x, const struct lval* y) {
+    return !lval_is_numeric(x);
+}
+inline static bool cnd_are_not_numeric(const struct lval* x, const struct lval* y) {
+    return !(lval_is_numeric(x) && lval_is_numeric(y));
+}
+
 static bool _too_big_for_ul(const struct lval* x) {
     if (lval_type(x) != LVAL_BIGNUM) {
         return false;
@@ -69,3 +76,5 @@ static bool cnd_are_num(const struct lval* x, const struct lval* y);
 static bool _is_neg(const struct lval* x);
 static bool cnd_x_is_neg(const struct lval* x, const struct lval* y);
 static bool cnd_y_is_neg(const struct lval* x, const struct lval* y);
+static bool cnd_x_is_not_numeric(const struct lval* x, const struct lval* y);
+static bool cnd_are_not_numeric(const struct lval* x, const struct lval* y);

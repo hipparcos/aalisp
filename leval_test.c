@@ -58,7 +58,7 @@ describe(lisp_eval, {
     it_pass("+ 1 1",                     lval_mut_num(expected, 2));
     it_pass("+ 1",                       lval_mut_num(expected, 1));
     it_pass("+ 1 1 1 1 1 1",             lval_mut_num(expected, 6));
-    it_pass("/ 10 0",                    lval_mut_err(expected, LERR_DIV_ZERO));
+    it_fail("/ 10 0",                    lval_mut_err(expected, LERR_DIV_ZERO));
     it_pass("+ 1 1.0",                   lval_mut_dbl(expected, 2.0));
     it_pass("! 21",                      lval_mut_bignum(expected, bn_fac21));
     it_pass("* 10 (- 20 10)",            lval_mut_num(expected, 100));
@@ -69,7 +69,7 @@ describe(lisp_eval, {
     /* should not be in grammar */
     it_fail("",          lval_mut_err(expected, LERR_EVAL));
     it_fail("1 + 1",     lval_mut_err(expected, LERR_EVAL));
-    /* it_fail("gibberish", lval_mut_err(expected, LERR_EVAL)); */
+    it_fail("gibberish", lval_mut_err(expected, LERR_BAD_SYMBOL));
 
 });
 

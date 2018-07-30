@@ -71,14 +71,15 @@ static bool leval_ast(struct last* ast, struct lval* r);
 static bool leval_expr(struct last* ast, struct lval* r) {
     char* op = ast->children[0]->content;
     struct lval *x = NULL, *y = NULL;
+    bool ret = false;
     switch (ast->childrenc - 1) {
     case 0: // no arguments.
-        leval_exec(op, &lnil, &lnil, r);
+        ret = leval_exec(op, &lnil, &lnil, r);
         break;
     case 1: // 1 argument.
         x = lval_alloc();
         leval_ast(ast->children[1], x);
-        leval_exec(op, x, &lnil, r);
+        ret = leval_exec(op, x, &lnil, r);
         lval_free(x);
         break;
     default: // >= 2
@@ -88,13 +89,13 @@ static bool leval_expr(struct last* ast, struct lval* r) {
         for (size_t i = 2; i < ast->childrenc; i++) {
             y = lval_alloc();
             leval_ast(ast->children[i], y);
-            leval_exec(op, r, y, r);
+            ret = leval_exec(op, r, y, r);
             lval_free(y);
         }
         lval_free(x);
         break;
     }
-    return true;
+    return ret;
 }
 
 static bool leval_ast(struct last* ast, struct lval* r) {

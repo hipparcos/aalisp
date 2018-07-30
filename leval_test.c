@@ -69,9 +69,11 @@ describe(lisp_eval, {
     it_fail("/ 10 0",    lval_mut_err(expected, LERR_DIV_ZERO));
     it_fail("",          lval_mut_err(expected, LERR_EVAL));
     it_fail("1 + 1",     lval_mut_err(expected, LERR_EVAL));
+    it_fail("!1",        lval_mut_err(expected, LERR_BAD_SYMBOL));
     it_fail("gibberish", lval_mut_err(expected, LERR_BAD_SYMBOL));
     it_fail("+ 1 +",     lval_mut_err(expected, LERR_BAD_OPERAND));
     it_fail("+ 1 \"string\"",     lval_mut_err(expected, LERR_BAD_OPERAND));
+    it_fail("+ 1 (!1)",  lval_mut_err(expected, LERR_BAD_SYMBOL));
 
 });
 

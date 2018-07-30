@@ -88,7 +88,12 @@ static bool leval_expr(struct last* ast, struct lval* r) {
         lval_copy(r, x);
         for (size_t i = 2; i < ast->childrenc; i++) {
             y = lval_alloc();
-            leval_ast(ast->children[i], y);
+            if (!leval_ast(ast->children[i], y)) {
+                lval_clear(r);
+                lval_copy(r, y);
+                lval_free(y);
+                break;
+            }
             ret = leval_exec(op, r, y, r);
             lval_free(y);
         }

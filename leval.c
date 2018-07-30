@@ -40,7 +40,8 @@ static bool leval_exec(char* op, const struct lval* x, const struct lval* y, str
     return false;
 }
 
-static bool leval_num(struct last* ast, struct lval* r) {
+static bool leval_num(struct last* ast, struct lval* r, struct last** error) {
+    (void)error;
     errno = 0;
     long n = strtol(ast->content, NULL, 10);
     if (errno == ERANGE) {
@@ -55,70 +56,93 @@ static bool leval_num(struct last* ast, struct lval* r) {
     return true;
 }
 
-static bool leval_dbl(struct last* ast, struct lval* r) {
+static bool leval_dbl(struct last* ast, struct lval* r, struct last** error) {
     errno = 0;
     double d = strtod(ast->content, NULL);
     if (errno == ERANGE) {
         lval_mut_err(r, LERR_BAD_OPERAND);
+        *error = ast;
         return false;
     }
     lval_mut_dbl(r, d);
     return true;
 }
 
-static bool leval_ast(struct last* ast, struct lval* r);
+static bool leval_ast(struct last* ast, struct lval* r, struct last** error);
 
-static bool leval_expr(struct last* ast, struct lval* r) {
+static bool leval_expr(struct last* ast, struct lval* r, struct last** error) {
     char* op = ast->children[0]->content;
     struct lval *x = NULL, *y = NULL;
-    bool ret = false;
     switch (ast->childrenc - 1) {
     case 0: // no arguments.
-        ret = leval_exec(op, &lnil, &lnil, r);
+        if (!leval_exec(op, &lnil, &lnil, r)) {
+            *error = ast;
+            return false;
+        }
         break;
     case 1: // 1 argument.
         x = lval_alloc();
-        leval_ast(ast->children[1], x);
-        ret = leval_exec(op, x, &lnil, r);
+        if (!leval_ast(ast->children[1], x, error)) {
+            lval_clear(r);
+            lval_copy(r, x);
+            lval_free(x);
+            return false;
+        }
+        if (!leval_exec(op, x, &lnil, r)) {
+            *error = ast;
+            lval_free(x);
+            return false;
+        }
         lval_free(x);
         break;
     default: // >= 2
         x = lval_alloc();
-        leval_ast(ast->children[1], x);
+        if (!leval_ast(ast->children[1], x, error)) {
+            lval_clear(r);
+            lval_copy(r, x);
+            lval_free(x);
+            return false;
+        }
         lval_copy(r, x);
         for (size_t i = 2; i < ast->childrenc; i++) {
             y = lval_alloc();
-            if (!leval_ast(ast->children[i], y)) {
+            if (!leval_ast(ast->children[i], y, error)) {
                 lval_clear(r);
                 lval_copy(r, y);
                 lval_free(y);
-                break;
+                lval_free(x);
+                return false;
             }
-            ret = leval_exec(op, r, y, r);
+            if (!leval_exec(op, r, y, r)) {
+                *error = ast;
+                lval_free(y);
+                lval_free(x);
+                return false;
+            }
             lval_free(y);
         }
         lval_free(x);
         break;
     }
-    return ret;
+    return true;
 }
 
-static bool leval_ast(struct last* ast, struct lval* r) {
+static bool leval_ast(struct last* ast, struct lval* r, struct last** error) {
     if (!ast) {
         lval_mut_err(r, LERR_EVAL);
         return false;
     }
     switch (ast->tag) {
     case LTAG_PROG:
-        return leval_ast(ast->children[0], r);
+        return leval_ast(ast->children[0], r, error);
     case LTAG_NUM:
-        return leval_num(ast, r);
+        return leval_num(ast, r, error);
     case LTAG_DBL:
-        return leval_dbl(ast, r);
+        return leval_dbl(ast, r, error);
     case LTAG_SEXPR:
-        return leval_expr(ast->children[0], r);
+        return leval_expr(ast->children[0], r, error);
     case LTAG_EXPR:
-        return leval_expr(ast, r);
+        return leval_expr(ast, r, error);
     case LTAG_STR:
         lval_mut_str(r, ast->content);
         return true;
@@ -127,7 +151,8 @@ static bool leval_ast(struct last* ast, struct lval* r) {
         return true;
     default: break;
     }
-    lval_mut_err(r, LERR_EVAL);
+    lval_mut_err(r, LERR_UNKNOWN);
+    *error = ast;
     return false;
 }
 
@@ -191,7 +216,18 @@ bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len) {
         return false;
     }
     bool ret = false;
-    ret = leval_ast(ast, r); // Skip program node.
+    struct last *eval_error = NULL; // An eval error occurs at a specific location of the AST.
+    if (!(ret = leval_ast(ast, r, &eval_error)) && eval_error) {
+        if (prompt_len >= 0) {
+            print_error_marker(stderr, prompt_len, eval_error->col);
+            size_t len = lval_printlen(r);
+            char* err = calloc(1, len);
+            lval_as_str(r, err, len);
+            fprintf(stderr, "<stdin>:%d:%d: evaluation error: %s.\n",
+                    eval_error->line, eval_error->col, err);
+            free(err);
+        }
+    }
     /* Cleanup */
     llex_free(tokens);
     last_free(ast);
@@ -200,7 +236,8 @@ bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len) {
 
 void lisp_eval_from_string(const char* restrict input, int prompt_len) {
     struct lval* r = lval_alloc();
-    lisp_eval(input, r, prompt_len);
-    lval_println(r);
+    if (lisp_eval(input, r, prompt_len)) {
+        lval_println(r);
+    } // Error already printed.
     lval_free(r);
 }

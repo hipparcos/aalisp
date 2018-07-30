@@ -15,13 +15,13 @@ const char* const ltype_string[] = {
     "sexpr",
 };
 const char* const lerr_string[7] = {
-    "Error: unknown error.",
-    "Error: dead reference.",
-    "Error: evaluation error.",
-    "Error: division by zero.",
-    "Error: bad symbol.",
-    "Error: bad operand.",
-    "Error: too many arguments.",
+    "unknown error",
+    "dead reference",
+    "evaluation error",
+    "division by zero",
+    "bad symbol",
+    "bad operand",
+    "too many arguments",
 };
 
 /** ldata is the return type of an evalution. */

@@ -157,6 +157,7 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
                 break;
             case LTOK_SYM:
                 operand = lparse_symbol(curr);
+                curr = curr->next;
                 break;
             case LTOK_OPAR:
                 operand = lparse_sexpr(curr, &curr);

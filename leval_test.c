@@ -20,7 +20,7 @@ struct lval* expected;
     it(input" == "#output, { \
         output; \
         defer(cleanup()); \
-        assert( lisp_eval(input, result, 0)); \
+        assert( lisp_eval(input, result, -1)); \
         if (!lval_are_equal(result, expected)) { \
             fputs("\nGot: ", stdout); \
             lval_println(result); \
@@ -31,7 +31,7 @@ struct lval* expected;
     it(input" == "#output, { \
         output; \
         defer(cleanup()); \
-        assert(!lisp_eval(input, result, 0)); \
+        assert(!lisp_eval(input, result, -1)); \
         if (!lval_are_equal(result, expected)) { \
             fputs("\nGot: ", stdout); \
             lval_println(result); \

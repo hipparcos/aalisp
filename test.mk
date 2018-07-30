@@ -20,7 +20,7 @@ $(testcases_built): % : %.o $(filter-out $(build_dir)/$(PROGNAME).o,$(objects))
 # $(test_build_dir)/%_test: $(test_build_dir)/%_test.o $(filter-out $(build_dir)/$(PROGNAME).o,$(objects))
 	@$(CC) $(LDFLAGS) $(LDLIBS) $^ $(TEST_CFLAGS) -o $@
 	@if [ $$($(DO_MEMCHECK); echo $$?) -eq 0 ]; then valgrind $(VGFLAGS) ./$@; \
-		else ./$@ 2> /dev/null; fi
+		else ./$@; fi
 
 $(test_build_dir)/%_test.o: %_test.c $$(@D)/.f
 	@$(CC) $(CFLAGS) $(TEST_CFLAGS) -c -o $@ $<

@@ -167,9 +167,11 @@ bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len) {
     struct ltok *tokens = NULL, *lexer_error = NULL;
     tokens = lisp_lex(input, &lexer_error);
     if (lexer_error != NULL) {
-        print_error_marker(stderr, prompt_len, lexer_error->col);
-        fprintf(stderr, "<stdin>:%d:%d: lexing error: %s.\n",
-                lexer_error->line, lexer_error->col, lexer_error->content);
+        if (prompt_len >= 0) {
+            print_error_marker(stderr, prompt_len, lexer_error->col);
+            fprintf(stderr, "<stdin>:%d:%d: lexing error: %s.\n",
+                    lexer_error->line, lexer_error->col, lexer_error->content);
+        }
         llex_free(tokens);
         lval_mut_err(r, LERR_EVAL);
         return false;
@@ -178,9 +180,11 @@ bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len) {
     struct last *ast, *parser_error = NULL;
     ast = lisp_parse(tokens, &parser_error);
     if (parser_error != NULL) {
-        print_error_marker(stderr, prompt_len, parser_error->col);
-        fprintf(stderr, "<stdin>:%d:%d: parsing error: %s.\n",
-                parser_error->line, parser_error->col, parser_error->content);
+        if (prompt_len >= 0) {
+            print_error_marker(stderr, prompt_len, parser_error->col);
+            fprintf(stderr, "<stdin>:%d:%d: parsing error: %s.\n",
+                    parser_error->line, parser_error->col, parser_error->content);
+        }
         llex_free(tokens);
         last_free(ast);
         lval_mut_err(r, LERR_EVAL);

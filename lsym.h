@@ -4,12 +4,16 @@
 #include "lval.h"
 
 /* Condition: eval a condition for the given operands. */
-typedef bool (*lcondition)(const struct lval*, const struct lval*);
+/** lcondition_bin returns either true or false. */
+typedef bool (*lcondition_bin)(const struct lval*, const struct lval*);
+/** lcondition_tern returns 0 if true, -1 if false,
+ **   1 if first arg gives false, 2 if second arg gives false. */
+typedef int (*lcondition_tern)(const struct lval*, const struct lval*);
 
 /* Guard: a condition associated with an error. */
 struct lguard {
-    lcondition condition;
-    enum lerr  error;
+    lcondition_tern condition;
+    enum lerr error;
 };
 
 /* Symbol: generic */
@@ -25,7 +29,12 @@ struct lsym {
     double (*op_dbl)(const double, const double);
 };
 
-bool lsym_exec(
+/** lsym_exec returns
+ **   0 if success
+ **  -1 if error
+ **   1 if x generate an error
+ **   2 if y generate an error */
+int lsym_exec(
     const struct lsym sym,
     const struct lval* x, const struct lval* y, struct lval* r);
 

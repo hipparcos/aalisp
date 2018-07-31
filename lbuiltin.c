@@ -8,32 +8,32 @@
 #define LENGTH(array) sizeof(array)/sizeof(array[0])
 
 /* Guards: instanciation. */
-static const struct lguard guard_x_is_negative = {
-    .condition= cnd_x_is_neg,
+static const struct lguard guard_x_is_positive = {
+    .condition= cnd_x_is_positive,
     .error= LERR_BAD_OPERAND
 };
-static const struct lguard guard_x_too_big = {
-    .condition= cnd_x_too_big_for_ul,
+static const struct lguard guard_x_is_ul = {
+    .condition= cnd_x_is_ul,
     .error= LERR_BAD_OPERAND
 };
-static const struct lguard guard_y_too_big = {
-    .condition= cnd_y_too_big_for_ul,
+static const struct lguard guard_y_is_ul = {
+    .condition= cnd_y_is_ul,
     .error= LERR_BAD_OPERAND
 };
 static const struct lguard guard_div_by_zero = {
-    .condition= cnd_y_is_zero,
+    .condition= cnd_y_is_not_zero,
     .error= LERR_DIV_ZERO
 };
-static const struct lguard guard_either_is_double = {
-    .condition= cnd_either_is_dbl,
+static const struct lguard guard_x_is_integral = {
+    .condition= cnd_x_is_integral,
     .error= LERR_BAD_OPERAND
 };
-static const struct lguard guard_x_is_numeric = {
-    .condition= cnd_x_is_not_numeric,
+static const struct lguard guard_are_integral = {
+    .condition= cnd_are_integral,
     .error= LERR_BAD_OPERAND
 };
 static const struct lguard guard_are_numeric = {
-    .condition= cnd_are_not_numeric,
+    .condition= cnd_are_numeric,
     .error= LERR_BAD_OPERAND
 };
 
@@ -98,7 +98,7 @@ const struct lsym lbuiltin_op_div = {
 static const struct lguard* guards_op_mod[] = {
     &guard_are_numeric,
     &guard_div_by_zero,
-    &guard_either_is_double,
+    &guard_are_integral,
 };
 const struct lsym lbuiltin_op_mod = {
     .symbol       = "%",
@@ -112,10 +112,9 @@ const struct lsym lbuiltin_op_mod = {
 };
 
 static const struct lguard* guards_op_fac[] = {
-    &guard_x_is_numeric,
-    &guard_either_is_double,
-    &guard_x_is_negative,
-    &guard_x_too_big
+    &guard_x_is_integral,
+    &guard_x_is_positive,
+    &guard_x_is_ul
 };
 const struct lsym lbuiltin_op_fac = {
     .symbol       = "!",
@@ -130,7 +129,7 @@ const struct lsym lbuiltin_op_fac = {
 
 static const struct lguard *guards_op_pow[] = {
     &guard_are_numeric,
-    &guard_y_too_big
+    &guard_y_is_ul
 };
 const struct lsym lbuiltin_op_pow = {
     .symbol       = "^",

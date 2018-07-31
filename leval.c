@@ -12,14 +12,19 @@
 #include "llexer.h"
 #include "lparser.h"
 
-static bool leval_exec(char* op, const struct lval* x, const struct lval* y, struct lval* r) {
+/** level_exec returns
+ **   0 if success
+ **  -1 if error
+ **   1 if x generate an error
+ **   2 if y generate an error */
+static int leval_exec(char* op, const struct lval* x, const struct lval* y, struct lval* r) {
     if (lval_type(x) == LVAL_ERR) {
         lval_copy(r, x);
-        return false;
+        return -1;
     }
     if (lval_type(y) == LVAL_ERR) {
         lval_copy(r, y);
-        return false;
+        return -1;
     }
 
     if (strcmp(op, "+") == 0) return lsym_exec(lbuiltin_op_add, x, y, r);
@@ -28,16 +33,10 @@ static bool leval_exec(char* op, const struct lval* x, const struct lval* y, str
     if (strcmp(op, "/") == 0) return lsym_exec(lbuiltin_op_div, x, y, r);
     if (strcmp(op, "%") == 0) return lsym_exec(lbuiltin_op_mod, x, y, r);
     if (strcmp(op, "^") == 0) return lsym_exec(lbuiltin_op_pow, x, y, r);
-    if (strcmp(op, "!") == 0) {
-        if (lval_type(y) != LVAL_NIL) {
-            return lval_mut_err(r, LERR_TOO_MANY_ARGS);
-            return false;
-        }
-        return lsym_exec(lbuiltin_op_fac, x, &lnil, r);
-    }
+    if (strcmp(op, "!") == 0) return lsym_exec(lbuiltin_op_fac, x, y, r);
 
     lval_mut_err(r, LERR_BAD_SYMBOL);
-    return false;
+    return -1;
 }
 
 static bool leval_num(struct last* ast, struct lval* r, struct last** error) {
@@ -71,11 +70,12 @@ static bool leval_dbl(struct last* ast, struct lval* r, struct last** error) {
 static bool leval_ast(struct last* ast, struct lval* r, struct last** error);
 
 static bool leval_expr(struct last* ast, struct lval* r, struct last** error) {
+    int ret = 0;
     char* op = ast->children[0]->content;
     struct lval *x = NULL, *y = NULL;
     switch (ast->childrenc - 1) {
     case 0: // no arguments.
-        if (!leval_exec(op, &lnil, &lnil, r)) {
+        if (leval_exec(op, &lnil, &lnil, r) != 0) {
             *error = ast;
             return false;
         }
@@ -88,8 +88,12 @@ static bool leval_expr(struct last* ast, struct lval* r, struct last** error) {
             lval_free(x);
             return false;
         }
-        if (!leval_exec(op, x, &lnil, r)) {
-            *error = ast;
+        if ((ret = leval_exec(op, x, &lnil, r)) != 0) {
+            if (ret == 1) {
+                *error = ast->children[1];
+            } else {
+                *error = ast;
+            }
             lval_free(x);
             return false;
         }
@@ -113,8 +117,14 @@ static bool leval_expr(struct last* ast, struct lval* r, struct last** error) {
                 lval_free(x);
                 return false;
             }
-            if (!leval_exec(op, r, y, r)) {
-                *error = ast;
+            if ((ret = leval_exec(op, r, y, r)) != 0) {
+                if (ret == 1) {
+                    *error = ast->children[i-1];
+                } else if (ret == 2) {
+                    *error = ast->children[i];
+                } else {
+                    *error = ast;
+                }
                 lval_free(y);
                 lval_free(x);
                 return false;

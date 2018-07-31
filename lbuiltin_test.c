@@ -54,10 +54,10 @@ mpz_t bn_fac21;
     mut_func_y(b, y); \
     lval_mut_nil(r); \
     mut_func_e(e, expected); \
-    if (must_pass) { assert( lsym_exec(op, a, b, r)); } \
-    else {           assert(!lsym_exec(op, a, b, r)); } \
+    defer(lval_free(e)); defer(lval_free(r)); defer(lval_free(b)); defer(lval_free(a)); \
+    if (must_pass) { assert(0 == lsym_exec(op, a, b, r)); } \
+    else {           assert(0 != lsym_exec(op, a, b, r)); } \
     assert(lval_are_equal(r, e)); \
-    lval_free(e); lval_free(r); lval_free(b); lval_free(a); \
 
 /** discard is a helper used to do nothing instead of mut_func_y. */
 static void discard(struct lval* v, void* i) {

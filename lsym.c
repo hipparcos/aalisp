@@ -1,6 +1,6 @@
 #include "lsym.h"
 
-bool lsym_exec(
+int lsym_exec(
     const struct lsym sym,
     const struct lval* x, const struct lval* y, struct lval* r
 ) {
@@ -9,7 +9,7 @@ bool lsym_exec(
     if (sym.unary) {
         if (lval_type(y) != LVAL_NIL) {
             lval_mut_err(r, LERR_TOO_MANY_ARGS);
-            return false;
+            return -1;
         }
         ly = (struct lval*) &lnil;
     } else {
@@ -20,10 +20,11 @@ bool lsym_exec(
     }
 
     /* Guards */
+    int ret = 0;
     for (int i = 0; i < sym.guardc; i++) {
-        if ((sym.guards[i]->condition)(x, ly)) {
+        if ((ret = (sym.guards[i]->condition)(x, ly)) != 0) {
             lval_mut_err(r, sym.guards[i]->error);
-            return false;
+            return ret;
         }
     }
 
@@ -33,7 +34,7 @@ bool lsym_exec(
         lval_as_dbl(x, &a);
         lval_as_dbl(ly, &b);
         lval_mut_dbl(r, sym.op_dbl(a, b));
-        return true;
+        return 0;
     }
     /* Eval: bignum */
     if (lval_type(x) == LVAL_BIGNUM || lval_type(ly) == LVAL_BIGNUM) {
@@ -49,7 +50,7 @@ bool lsym_exec(
         mpz_clear(b);
         lval_mut_bignum(r, rbn);
         mpz_clear(rbn);
-        return true;
+        return 0;
     }
     /* Eval: num */
     if (lval_type(x) == LVAL_NUM && (lval_type(ly) == LVAL_NUM || lval_type(ly) == LVAL_NIL)) {
@@ -66,7 +67,7 @@ bool lsym_exec(
                 mpz_init_set_si(bnb, b);
                 lval_mut_bignum(vbnb, bnb);
             }
-            bool ret = lsym_exec(sym, vbna, vbnb, r);
+            int ret = lsym_exec(sym, vbna, vbnb, r);
             if (!sym.unary) {
                 mpz_clear(bnb);
             }
@@ -76,9 +77,9 @@ bool lsym_exec(
             return ret;
         }
         lval_mut_num(r, sym.op_num(a, b));
-        return true;
+        return 0;
     }
 
     lval_mut_err(r, LERR_EVAL);
-    return false;
+    return -1;
 }

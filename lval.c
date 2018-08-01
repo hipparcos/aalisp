@@ -29,6 +29,8 @@ struct ldata {
     /** ldata.alive is a code used to detect mutation.
      ** This ldata is dead if set to 0. */
     int alive;
+    /** refc is the number of lval referencing this ldata. */
+    int refc;
     /** ldata.mutable tells if the ldata is mutable. */
     bool mutable;
     /** ldata.type to use the union. */
@@ -41,12 +43,12 @@ struct ldata {
     size_t len;
     /** ldata.payload must be considered according to ldata.type */
     union {
-        long          num;
-        mpz_t         bignum; // int > LONG_MAX.
-        double        dbl;
-        enum lerr     err;    // error code.
-        char*         str;    // string or symbol.
-        struct lval** cell;   // list.
+        long           num;
+        mpz_t          bignum; // int > LONG_MAX.
+        double         dbl;
+        enum lerr      err;    // error code.
+        char*          str;    // string or symbol.
+        struct ldata** cell;   // list.
     } payload;
 };
 
@@ -140,6 +142,7 @@ static bool ldata_clear(struct ldata* d) {
     }
     d->alive       = lval_unique();
     d->mutable     = true;
+    d->refc        = 0;
     d->type        = LVAL_NIL;
     d->len         = 0;
     d->payload.num = 0;
@@ -165,6 +168,32 @@ static void lval_connect(struct lval* v, struct ldata* d) {
     }
     v->data  = d;
     v->alive = v->data->alive;
+    v->data->refc++;
+}
+
+/** lval_disconnect disconnects v from its ldata.
+ ** v->data is reclaimed if refc = 0. */
+static struct ldata* lval_disconnect(struct lval* v, bool reuse) {
+    if (!v->data->mutable) {
+        lval_connect(v, (struct ldata*)&lnil);
+        return NULL;
+    }
+    if (v->data->refc > 0) {
+        v->data->refc--;
+    }
+    if (reuse) {
+        /* Can't reuse ldata. */
+        if (v->data->refc > 0) {
+            struct ldata* data = ldata_alloc();
+            return data;
+        } else {
+            ldata_clear(v->data);
+            return v->data;
+        }
+    }
+    ldata_clear(v->data);
+    free(v->data);
+    return NULL;
 }
 
 struct lval* lval_alloc(void) {
@@ -178,12 +207,7 @@ bool lval_free(struct lval* v) {
     if (!lval_is_mutable(v)) {
         return false;
     }
-    if (!lval_clear(v)) {
-        return false;
-    }
-    if (v->data->mutable) {
-        free(v->data);
-    }
+    lval_disconnect(v, false);
     free(v);
     return true;
 }
@@ -192,10 +216,11 @@ bool lval_clear(struct lval* v) {
     if (!lval_is_mutable(v)) {
         return false;
     }
-    if (!ldata_clear(v->data)) {
+    struct ldata* data = NULL;
+    if (!(data = lval_disconnect(v, true))) {
         return false;
     }
-    lval_connect(v, v->data);
+    lval_connect(v, data);
     return true;
 }
 
@@ -264,11 +289,14 @@ bool lval_mut_num(struct lval* v, long x) {
     if (!lval_is_mutable(v)) {
         return false;
     }
-    ldata_clear(v->data);
-    v->data->type = LVAL_NUM;
-    v->data->payload.num = x;
-    v->data->len = 1;
-    lval_connect(v, v->data);
+    struct ldata* data = NULL;
+    if (!(data = lval_disconnect(v, true))) {
+        return false;
+    }
+    data->type = LVAL_NUM;
+    data->payload.num = x;
+    data->len = 1;
+    lval_connect(v, data);
     return true;
 }
 
@@ -276,11 +304,14 @@ bool lval_mut_bignum(struct lval* v, const mpz_t x) {
     if (!lval_is_mutable(v)) {
         return false;
     }
-    ldata_clear(v->data);
-    v->data->type = LVAL_BIGNUM;
-    mpz_init_set(v->data->payload.bignum, x);
-    v->data->len = 1;
-    lval_connect(v, v->data);
+    struct ldata* data = NULL;
+    if (!(data = lval_disconnect(v, true))) {
+        return false;
+    }
+    data->type = LVAL_BIGNUM;
+    mpz_init_set(data->payload.bignum, x);
+    data->len = 1;
+    lval_connect(v, data);
     return true;
 }
 
@@ -288,11 +319,14 @@ bool lval_mut_dbl(struct lval* v, double x) {
     if (!lval_is_mutable(v)) {
         return false;
     }
-    ldata_clear(v->data);
-    v->data->type = LVAL_DBL;
-    v->data->payload.dbl = x;
-    v->data->len = 1;
-    lval_connect(v, v->data);
+    struct ldata* data = NULL;
+    if (!(data = lval_disconnect(v, true))) {
+        return false;
+    }
+    data->type = LVAL_DBL;
+    data->payload.dbl = x;
+    data->len = 1;
+    lval_connect(v, data);
     return true;
 }
 
@@ -300,11 +334,14 @@ bool lval_mut_err(struct lval* v, enum lerr e) {
     if (!lval_is_mutable(v)) {
         return false;
     }
-    ldata_clear(v->data);
-    v->data->type = LVAL_ERR;
-    v->data->payload.err = e;
-    v->data->len = 1;
-    lval_connect(v, v->data);
+    struct ldata* data = NULL;
+    if (!(data = lval_disconnect(v, true))) {
+        return false;
+    }
+    data->type = LVAL_ERR;
+    data->payload.err = e;
+    data->len = 1;
+    lval_connect(v, data);
     return true;
 }
 
@@ -312,18 +349,23 @@ bool lval_mut_str(struct lval* v, const char* const str) {
     if (!lval_is_mutable(v) || !str) {
         return false;
     }
-    ldata_clear(v->data);
+    struct ldata* data = NULL;
+    if (!(data = lval_disconnect(v, true))) {
+        return false;
+    }
     size_t len = strlen(str);
-    if(!(v->data->payload.str = calloc(sizeof(char), len + 1))) {
+    if(!(data->payload.str = calloc(sizeof(char), len + 1))) {
+        free(data);
         return false;
     }
-    if (!strncpy(v->data->payload.str, str, len)) {
-        free(v->data->payload.str);
+    if (!strncpy(data->payload.str, str, len)) {
+        free(data->payload.str);
+        free(data);
         return false;
     }
-    v->data->type = LVAL_STR;
-    v->data->len = len;
-    lval_connect(v, v->data);
+    data->type = LVAL_STR;
+    data->len = len;
+    lval_connect(v, data);
     return true;
 }
 
@@ -535,9 +577,9 @@ void lval_debug(const struct lval* v, char* out) {
         }
         sprintf(out,
                 "lval{data: %p, alive: 0x%x}->" \
-                "ldata{type: %s, len: %ld, alive: 0x%x, mutable: %s, payload: '%s'}",
+                "ldata{type: %s, len: %ld, alive: 0x%x, refc: %d, mutable: %s, payload: '%s'}",
                 v->data, v->alive,
-                ltype_string[v->data->type], v->data->len, v->data->alive,
+                ltype_string[v->data->type], v->data->len, v->data->alive, v->data->refc,
                 v->data->mutable ? "true" : "false", payload);
         if (payload) {
             free(payload);

@@ -474,7 +474,11 @@ bool lval_as_str(const struct lval* v, char* r, size_t len) {
         sprintf(r, "<sexpr>");
         break;
     case LVAL_ERR:
-        sprintf(r, lerr_string[v->data->payload.err]);
+        {
+        size_t idx = v->data->payload.err % sizeof(lerr_string);
+        const char* format = lerr_string[idx];
+        sprintf(r, "%s", format);
+        }
         break;
     }
     return true;

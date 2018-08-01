@@ -4,8 +4,9 @@ int lsym_exec(
     const struct lsym sym,
     const struct lval* x, const struct lval* y, struct lval* r
 ) {
-    /* local y operand */
-    const struct lval* ly;
+    /* local x & y operands */
+    const struct lval* lx = x;
+    const struct lval* ly = y;
     if (sym.unary) {
         if (lval_type(y) != LVAL_NIL) {
             lval_mut_err(r, LERR_TOO_MANY_ARGS);
@@ -13,35 +14,36 @@ int lsym_exec(
         }
         ly = (struct lval*) &lnil;
     } else {
-        ly = y;
         if (lval_type(y) == LVAL_NIL) {
-            ly = sym.neutral;
+            /* Swap operands so that (- 5) = -5. */
+            ly = x;
+            lx = sym.neutral;
         }
     }
 
     /* Guards */
     int ret = 0;
     for (int i = 0; i < sym.guardc; i++) {
-        if ((ret = (sym.guards[i]->condition)(x, ly)) != 0) {
+        if ((ret = (sym.guards[i]->condition)(lx, ly)) != 0) {
             lval_mut_err(r, sym.guards[i]->error);
             return ret;
         }
     }
 
     /* Eval: double */
-    if (lval_type(x) == LVAL_DBL || lval_type(ly) == LVAL_DBL) {
+    if (lval_type(lx) == LVAL_DBL || lval_type(ly) == LVAL_DBL) {
         double a, b;
-        lval_as_dbl(x, &a);
+        lval_as_dbl(lx, &a);
         lval_as_dbl(ly, &b);
         lval_mut_dbl(r, sym.op_dbl(a, b));
         return 0;
     }
     /* Eval: bignum */
-    if (lval_type(x) == LVAL_BIGNUM || lval_type(ly) == LVAL_BIGNUM) {
+    if (lval_type(lx) == LVAL_BIGNUM || lval_type(ly) == LVAL_BIGNUM) {
         mpz_t a, b;
         mpz_init(a);
         mpz_init(b);
-        lval_as_bignum(x, a);
+        lval_as_bignum(lx, a);
         lval_as_bignum(ly, b);
         mpz_t rbn;
         mpz_init(rbn);
@@ -53,9 +55,9 @@ int lsym_exec(
         return 0;
     }
     /* Eval: num */
-    if (lval_type(x) == LVAL_NUM && (lval_type(ly) == LVAL_NUM || lval_type(ly) == LVAL_NIL)) {
+    if (lval_type(lx) == LVAL_NUM && (lval_type(ly) == LVAL_NUM || lval_type(ly) == LVAL_NIL)) {
         long a, b;
-        lval_as_num(x, &a);
+        lval_as_num(lx, &a);
         lval_as_num(ly, &b);
         if (sym.cnd_overflow && sym.cnd_overflow(a, b)) {
             mpz_t bna, bnb;

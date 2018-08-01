@@ -57,6 +57,7 @@ describe(lisp_eval, {
     /* happy path */
     it_pass("+ 1 1",                     lval_mut_num(expected, 2));
     it_pass("+ 1",                       lval_mut_num(expected, 1));
+    it_pass("- 1",                       lval_mut_num(expected, -1));
     it_pass("+ 1 1 1 1 1 1",             lval_mut_num(expected, 6));
     it_pass("+ 1 1.0",                   lval_mut_dbl(expected, 2.0));
     it_pass("! 21",                      lval_mut_bignum(expected, bn_fac21));

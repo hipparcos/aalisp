@@ -2,9 +2,12 @@
 
 #include "vendor/snow/snow/snow.h"
 
-bool test_helper(const char* input, struct ltok* expected) {
+#define test_helper(input, expected) _test_helper(input, expected, lisp_lex)
+#define test_helper_surround(input, expected) _test_helper(input, expected, lisp_lex_surround)
+
+bool _test_helper(const char* input, struct ltok* expected, struct ltok* (*lexer)(const char*, struct ltok**)) {
     struct ltok *first = NULL, *error = NULL;
-    first = lisp_lex(input, &error);
+    first = lexer(input, &error);
     bool ret = false;
     if (error != NULL || !(ret = llex_are_all_equal(first, expected))) {
         fputs("\nInput:", stdout);
@@ -125,6 +128,23 @@ describe(llex, {
         tok4.next = &tEOF;
         struct ltok* expected = &tok1;
         assert(test_helper(input, expected));
+    });
+
+    it("surrounds the output with `(` & `)`", {
+        const char* input = "+ 1 2";
+        struct ltok tok0 = {.type= LTOK_OPAR, .content= "("};
+        struct ltok tok1 = {.type= LTOK_SYM, .content= "+"};
+        struct ltok tok2 = {.type= LTOK_NUM, .content= "1"};
+        struct ltok tok3 = {.type= LTOK_NUM, .content= "2"};
+        struct ltok tok4 = {.type= LTOK_CPAR, .content= ")"};
+        struct ltok tEOF = {.type= LTOK_EOF, .content= NULL};
+        tok0.next = &tok1;
+        tok1.next = &tok2;
+        tok2.next = &tok3;
+        tok3.next = &tok4;
+        tok4.next = &tEOF;
+        struct ltok* expected = &tok0;
+        assert(test_helper_surround(input, expected));
     });
 
 });

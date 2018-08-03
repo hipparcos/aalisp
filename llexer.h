@@ -33,6 +33,9 @@ struct ltok {
  ** error is set to the node containing an error or to NULL.
  ** Caller is responsible for calling llex_free() on tokens. */
 struct ltok* lisp_lex(const char* input, struct ltok** error);
+/** lisp_lex_surround acts as lisp_lex but surrounds tokens with `(` & `)`.
+ ** It ensures that the output is a sexpr.  */
+struct ltok* lisp_lex_surround(const char* input, struct ltok** error);
 /** llex_free clears a list of tokens.
  ** The list of tokens must end with a token of type LTOK_EOS.
  ** tokens must not be used afterwards */

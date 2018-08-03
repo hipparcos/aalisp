@@ -217,6 +217,22 @@ static struct ltok* llex_emitEOF() {
     return tok;
 }
 
+static struct ltok* llex_emitOPAR() {
+    struct ltok* tok = calloc(1, sizeof(struct ltok));
+    tok->type = LTOK_OPAR;
+    tok->content = calloc(2, 1);
+    strncpy(tok->content, "(", 2);
+    return tok;
+}
+
+static struct ltok* llex_emitCPAR() {
+    struct ltok* tok = calloc(1, sizeof(struct ltok));
+    tok->type = LTOK_CPAR;
+    tok->content = calloc(2, 1);
+    strncpy(tok->content, ")", 2);
+    return tok;
+}
+
 /** llex_append appends token to list. */
 static struct ltok* llex_append(struct ltok* last, struct ltok* curr) {
     if (!last) {
@@ -230,7 +246,7 @@ static struct ltok* llex_append(struct ltok* last, struct ltok* curr) {
     return curr;
 }
 
-struct ltok* lisp_lex(const char* input, struct ltok** error) {
+static struct ltok* llex(const char* input, struct ltok** error, bool surround) {
     struct lscanner scanner = {0};
     scanner.input = input;
     scanner.line = 1;
@@ -252,6 +268,17 @@ struct ltok* lisp_lex(const char* input, struct ltok** error) {
         /* Force EOF emission. */
         llex_append(last, llex_emitEOF());
     } else {
+        /* Optional: ensure that it's a sexpr. */
+        if (surround && first && first->type != LTOK_OPAR && last && last->type != LTOK_CPAR) {
+            struct ltok* opar = llex_emitOPAR();
+            struct ltok* cpar = llex_emitCPAR();
+            first->prev = opar;
+            opar->next = first;
+            first = opar;
+            last->next = cpar;
+            cpar->prev = last;
+            last = cpar;
+        }
         /* Last call to emit returns a LTOK_EOF. */
         llex_append(last, curr);
     }
@@ -260,6 +287,14 @@ struct ltok* lisp_lex(const char* input, struct ltok** error) {
         first = curr;
     }
     return first;
+}
+
+struct ltok* lisp_lex(const char* input, struct ltok** error) {
+    return llex(input, error, false);
+}
+
+struct ltok* lisp_lex_surround(const char* input, struct ltok** error) {
+    return llex(input, error, true);
 }
 
 void llex_free(struct ltok* tokens) {

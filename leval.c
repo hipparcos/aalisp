@@ -70,6 +70,9 @@ static bool leval_dbl(struct last* ast, struct lval* r, struct last** error) {
 static bool leval_ast(struct last* ast, struct lval* r, struct last** error);
 
 static bool leval_expr(struct last* ast, struct lval* r, struct last** error) {
+    if (ast->children[0]->tag == LTAG_SEXPR) {
+        return leval_ast(ast->children[0], r, error);
+    }
     int ret = 0;
     char* op = ast->children[0]->content;
     struct lval *x = NULL, *y = NULL;

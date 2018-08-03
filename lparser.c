@@ -103,7 +103,7 @@ static struct last* lparse_sexpr(struct ltok* first, struct ltok** last) {
     // Inner expr.
     expr = lparse_expr(curr, &curr);
     // Error = break.
-    if (expr->tag == LTAG_ERR) {
+    if (expr && expr->tag == LTAG_ERR) {
         return expr;
     }
     // ) or error.

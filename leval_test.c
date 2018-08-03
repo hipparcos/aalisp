@@ -77,6 +77,7 @@ describe(lisp_eval, {
     it_fail("+ 1 +",     lval_mut_err(expected, LERR_BAD_OPERAND));
     it_fail("+ 1 \"string\"",     lval_mut_err(expected, LERR_BAD_OPERAND));
     it_fail("+ 1 (!1)",  lval_mut_err(expected, LERR_BAD_SYMBOL));
+    it_fail("- (",       lval_mut_err(expected, LERR_EVAL));
 
 });
 

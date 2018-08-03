@@ -316,6 +316,17 @@ describe(lparse, {
         assert(test_helper_fail(&tok1));
     });
 
+    it("fails for a s-expression that starts right before the end of a line `- (`", {
+        /* Input */
+        struct ltok tok1 = {.type= LTOK_SYM, .content= "-"};
+        struct ltok tok2 = {.type= LTOK_OPAR, .content= "("};
+        struct ltok tEOF = {.type= LTOK_EOF, .content= NULL};
+        tok1.next = &tok2;
+        tok2.next = &tEOF;
+
+        assert(test_helper_fail(&tok1));
+    });
+
 });
 
 snow_main();

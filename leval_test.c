@@ -64,6 +64,7 @@ describe(lisp_eval, {
     it_pass("* 10 (- 20 10)",            lval_mut_num(expected, 100));
     /* sexpr */
     it_pass("(+ 1 1)",                   lval_mut_num(expected, 2));
+    it_pass("(+ 1 1)(+ 2 2)",            lval_mut_num(expected, 4));
     /* nested */
     it_pass("- (! 21) (! 21) 2.0 1",     lval_mut_dbl(expected, -3.0));
     it_pass("- 2.0 1 (- (! 21) (! 21))", lval_mut_dbl(expected, 1.0));

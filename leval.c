@@ -147,7 +147,12 @@ static bool leval_ast(struct last* ast, struct lval* r, struct last** error) {
     }
     switch (ast->tag) {
     case LTAG_PROG:
-        return leval_ast(ast->children[0], r, error);
+        for (size_t s = 0; s < ast->childrenc; s++) {
+            if (!leval_ast(ast->children[s], r, error)) {
+                return false;
+            }
+        }
+        return true;
     case LTAG_NUM:
         return leval_num(ast, r, error);
     case LTAG_DBL:
@@ -203,7 +208,7 @@ static void print_error_marker(FILE* out, int indent, int col) {
 bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len) {
     /* Lex input. */
     struct ltok *tokens = NULL, *lexer_error = NULL;
-    tokens = lisp_lex(input, &lexer_error);
+    tokens = lisp_lex_surround(input, &lexer_error);
     if (lexer_error != NULL) {
         if (prompt_len >= 0) {
             print_error_marker(stderr, prompt_len, lexer_error->col);
@@ -228,6 +233,7 @@ bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len) {
         lval_mut_err(r, LERR_EVAL);
         return false;
     }
+    /* Evaluate AST. */
     bool ret = false;
     struct last *eval_error = NULL; // An eval error occurs at a specific location of the AST.
     if (!(ret = leval_ast(ast, r, &eval_error)) && eval_error) {

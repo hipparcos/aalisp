@@ -269,7 +269,7 @@ static struct ltok* llex(const char* input, struct ltok** error, bool surround) 
         llex_append(last, llex_emitEOF());
     } else {
         /* Optional: ensure that it's a sexpr. */
-        if (surround && first && first->type != LTOK_OPAR && last && last->type != LTOK_CPAR) {
+        if (surround && first && first->type != LTOK_OPAR) {
             struct ltok* opar = llex_emitOPAR();
             struct ltok* cpar = llex_emitCPAR();
             first->prev = opar;

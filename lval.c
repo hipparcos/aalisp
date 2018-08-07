@@ -515,16 +515,16 @@ bool lval_as_str(const struct lval* v, char* r, size_t len) {
     }
     switch (v->data->type) {
     case LVAL_NIL:
-        sprintf(r, "nil");
+        snprintf(r, len, "nil");
         break;
     case LVAL_NUM:
-        sprintf(r, "%li", v->data->payload.num);
+        snprintf(r, len, "%li", v->data->payload.num);
         break;
     case LVAL_BIGNUM:
         mpz_get_str(r, 10, v->data->payload.bignum);
         break;
     case LVAL_DBL:
-        sprintf(r, "%g", v->data->payload.dbl);
+        snprintf(r, len, "%g", v->data->payload.dbl);
         break;
     case LVAL_SYM:
     case LVAL_STR:
@@ -533,11 +533,13 @@ bool lval_as_str(const struct lval* v, char* r, size_t len) {
         break;
     case LVAL_SEXPR:
         {
+        if (len < 3) return false;
         char* s = r;
         *s++ = '(';
         for (size_t c = 0; c < v->data->len; c++) {
             if (c > 0) *s++ = ' ';
-            size_t len = lval_printlen(v->data->payload.cell[c]);
+            /* size_t len = lval_printlen(v->data->payload.cell[c]); */
+            size_t len = 0;
             lval_as_str(v->data->payload.cell[c], s, len);
             s += len-1; // - '\0'.
         }
@@ -549,7 +551,7 @@ bool lval_as_str(const struct lval* v, char* r, size_t len) {
         {
         size_t idx = v->data->payload.err % sizeof(lerr_string);
         const char* format = lerr_string[idx];
-        sprintf(r, "%s", format);
+        snprintf(r, len, "%s", format);
         }
         break;
     }

@@ -627,6 +627,18 @@ bool lval_are_equal(const struct lval* x, const struct lval* y) {
     }
 }
 
+static size_t length_of_long(long l) {
+    if (l == 0) {
+        return 1;
+    }
+    size_t len = 0;
+    len = (size_t)floor(log10(labs(l))) + 1;
+    if (l < 0) {
+        len++;
+    }
+    return len;
+}
+
 size_t lval_printlen(const struct lval* v) {
     if (!lval_is_alive(v)) {
         return 0;
@@ -634,10 +646,19 @@ size_t lval_printlen(const struct lval* v) {
     size_t len = 0;
     switch (v->data->type) {
     case LVAL_NIL:    len = 3;   break;
-    case LVAL_ERR:    len = 128; break; // TODO: implement lval_printlen for LVAL_ERR.
-    case LVAL_NUM:    len = 128; break; // TODO: implement lval_printlen for LVAL_NUM.
+    case LVAL_ERR:
+        len = strlen(lerr_string[v->data->payload.err]);
+        break;
+    case LVAL_NUM:
+        len = length_of_long(v->data->payload.num);
+        break;
     case LVAL_BIGNUM: len = mpz_sizeinbase(v->data->payload.bignum, 10); break;
-    case LVAL_DBL:    len = 128; break; // TODO: implement lval_printlen for LVAL_DBL.
+    case LVAL_DBL:
+        {
+        char dummy[2]; // minimum output size is 2 to suppress compiler warning.
+        len = snprintf(dummy, sizeof(dummy), "%g", v->data->payload.dbl);
+        }
+        break;
     case LVAL_SYM:
     case LVAL_STR:    len = v->data->len; break;
     case LVAL_SEXPR:

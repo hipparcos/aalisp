@@ -610,10 +610,10 @@ describe(lval, {
             lval_mut_sym(sym, "+");
             defer(lval_free(sym));
             struct lval* a = lval_alloc();
-            lval_mut_str(a, "1");
+            lval_mut_num(a, 1);
             defer(lval_free(a));
             struct lval* b = lval_alloc();
-            lval_mut_str(b, "2");
+            lval_mut_num(b, 2);
             defer(lval_free(b));
             struct lval* sexpr = lval_alloc();
             defer(lval_free(sexpr));
@@ -633,10 +633,10 @@ describe(lval, {
             lval_mut_sym(sym, "+");
             defer(lval_free(sym));
             struct lval* a = lval_alloc();
-            lval_mut_str(a, "1");
+            lval_mut_num(a, 1);
             defer(lval_free(a));
             struct lval* b = lval_alloc();
-            lval_mut_str(b, "2");
+            lval_mut_num(b, 2);
             defer(lval_free(b));
             struct lval* sexpr = lval_alloc();
             defer(lval_free(sexpr));

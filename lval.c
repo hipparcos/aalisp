@@ -4,6 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef OPTIM
+#define INLINE inline
+#else
+#define INLINE
+#endif
+
 const char* const ltype_string[] = {
     "nil",
     "num",
@@ -43,12 +49,12 @@ struct ldata {
     size_t len;
     /** ldata.payload must be considered according to ldata.type */
     union {
-        long           num;
-        mpz_t          bignum; // int > LONG_MAX.
-        double         dbl;
-        enum lerr      err;    // error code.
-        char*          str;    // string or symbol.
-        struct ldata** cell;   // list.
+        long          num;
+        mpz_t         bignum; // int > LONG_MAX.
+        double        dbl;
+        enum lerr     err;    // error code.
+        char*         str;    // string or symbol.
+        struct lval** cell;   // list of lval (can detect data mutation).
     } payload;
 };
 
@@ -65,20 +71,17 @@ struct lval {
 #define DEAD      0
 #define IMMORTAL -1 /** and immutable. */
 
-static inline bool lval_is_alive(const struct lval* v) {
+static INLINE bool lval_is_alive(const struct lval* v) {
     return v && v->alive != DEAD && v->alive == v->data->alive;
 }
-static bool lval_is_alive(const struct lval*);
 
-static inline bool lval_is_immortal(const struct lval* v) {
+static INLINE bool lval_is_immortal(const struct lval* v) {
     return lval_is_alive(v) && v->alive == IMMORTAL;
 }
-static bool lval_is_immortal(const struct lval*);
 
-static inline bool lval_is_mutable(const struct lval* v) {
+static INLINE bool lval_is_mutable(const struct lval* v) {
     return lval_is_alive(v) && !lval_is_immortal(v) && v->data->mutable;
 }
-static bool lval_is_mutable(const struct lval*);
 
 /* Special lval definitions. */
 static const struct ldata ldata_nil = {
@@ -138,6 +141,13 @@ static bool ldata_clear(struct ldata* d) {
             d->payload.str = NULL;
         }
         break;
+    case LVAL_SEXPR:
+        for (size_t c = 0; c < d->len; c++) {
+            lval_free(d->payload.cell[c]);
+        }
+        free(d->payload.cell);
+        d->payload.cell = NULL;
+        break;
     default: break;
     }
     d->alive       = lval_unique();
@@ -154,7 +164,7 @@ static struct ldata* ldata_alloc(void) {
     /* Heap allocation for the moment.
      * Allocation from a ldata pool later.
      * Memory is set to 0. */
-    struct ldata* data = calloc(sizeof(struct ldata), 1);
+    struct ldata* data = calloc(1, sizeof(struct ldata));
     data->mutable = true;
     ldata_clear(data);
     return data;
@@ -191,15 +201,24 @@ static struct ldata* lval_disconnect(struct lval* v, bool reuse) {
             return v->data;
         }
     }
-    ldata_clear(v->data);
-    free(v->data);
+    if (v->data->refc == 0) {
+        ldata_clear(v->data);
+        free(v->data);
+    }
     return NULL;
 }
 
 struct lval* lval_alloc(void) {
     struct ldata* data = ldata_alloc();
-    struct lval* v = calloc(sizeof(struct lval), 1);
+    struct lval* v = calloc(1, sizeof(struct lval));
     lval_connect(v, data);
+    return v;
+}
+
+static struct lval* lval_alloc_handle(void) {
+    struct lval* v = calloc(1, sizeof(struct lval));
+    v->alive = DEAD;
+    v->data = NULL;
     return v;
 }
 
@@ -241,14 +260,19 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
         dest->payload.err = src->payload.err;
         break;
     case LVAL_SEXPR:
-        dest->payload.cell = src->payload.cell;
+        dest->payload.cell = calloc(src->len, sizeof(struct lval*));
+        for (size_t c = 0; c < src->len; c++) {
+            struct lval* val = lval_alloc_handle();
+            lval_connect(val, src->payload.cell[c]->data);
+            dest->payload.cell[c] = val;
+        }
         break;
     case LVAL_BIGNUM:
         mpz_init_set(dest->payload.bignum, src->payload.bignum);
         break;
     case LVAL_STR:
     case LVAL_SYM:
-        dest->payload.str = calloc(sizeof(char), src->len + 1);
+        dest->payload.str = calloc(src->len + 1, sizeof(char));
         if (!strncpy(dest->payload.str, src->payload.str, src->len)) {
             free(dest->payload.str);
         }
@@ -354,7 +378,7 @@ bool lval_mut_str(struct lval* v, const char* const str) {
         return false;
     }
     size_t len = strlen(str);
-    if(!(data->payload.str = calloc(sizeof(char), len + 1))) {
+    if(!(data->payload.str = calloc(len + 1, sizeof(char)))) {
         free(data);
         return false;
     }
@@ -378,16 +402,54 @@ bool lval_mut_sym(struct lval* v, const char* const sym) {
     return true;
 }
 
-bool lval_mut_sexpr(struct lval* v, const struct lval** cells, int cellc) {
-    (void)(cells);
-    (void)(cellc);
+bool lval_mut_sexpr(struct lval* v) {
     if (!lval_is_mutable(v)) {
         return false;
     }
-    ldata_clear(v->data);
-    // TODO: implement list assignment.
-    lval_connect(v, v->data);
-    return false;
+    struct ldata* data = NULL;
+    if (!(data = lval_disconnect(v, true))) {
+        return false;
+    }
+    data->type = LVAL_SEXPR;
+    data->len = 0;
+    lval_connect(v, data);
+    return true;
+}
+
+bool lval_push(struct lval* v, const struct lval* cell) {
+    if (lval_type(v) != LVAL_SEXPR || !lval_is_alive(cell)) {
+        return false;
+    }
+    /* Create a new handle. */
+    struct lval* handle = lval_alloc_handle();
+    lval_connect(handle, cell->data);
+    /* Add it to the list. */
+    v->data->len++;
+    v->data->payload.cell = realloc(v->data->payload.cell,
+            sizeof(struct lval*) * v->data->len);
+    v->data->payload.cell[v->data->len-1] = handle;
+    return true;
+}
+
+struct lval* lval_pop(struct lval* v, size_t c) {
+    if (lval_type(v) != LVAL_SEXPR) {
+        return false;
+    }
+    if (c >= v->data->len) {
+        return NULL;
+    }
+    struct lval* val = v->data->payload.cell[c];
+    memmove(&v->data->payload.cell[c], &v->data->payload.cell[c+1], sizeof(struct lval*) * (v->data->len - c - 1));
+    v->data->len--;
+    v->data->payload.cell = realloc(v->data->payload.cell, sizeof(struct lval*) * v->data->len);
+    return val;
+}
+
+size_t lval_len(struct lval* v) {
+    if (!lval_is_alive(v)) {
+        return 0;
+    }
+    return v->data->len;
 }
 
 enum ltype lval_type(const struct lval* v) {
@@ -470,8 +532,18 @@ bool lval_as_str(const struct lval* v, char* r, size_t len) {
                 (len > v->data->len) ? v->data->len : len);
         break;
     case LVAL_SEXPR:
-        // TODO: implement sexpr printing.
-        sprintf(r, "<sexpr>");
+        {
+        char* s = r;
+        *s++ = '(';
+        for (size_t c = 0; c < v->data->len; c++) {
+            if (c > 0) *s++ = ' ';
+            size_t len = lval_printlen(v->data->payload.cell[c]);
+            lval_as_str(v->data->payload.cell[c], s, len);
+            s += len-1; // - '\0'.
+        }
+        *s++ = ')';
+        *s   = '\0';
+        }
         break;
     case LVAL_ERR:
         {
@@ -534,6 +606,7 @@ bool lval_are_equal(const struct lval* x, const struct lval* y) {
     if (!lval_is_alive(y))              return false;
     if (x->data == y->data)             return true;
     if (x->data->type != y->data->type) return false;
+    if (x->data->len != y->data->len)   return false;
     static const double epsilon = 0.000001;
     switch (x->data->type) {
     case LVAL_NIL:    return x->data->type == y->data->type;
@@ -543,7 +616,13 @@ bool lval_are_equal(const struct lval* x, const struct lval* y) {
     case LVAL_DBL:    return fabs(x->data->payload.dbl - y->data->payload.dbl) < epsilon;
     case LVAL_SYM:
     case LVAL_STR:    return strcmp(x->data->payload.str, y->data->payload.str) == 0;
-    case LVAL_SEXPR:  return false; // TODO: implement lval_are_equal for SEXPR.
+    case LVAL_SEXPR:
+        for (size_t c = 0; c < x->data->len; c++) {
+            if (!lval_are_equal(x->data->payload.cell[c], y->data->payload.cell[c])) {
+                return false;
+            }
+        }
+        return true;
     default: return false;
     }
 }
@@ -561,7 +640,13 @@ size_t lval_printlen(const struct lval* v) {
     case LVAL_DBL:    len = 128; break; // TODO: implement lval_printlen for LVAL_DBL.
     case LVAL_SYM:
     case LVAL_STR:    len = v->data->len; break;
-    case LVAL_SEXPR:  len = 7; break; // TODO: implement lval_printlen for SEXPR.
+    case LVAL_SEXPR:
+        len = 1 + 1; // ( )
+        for (size_t c = 0; c < v->data->len; c++) {
+            if (c > 0) len += 1; // ' '.
+            len += lval_printlen(v->data->payload.cell[c]);
+        }
+        break;
     }
     return len + 1; // + '\0'
 }
@@ -576,7 +661,7 @@ void lval_debug(const struct lval* v, char* out) {
         size_t lenpl = lval_printlen(v);
         char* payload = NULL;
         if (lenpl > 0) {
-            payload = calloc(sizeof(char), lenpl);
+            payload = calloc(lenpl, sizeof(char));
             lval_as_str(v, payload, lenpl);
         }
         sprintf(out,
@@ -600,7 +685,7 @@ void lval_debug_print_to(const struct lval* v, FILE* out) {
     if (len == 0) {
         return;
     }
-    char* str = calloc(sizeof(char), len);
+    char* str = calloc(len, sizeof(char));
     lval_debug(v, str);
     fputs(str, out);
     free(str);
@@ -611,7 +696,7 @@ void lval_print_to(const struct lval* v, FILE* out) {
     if (len == 0) {
         return;
     }
-    char* str = calloc(sizeof(char), len);
+    char* str = calloc(len, sizeof(char));
     lval_as_str(v, str, len);
     fputs(str, out);
     free(str);

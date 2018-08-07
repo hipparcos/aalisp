@@ -604,6 +604,76 @@ describe(lval, {
 
     });
 
+    subdesc(sexpr, {
+        it("lval_push works", {
+            struct lval* sym = lval_alloc();
+            lval_mut_sym(sym, "+");
+            defer(lval_free(sym));
+            struct lval* a = lval_alloc();
+            lval_mut_str(a, "1");
+            defer(lval_free(a));
+            struct lval* b = lval_alloc();
+            lval_mut_str(b, "2");
+            defer(lval_free(b));
+            struct lval* sexpr = lval_alloc();
+            defer(lval_free(sexpr));
+            assert(lval_mut_sexpr(sexpr));
+            assert(lval_push(sexpr, sym));
+            assert(lval_push(sexpr, a));
+            assert(lval_push(sexpr, b));
+            size_t len = lval_printlen(sexpr);
+            char* s = calloc(len, sizeof(char));
+            lval_as_str(sexpr, s, len);
+            defer(free(s));
+            assert(strcmp(s, "(+ 1 2)") == 0);
+        });
+
+        it("lval_pop works", {
+            struct lval* sym = lval_alloc();
+            lval_mut_sym(sym, "+");
+            defer(lval_free(sym));
+            struct lval* a = lval_alloc();
+            lval_mut_str(a, "1");
+            defer(lval_free(a));
+            struct lval* b = lval_alloc();
+            lval_mut_str(b, "2");
+            defer(lval_free(b));
+            struct lval* sexpr = lval_alloc();
+            defer(lval_free(sexpr));
+            assert(lval_mut_sexpr(sexpr));
+            assert(lval_push(sexpr, sym));
+            assert(lval_push(sexpr, a));
+            assert(lval_push(sexpr, b));
+            struct lval* val;
+            assert(val = lval_pop(sexpr, 1));
+            defer(lval_free(val));
+            size_t len = lval_printlen(val);
+            char* s = calloc(len, sizeof(char));
+            lval_as_str(val, s, len);
+            defer(free(s));
+            assert(strcmp(s, "1") == 0);
+        });
+
+        it("lval_len works", {
+            struct lval* sym = lval_alloc();
+            lval_mut_sym(sym, "+");
+            defer(lval_free(sym));
+            struct lval* a = lval_alloc();
+            lval_mut_str(a, "1");
+            defer(lval_free(a));
+            struct lval* b = lval_alloc();
+            lval_mut_str(b, "2");
+            defer(lval_free(b));
+            struct lval* sexpr = lval_alloc();
+            defer(lval_free(sexpr));
+            assert(lval_mut_sexpr(sexpr));
+            assert(lval_push(sexpr, sym));
+            assert(lval_push(sexpr, a));
+            assert(lval_push(sexpr, b));
+            assert(lval_len(sexpr) == 3);
+        });
+    });
+
 });
 
 snow_main();

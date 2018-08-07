@@ -72,7 +72,15 @@ bool lval_mut_str(struct lval* v, const char* str);
 /** lval_mut_nil mutates v to LVAL_SYM type. sym is copied */
 bool lval_mut_sym(struct lval* v, const char* const sym);
 /** lval_mut_nil mutates v to LVAL_SEXPR type. Underlying data are not copied. */
-bool lval_mut_sexpr(struct lval* v, const struct lval** cells, int cellc);
+bool lval_mut_sexpr(struct lval* v);
+/** lval_push add cell to v. v must be of type sexpr.
+ ** cell is safe to be freed by the caller after. */
+bool lval_push(struct lval* v, const struct lval* cell);
+/** lval_pop remove cell c from v and returns it.
+ ** Caller is responsible for calling free on returned value. */
+struct lval* lval_pop(struct lval* v, size_t c);
+/** lval_len returns the length of an sexpr. */
+size_t lval_len(struct lval* v);
 
 /* Accessors */
 /** lval_type returns the type of v. */

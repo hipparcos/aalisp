@@ -20,9 +20,10 @@ const char* const ltype_string[] = {
     "symbol",
     "sexpr",
 };
-const char* const lerr_string[7] = {
+const char* const lerr_string[] = {
     "unknown error",
     "dead reference",
+    "ast error",
     "evaluation error",
     "division by zero",
     "bad symbol",

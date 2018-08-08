@@ -23,13 +23,14 @@ extern const char* const ltype_string[8];
 enum lerr {
     LERR_UNKNOWN = 0,
     LERR_DEAD_REF,
+    LERR_AST,
     LERR_EVAL,
     LERR_DIV_ZERO,
     LERR_BAD_SYMBOL,
     LERR_BAD_OPERAND,
     LERR_TOO_MANY_ARGS
 };
-extern const char* const lerr_string[7];
+extern const char* const lerr_string[8];
 
 /** lval is the public handle to a value. */
 struct lval;

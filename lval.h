@@ -32,8 +32,17 @@ enum lerr {
 };
 extern const char* const lerr_string[8];
 
-/** lval is the public handle to a value. */
-struct lval;
+/** lval is the public handle to a ldata.
+ ** This level of indirection is used to prepare the work on a GC. */
+struct lval {
+    /** lval.alive is a code used to detect aliveness of the payload. */
+    int alive;
+    /** lval.data is a pointer to the actual ldata. */
+    struct ldata* data;
+    /** lval.ast is a pointer to the corresponding ast node. For error handling.
+     ** Must not be used after the corresponding ast had been cleaned. */
+    const struct last* ast;
+};
 
 /* Special lvals used in builtins. */
 extern const struct lval lnil;  /** = nil */

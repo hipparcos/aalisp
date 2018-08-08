@@ -7,6 +7,7 @@ static struct lval* lmut_num(const struct last* ast, struct last** error) {
     errno = 0;
     long n = strtol(ast->content, NULL, 10);
     struct lval* v = lval_alloc();
+    v->ast = ast;
     if (errno == ERANGE) {
         /* Switch to bignum. */
         mpz_t bignum;
@@ -23,6 +24,7 @@ static struct lval* lmut_dbl(const struct last* ast, struct last** error) {
     errno = 0;
     double d = strtod(ast->content, NULL);
     struct lval* v = lval_alloc();
+    v->ast = ast;
     if (errno == ERANGE) {
         lval_mut_err(v, LERR_BAD_OPERAND);
         *error = (struct last*)ast;
@@ -36,6 +38,7 @@ static struct lval* lmut_sym(const struct last* ast, struct last** error) {
     *error = NULL;
     struct lval* v = lval_alloc();
     lval_mut_sym(v, ast->content);
+    v->ast = ast;
     return v;
 }
 
@@ -43,12 +46,14 @@ static struct lval* lmut_str(const struct last* ast, struct last** error) {
     *error = NULL;
     struct lval* v = lval_alloc();
     lval_mut_str(v, ast->content);
+    v->ast = ast;
     return v;
 }
 
 static struct lval* lmut_sexpr(const struct last* ast, struct last** error) {
     struct lval* v = lval_alloc();
     lval_mut_sexpr(v);
+    v->ast = ast;
     /* Dereference the inner expression. */
     ast = ast->children[0];
     for (size_t c = 0; c < ast->childrenc; c++) {
@@ -62,6 +67,7 @@ static struct lval* lmut_sexpr(const struct last* ast, struct last** error) {
         default:
             o = lval_alloc();
             lval_mut_err(o, LERR_AST);
+            o->ast = ast;
             *error = (struct last*)ast;
             break;
         }
@@ -83,13 +89,15 @@ struct lval* lisp_mut(const struct last* ast, struct last** error) {
     }
     /* A program is a list of SEXPR. */
     lval_mut_sexpr(p);
+    p->ast = ast;
     for (size_t c = 0; c < ast->childrenc; c++) {
         struct lval* s = NULL;
         if (ast->children[c]->tag == LTAG_SEXPR) {
             s = lmut_sexpr(ast->children[c], error);
         } else {
             s = lval_alloc();
-            lval_mut_err(s, LERR_EVAL);
+            lval_mut_err(s, LERR_AST);
+            s->ast = ast->children[c];
             *error = (struct last*)ast->children[c];
         }
         lval_push(p, s);

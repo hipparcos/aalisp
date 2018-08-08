@@ -59,15 +59,6 @@ struct ldata {
     } payload;
 };
 
-/** lval is the public handle to a ldata.
- ** This level of indirection is used to prepare the work on a GC. */
-struct lval {
-    /** lval.alive is a code used to detect aliveness of the payload. */
-    int alive;
-    /** lval.data is a pointer to the actual ldata. */
-    struct ldata* data;
-};
-
 /* ldata.alive special status. */
 #define DEAD      0
 #define IMMORTAL -1 /** and immutable. */
@@ -213,6 +204,7 @@ struct lval* lval_alloc(void) {
     struct ldata* data = ldata_alloc();
     struct lval* v = calloc(1, sizeof(struct lval));
     lval_connect(v, data);
+    v->ast = NULL;
     return v;
 }
 
@@ -220,6 +212,7 @@ static struct lval* lval_alloc_handle(void) {
     struct lval* v = calloc(1, sizeof(struct lval));
     v->alive = DEAD;
     v->data = NULL;
+    v->ast = NULL;
     return v;
 }
 

@@ -130,18 +130,16 @@ bool lval_are_equal(const struct lval* x, const struct lval* y);
 /** lval_printlen returns the minimum size in bytes required to print v. */
 size_t lval_printlen(const struct lval* v);
 /** lval_printlen_debug is equivalent to lval_printlen but adds the length of the debug header. */
-size_t lval_printlen_debug(const struct lval* v);
+size_t lval_printlen_debug(const struct lval* v, bool recursive);
 
 /* Printer */
 /** lval_to_string prints v to out.
  ** out must be allocated by the caller (see lval_printlen_debug). */
-void lval_debug(const struct lval* v, char* out);
+void lval_debug(const struct lval* v, char* out, bool recursive);
 /** lval_debug_print_to prints debug infos of v to out (FILE*). */
 void lval_debug_print_to(const struct lval* v, FILE* out);
 /** lval_debug_print prints debug infos of v to stdout. */
 #define lval_debug_print(v) lval_debug_print_to(v, stdout);
-/** lval_debug_println prints debug infos of v to stdout. A newline is added. */
-#define lval_debug_println(v) lval_debug_print_to(v, stdout); putchar('\n');
 /** lval_print_to prints v to out (FILE*). */
 void lval_print_to(const struct lval* v, FILE* out);
 /** lval_print prints v to stdout. */

@@ -667,12 +667,24 @@ size_t lval_printlen(const struct lval* v) {
     return len + 1; // + '\0'
 }
 
-size_t lval_printlen_debug(const struct lval* v) {
-    /* header length < 256 */
-    return 256 + lval_printlen(v);
+static size_t _lval_printlen_debug(const struct lval* v, bool recursive, int indent) {
+    size_t len = 256 + lval_printlen(v);
+    if (recursive && lval_type(v) == LVAL_SEXPR) {
+        for (size_t c = 0; c < v->data->len; c++) {
+            len += 8 * indent;
+            len += _lval_printlen_debug(v->data->payload.cell[c], recursive, --indent);
+        }
+    }
+    return len;
+}
+size_t lval_printlen_debug(const struct lval* v, bool recursive) {
+    return _lval_printlen_debug(v, recursive, 0);
 }
 
-void lval_debug(const struct lval* v, char* out) {
+#define INDENT(out, indent) \
+    do { int i = indent; while (i-- > 0) { *out++ = ' '; *out++ = ' '; } } while (0);
+
+static void _lval_debug(const struct lval* v, char* out, bool recursive, int indent) {
     if (lval_is_alive(v)) {
         size_t lenpl = lval_printlen(v);
         char* payload = NULL;
@@ -680,14 +692,33 @@ void lval_debug(const struct lval* v, char* out) {
             payload = calloc(lenpl, sizeof(char));
             lval_as_str(v, payload, lenpl);
         }
+        INDENT(out, indent);
         sprintf(out,
-                "lval{data: %p, alive: 0x%x}->" \
-                "ldata{type: %s, len: %ld, alive: 0x%x, refc: %d, mutable: %s, payload: '%s'}",
-                v->data, v->alive,
+                "lval{data: %p, alive: 0x%x}->\n",
+                v->data, v->alive);
+        out += strlen(out);
+        INDENT(out, indent);
+        sprintf(out,
+                "  ldata{type: %s, len: %ld, alive: 0x%x, refc: %d, mutable: %s,\n",
                 ltype_string[v->data->type], v->data->len, v->data->alive, v->data->refc,
-                v->data->mutable ? "true" : "false", payload);
+                v->data->mutable ? "true" : "false");
+        out += strlen(out);
+        INDENT(out, indent);
+        sprintf(out,
+                "    payload as string: '%s'\n",
+                payload);
+        out += strlen(out);
+        INDENT(out, indent);
+        sprintf(out, "  }\n");
+        out += strlen(out);
         if (payload) {
             free(payload);
+        }
+        if (recursive && lval_type(v) == LVAL_SEXPR) {
+            for (size_t c = 0; c < v->data->len; c++) {
+                size_t len = strlen(out);
+                _lval_debug(v->data->payload.cell[c], out+len, recursive, indent+1);
+            }
         }
     } else {
         sprintf(out,
@@ -696,13 +727,17 @@ void lval_debug(const struct lval* v, char* out) {
     }
 }
 
+void lval_debug(const struct lval* v, char* out, bool recursive) {
+    _lval_debug(v, out, recursive, 0);
+}
+
 void lval_debug_print_to(const struct lval* v, FILE* out) {
-    size_t len = lval_printlen_debug(v);
+    size_t len = lval_printlen_debug(v, true);
     if (len == 0) {
         return;
     }
     char* str = calloc(len, sizeof(char));
-    lval_debug(v, str);
+    lval_debug(v, str, true);
     fputs(str, out);
     free(str);
 }

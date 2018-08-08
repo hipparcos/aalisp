@@ -532,8 +532,7 @@ bool lval_as_str(const struct lval* v, char* r, size_t len) {
         *s++ = '(';
         for (size_t c = 0; c < v->data->len; c++) {
             if (c > 0) *s++ = ' ';
-            /* size_t len = lval_printlen(v->data->payload.cell[c]); */
-            size_t len = 0;
+            size_t len = lval_printlen(v->data->payload.cell[c]);
             lval_as_str(v->data->payload.cell[c], s, len);
             s += len-1; // - '\0'.
         }

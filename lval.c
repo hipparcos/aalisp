@@ -237,6 +237,18 @@ bool lval_clear(struct lval* v) {
     return true;
 }
 
+bool lval_dup(struct lval* dest, const struct lval* src) {
+    if (!dest || !lval_is_alive(src)) {
+        return false;
+    }
+    if (dest == src) {
+        return false;
+    }
+    lval_disconnect(dest, false);
+    lval_connect(dest, src->data);
+    return true;
+}
+
 bool ldata_copy(struct ldata* dest, const struct ldata* src) {
     if (!ldata_clear(dest)) {
         return false;

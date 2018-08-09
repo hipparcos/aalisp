@@ -315,6 +315,21 @@ describe(lval, {
         });
     });
 
+    subdesc(dup, {
+        it("duplicates handles", {
+            struct lval* dest = lval_alloc();
+            defer(lval_free(dest));
+            struct lval* src = lval_alloc();
+            defer(lval_free(src));
+            lval_mut_num(src, 10);
+            assert(lval_dup(dest, src));
+            assert(dest->data == src->data);
+            long got = 0;
+            assert(lval_as_num(dest, &got));
+            assert(got == 10);
+        });
+    });
+
     subdesc(copy, {
         it("copies a LVAL_NUM", {
             long expected = 10;

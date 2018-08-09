@@ -62,6 +62,9 @@ bool lval_free(struct lval* v);
  ** It immediately clears v internal memory.
  ** v becomes of type LVAL_NIL afterwards. */
 bool lval_clear(struct lval* v);
+/** lval_dup links dest to the same underlying data than src.
+ ** lval_dup fails when dest == src. */
+bool lval_dup(struct lval* dest, const struct lval* src);
 /** lval_copy does a deep copy of src into dest.
  ** dest must be of type LVAL_NIL. */
 bool lval_copy(struct lval* dest, const struct lval* src);

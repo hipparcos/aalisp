@@ -246,6 +246,7 @@ bool lval_dup(struct lval* dest, const struct lval* src) {
     }
     lval_disconnect(dest, false);
     lval_connect(dest, src->data);
+    dest->ast = src->ast;
     return true;
 }
 
@@ -265,7 +266,7 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
     case LVAL_ERR:
         dest->payload.err = src->payload.err;
         break;
-    case LVAL_SEXPR:
+    case LVAL_SEXPR: // TODO: deep copy sexpr?
         dest->payload.cell = calloc(src->len, sizeof(struct lval*));
         for (size_t c = 0; c < src->len; c++) {
             struct lval* val = lval_alloc_handle();
@@ -429,6 +430,7 @@ bool lval_push(struct lval* v, const struct lval* cell) {
     /* Create a new handle. */
     struct lval* handle = lval_alloc_handle();
     lval_connect(handle, cell->data);
+    handle->ast = cell->ast;
     /* Add it to the list. */
     v->data->len++;
     v->data->payload.cell = realloc(v->data->payload.cell,
@@ -461,6 +463,7 @@ struct lval* lval_index(struct lval* v, size_t c) {
     struct lval* r = lval_alloc_handle();
     struct lval* e = v->data->payload.cell[c];
     lval_connect(r, e->data);
+    r->ast = e->ast;
     return r;
 }
 
@@ -749,7 +752,7 @@ static void _lval_debug(const struct lval* v, char* out, bool recursive, int ind
         }
     } else {
         sprintf(out,
-                "lval{data: %p, alive: 0x%x} DEAD REF",
+                "lval{data: %p, alive: 0x%x} DEAD REF\n",
                 v->data, v->alive);
     }
 }

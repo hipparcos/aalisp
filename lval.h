@@ -63,7 +63,8 @@ bool lval_free(struct lval* v);
  ** v becomes of type LVAL_NIL afterwards. */
 bool lval_clear(struct lval* v);
 /** lval_dup links dest to the same underlying data than src.
- ** lval_dup fails when dest == src. */
+ ** lval_dup fails when dest == src.
+ ** It copies ast pointer. */
 bool lval_dup(struct lval* dest, const struct lval* src);
 /** lval_copy does a deep copy of src into dest.
  ** dest must be of type LVAL_NIL. */
@@ -87,12 +88,14 @@ bool lval_mut_sym(struct lval* v, const char* const sym);
 /** lval_mut_nil mutates v to LVAL_SEXPR type. Underlying data are not copied. */
 bool lval_mut_sexpr(struct lval* v);
 /** lval_push add cell to v. v must be of type sexpr.
- ** cell is safe to be freed by the caller after. */
+ ** cell is safe to be freed by the caller after.
+ ** It copies ast pointer. */
 bool lval_push(struct lval* v, const struct lval* cell);
 /** lval_pop remove cell c from v and returns it.
  ** Caller is responsible for calling free on returned value. */
 struct lval* lval_pop(struct lval* v, size_t c);
-/** lval_index returns the c-th child of a sexpr. */
+/** lval_index returns the c-th child of a sexpr.
+ ** It copies ast pointer. */
 struct lval* lval_index(struct lval* v, size_t c);
 /** lval_len returns the length of an sexpr. */
 size_t lval_len(struct lval* v);

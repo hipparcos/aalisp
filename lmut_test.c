@@ -40,16 +40,12 @@ describe(lmut, {
         assert(lval_are_equal(got, expected));
     });
 
-    it("fails for NULL ast", {
+    it("works for NULL ast", {
         struct last* ast = NULL;
         struct last* error = NULL;
         struct lval* got = NULL;
         defer(lval_free(got));
-        struct lval* expected = lval_alloc();
-        defer(lval_free(expected));
-        lval_mut_err(expected, LERR_AST);
-        assert(NULL != (got = lisp_mut(ast, &error)));
-        assert(lval_are_equal(got, expected));
+        assert(NULL == (got = lisp_mut(ast, &error)));
     });
 
 });

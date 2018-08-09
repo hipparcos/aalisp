@@ -81,8 +81,12 @@ static struct lval* lmut_sexpr(const struct last* ast, struct last** error) {
 }
 
 struct lval* lisp_mut(const struct last* ast, struct last** error) {
+    if (!ast) {
+        *error = NULL;
+        return NULL;
+    }
     struct lval* p = lval_alloc();
-    if (!ast || ast->tag != LTAG_PROG) {
+    if (ast->tag != LTAG_PROG) {
         lval_mut_err(p, LERR_AST);
         *error = NULL;
         return p;

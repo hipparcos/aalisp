@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-struct lval;
+#include "lval.h"
 
 bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len);
 void lisp_eval_from_string(const char* restrict input, int prompt_len);

@@ -18,7 +18,7 @@ struct lval* expected;
 
 #define it_pass(input, output) \
     it(input" == "#output, { \
-        output; \
+        (void)output; \
         defer(cleanup()); \
         assert( lisp_eval(input, result, -1)); \
         if (!lval_are_equal(result, expected)) { \
@@ -29,7 +29,7 @@ struct lval* expected;
     })
 #define it_fail(input, output) \
     it(input" == "#output, { \
-        output; \
+        (void)output; \
         defer(cleanup()); \
         assert(!lisp_eval(input, result, -1)); \
         if (!lval_are_equal(result, expected)) { \
@@ -40,9 +40,9 @@ struct lval* expected;
     })
 
 void cleanup(void) {
-        lval_free(result);
-        lval_free(expected);
-        mpz_clear(bn_fac21);
+    lval_free(result);
+    lval_free(expected);
+    mpz_clear(bn_fac21);
 }
 
 describe(lisp_eval, {
@@ -55,6 +55,7 @@ describe(lisp_eval, {
     });
 
     /* happy path */
+    it_pass("",                          &lnil);
     it_pass("+ 1 1",                     lval_mut_num(expected, 2));
     it_pass("+ 1",                       lval_mut_num(expected, 1));
     it_pass("- 1",                       lval_mut_num(expected, -1));
@@ -71,7 +72,6 @@ describe(lisp_eval, {
 
     /* erros */
     it_fail("/ 10 0",    lval_mut_err(expected, LERR_DIV_ZERO));
-    it_fail("",          lval_mut_err(expected, LERR_EVAL));
     it_fail("1 + 1",     lval_mut_err(expected, LERR_EVAL));
     it_fail("!1",        lval_mut_err(expected, LERR_BAD_SYMBOL));
     it_fail("gibberish", lval_mut_err(expected, LERR_BAD_SYMBOL));

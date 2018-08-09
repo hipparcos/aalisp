@@ -451,6 +451,19 @@ struct lval* lval_pop(struct lval* v, size_t c) {
     return val;
 }
 
+struct lval* lval_index(struct lval* v, size_t c) {
+    if (lval_type(v) != LVAL_SEXPR) {
+        return false;
+    }
+    if (c >= v->data->len) {
+        return NULL;
+    }
+    struct lval* r = lval_alloc_handle();
+    struct lval* e = v->data->payload.cell[c];
+    lval_connect(r, e->data);
+    return r;
+}
+
 size_t lval_len(struct lval* v) {
     if (!lval_is_alive(v)) {
         return 0;

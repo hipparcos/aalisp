@@ -527,7 +527,6 @@ bool lval_as_str(const struct lval* v, char* r, size_t len) {
         break;
     case LVAL_SEXPR:
         {
-        if (len < 3) return false;
         char* s = r;
         *s++ = '(';
         for (size_t c = 0; c < v->data->len; c++) {
@@ -658,9 +657,12 @@ size_t lval_printlen(const struct lval* v) {
     case LVAL_STR:    len = v->data->len; break;
     case LVAL_SEXPR:
         len = 1 + 1; // ( )
+        if (v->data->len > 0) {
+            len += v->data->len - 1; // ' '.
+        }
         for (size_t c = 0; c < v->data->len; c++) {
-            if (c > 0) len += 1; // ' '.
             len += lval_printlen(v->data->payload.cell[c]);
+            len--; // - '\0'.
         }
         break;
     }

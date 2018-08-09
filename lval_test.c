@@ -245,6 +245,36 @@ describe(lval, {
             assert(lval_free(v));
             mpz_clear(ibn);
         });
+
+        it("works for nested sexpr (+ 1 (+ 1)) as string", {
+            const char* expected = "(+ 1 (+ 1))";
+            /* Input lval construction. */
+            struct lval *input, *sexpr2, *sym, *opr;
+            input = lval_alloc();
+            sexpr2 = lval_alloc();
+            sym = lval_alloc();
+            opr = lval_alloc();
+            defer(lval_free(opr));
+            defer(lval_free(sym));
+            defer(lval_free(sexpr2));
+            defer(lval_free(input));
+            lval_mut_num(opr, 1);
+            lval_mut_sym(sym, "+");
+            lval_mut_sexpr(sexpr2);
+            lval_mut_sexpr(input);
+            lval_push(sexpr2, sym);
+            lval_push(sexpr2, opr);
+            lval_push(input, sym);
+            lval_push(input, opr);
+            lval_push(input, sexpr2);
+            /* Test */
+            size_t len = lval_printlen(input);
+            assert(len-1 == strlen(expected)); // - '\0'.
+            char* got = malloc(len);
+            defer(free(got));
+            lval_as_str(input, got, len);
+            assert(strcmp(got, expected) == 0);
+        });
     });
 
     subdesc(clear, {

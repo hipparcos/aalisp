@@ -590,6 +590,7 @@ bool lval_is_nil(const struct lval* v) {
 
 bool lval_is_numeric(const struct lval* v) {
     return lval_is_alive(v) && (
+            v->data->type == LVAL_NIL ||
             v->data->type == LVAL_NUM ||
             v->data->type == LVAL_BIGNUM ||
             v->data->type == LVAL_DBL

@@ -147,11 +147,11 @@ void lval_debug(const struct lval* v, char* out, bool recursive);
 /** lval_debug_print_to prints debug infos of v to out (FILE*). */
 void lval_debug_print_to(const struct lval* v, FILE* out);
 /** lval_debug_print prints debug infos of v to stdout. */
-#define lval_debug_print(v) lval_debug_print_to(v, stdout);
+#define lval_debug_print(v) lval_debug_print_to(v, stdout)
 /** lval_print_to prints v to out (FILE*). */
 void lval_print_to(const struct lval* v, FILE* out);
 /** lval_print prints v to stdout. */
-#define lval_print(v) lval_print_to(v, stdout);
+#define lval_print(v) lval_print_to(v, stdout)
 /** lval_print prints v to stdout. A newline is added. */
 #define lval_println(v) lval_print_to(v, stdout); putchar('\n');
 

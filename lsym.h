@@ -32,10 +32,10 @@ struct lsym {
 /** lsym_exec returns
  **   0 if success
  **  -1 if error
- **   1 if x generate an error
- **   2 if y generate an error */
+ **   1 if acc generate an error
+ **   2 if x generate an error */
 int lsym_exec(
     const struct lsym sym,
-    const struct lval* x, const struct lval* y, struct lval* r);
+    struct lval* acc, const struct lval* x);
 
 #endif

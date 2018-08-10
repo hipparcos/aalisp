@@ -16,27 +16,26 @@
 /** level_exec returns
  **   0 if success
  **  -1 if error
- **   1 if x generate an error
- **   2 if y generate an error */
-static int leval_exec(const char* op, const struct lval* x, const struct lval* y, struct lval* r) {
+ **   1 if acc generate an error
+ **   2 if x generate an error */
+static int leval_exec(const char* op, struct lval* acc, const struct lval* x) {
+    if (lval_type(acc) == LVAL_ERR) {
+        return -1;
+    }
     if (lval_type(x) == LVAL_ERR) {
-        lval_copy(r, x);
-        return -1;
-    }
-    if (lval_type(y) == LVAL_ERR) {
-        lval_copy(r, y);
+        lval_copy(acc, x);
         return -1;
     }
 
-    if (strcmp(op, "+") == 0) return lsym_exec(lbuiltin_op_add, x, y, r);
-    if (strcmp(op, "-") == 0) return lsym_exec(lbuiltin_op_sub, x, y, r);
-    if (strcmp(op, "*") == 0) return lsym_exec(lbuiltin_op_mul, x, y, r);
-    if (strcmp(op, "/") == 0) return lsym_exec(lbuiltin_op_div, x, y, r);
-    if (strcmp(op, "%") == 0) return lsym_exec(lbuiltin_op_mod, x, y, r);
-    if (strcmp(op, "^") == 0) return lsym_exec(lbuiltin_op_pow, x, y, r);
-    if (strcmp(op, "!") == 0) return lsym_exec(lbuiltin_op_fac, x, y, r);
+    if (strcmp(op, "+") == 0) return lsym_exec(lbuiltin_op_add, acc, x);
+    if (strcmp(op, "-") == 0) return lsym_exec(lbuiltin_op_sub, acc, x);
+    if (strcmp(op, "*") == 0) return lsym_exec(lbuiltin_op_mul, acc, x);
+    if (strcmp(op, "/") == 0) return lsym_exec(lbuiltin_op_div, acc, x);
+    if (strcmp(op, "%") == 0) return lsym_exec(lbuiltin_op_mod, acc, x);
+    if (strcmp(op, "^") == 0) return lsym_exec(lbuiltin_op_pow, acc, x);
+    if (strcmp(op, "!") == 0) return lsym_exec(lbuiltin_op_fac, acc, x);
 
-    lval_mut_err(r, LERR_BAD_SYMBOL);
+    lval_mut_err(acc, LERR_BAD_SYMBOL);
     return -1;
 }
 
@@ -45,75 +44,36 @@ static bool leval(struct lval* v, struct lval* r);
 static bool leval_expr(struct lval* v, struct lval* r) {
     struct lval* sym = lval_index(v, 0);
     const char* op = lval_as_sym(sym);
-    switch (lval_len(v)) {
-    case 1:  // 0 arguments.
-        leval_exec(op, &lnil, &lnil, r);
-        r->ast = sym->ast;
-        break;
-    case 2:  // 1 argument.
-        {
+    size_t c = 1; /* First argument is at index 1. */
+    size_t len = lval_len(v);
+    do {
         struct lval* x = lval_alloc();
-        struct lval* arg = lval_index(v, 1);
-        if (!leval(arg, x)) {
+        struct lval* child = lval_index(v, c);
+        if (!child) {
+            child = lval_alloc(); /* nil */
+        };
+        if (!leval(child, x)) {
             lval_dup(r, x);
-            lval_free(x);
-            lval_free(arg);
             r->ast = x->ast;
+            lval_free(x);
+            lval_free(child);
             break;
         }
-        int err = leval_exec(op, x, &lnil, r);
+        lval_free(child);
+        int err = leval_exec(op, r, x);
+        /* Error handling. */
         switch (err) {
             case -1: r->ast = sym->ast; break;
-            case  1: r->ast = arg->ast; break;
+            case  1: r->ast = x->ast; break;
+            case  2: r->ast = x->ast; break;
             default: break;
         }
-        lval_free(x);
-        lval_free(arg);
-        }
-        break;
-    default: // multiple arguments
-        {
-        struct lval* x = lval_alloc();
-        struct lval* arg = lval_index(v, 1);
-        if (!leval(arg, x)) {
-            lval_dup(r, x);
-            lval_free(x);
-            lval_free(arg);
-            r->ast = x->ast;
+        /* Break on error. */
+        if (lval_type(r) == LVAL_ERR) {
             break;
         }
-        lval_free(arg);
-        struct lval* y = lval_alloc();
-        size_t len = lval_len(v);
-        for (size_t c = 2; c < len; c++) {
-            /* Prepare arguments. */
-            arg = lval_index(v, c);
-            if (!leval(arg, y)) {
-                lval_dup(r, y);
-                lval_free(arg);
-                r->ast = y->ast;
-                break;
-            }
-            lval_free(arg);
-            /* Execute. */
-            int err = leval_exec(op, x, y, r);
-            /* Error handling. */
-            switch (err) {
-                case -1: r->ast = sym->ast; break;
-                case  1: r->ast = x->ast; break;
-                case  2: r->ast = arg->ast; break;
-                default: break;
-            }
-            /* Break on error. */
-            if (lval_type(r) == LVAL_ERR) {
-                break;
-            }
-            lval_dup(x, r);
-        }
         lval_free(x);
-        lval_free(y);
-        }
-    }
+    } while (++c < len);
     lval_free(sym);
     return lval_type(r) != LVAL_ERR;
 }
@@ -129,6 +89,7 @@ static bool leval_sexpr(struct lval* v, struct lval* r) {
     lval_free(child0);
     size_t len = lval_len(v);
     for (size_t c = 0; c < len; c++) {
+        lval_mut_nil(r);
         struct lval* child = lval_index(v, c);
         leval(child, r);
         lval_free(child);

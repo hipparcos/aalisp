@@ -384,9 +384,9 @@ describe(lval, {
     });
 
     subdesc(is_numeric, {
-        it("is not numeric because it's a LVAL_NIL", {
+        it("is numeric because it's a LVAL_NIL", {
             struct lval* v = lval_alloc();
-            assert(!lval_is_numeric(v));
+            assert(lval_is_numeric(v));
             assert(lval_free(v));
         });
 

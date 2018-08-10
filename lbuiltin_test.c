@@ -48,15 +48,14 @@ mpz_t bn_fac21;
             mut_func_x, x, \
             mut_func_y, y, \
             mut_func_e, expected) \
-    struct lval* a = lval_alloc(); struct lval* b = lval_alloc(); \
+    struct lval* a = lval_alloc(); \
     struct lval* r = lval_alloc(); struct lval* e = lval_alloc(); \
-    mut_func_x(a, x); \
-    mut_func_y(b, y); \
-    lval_mut_nil(r); \
+    mut_func_x(r, x); \
+    mut_func_y(a, y); \
     mut_func_e(e, expected); \
-    defer(lval_free(e)); defer(lval_free(r)); defer(lval_free(b)); defer(lval_free(a)); \
-    if (must_pass) { assert(0 == lsym_exec(op, a, b, r)); } \
-    else {           assert(0 != lsym_exec(op, a, b, r)); } \
+    defer(lval_free(e)); defer(lval_free(r)); defer(lval_free(a)); \
+    if (must_pass) { assert(0 == lsym_exec(op, r, a)); } \
+    else {           assert(0 != lsym_exec(op, r, a)); } \
     assert(lval_are_equal(r, e)); \
 
 /** discard is a helper used to do nothing instead of mut_func_y. */

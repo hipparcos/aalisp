@@ -44,8 +44,8 @@ struct ldata {
     enum ltype type;
     /** ldata.len value:
      ** LVAL_NIL = 0;
-     ** LVAL_NUM, LVAL_BIGNUM, LVAL_DBL, LVAL_ERR, LVAL_SYM = 1;
-     ** LVAL_STR = strlen(str);
+     ** LVAL_NUM, LVAL_BIGNUM, LVAL_DBL, LVAL_ERR = 1;
+     ** LVAL_STR, LVAL_SYM = strlen(str);
      ** LVAL_SEXPR = number of elements. */
     size_t len;
     /** ldata.payload must be considered according to ldata.type */
@@ -405,7 +405,6 @@ bool lval_mut_sym(struct lval* v, const char* const sym) {
         return false;
     }
     v->data->type = LVAL_SYM;
-    v->data->len = 1;
     return true;
 }
 

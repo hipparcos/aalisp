@@ -49,13 +49,13 @@ static bool leval_expr(struct lval* v, struct lval* r) {
     case 1:  // 0 arguments.
         leval_exec(op, &lnil, &lnil, r);
         r->ast = sym->ast;
-        lval_free(sym);
         break;
     case 2:  // 1 argument.
         {
         struct lval* x = lval_alloc();
         struct lval* arg = lval_index(v, 1);
         if (!leval(arg, x)) {
+            lval_dup(r, x);
             lval_free(x);
             lval_free(arg);
             r->ast = x->ast;
@@ -76,6 +76,7 @@ static bool leval_expr(struct lval* v, struct lval* r) {
         struct lval* x = lval_alloc();
         struct lval* arg = lval_index(v, 1);
         if (!leval(arg, x)) {
+            lval_dup(r, x);
             lval_free(x);
             lval_free(arg);
             r->ast = x->ast;
@@ -88,6 +89,7 @@ static bool leval_expr(struct lval* v, struct lval* r) {
             /* Prepare arguments. */
             arg = lval_index(v, c);
             if (!leval(arg, y)) {
+                lval_dup(r, y);
                 lval_free(arg);
                 r->ast = y->ast;
                 break;

@@ -18,7 +18,7 @@
  **  -1 if error
  **   1 if acc generate an error
  **   2 if x generate an error */
-static int leval_exec(const char* op, struct lval* acc, const struct lval* x) {
+static int leval_exec(const char* op, struct lval* acc, const struct lval* x, size_t operands) {
     if (lval_type(acc) == LVAL_ERR) {
         return -1;
     }
@@ -28,7 +28,12 @@ static int leval_exec(const char* op, struct lval* acc, const struct lval* x) {
     }
 
     if (strcmp(op, "+") == 0) return lsym_exec(lbuiltin_op_add, acc, x);
-    if (strcmp(op, "-") == 0) return lsym_exec(lbuiltin_op_sub, acc, x);
+    if (strcmp(op, "-") == 0) {
+        if (operands == 1) {
+            return lsym_exec(lbuiltin_op_sub_unary, acc, x);
+        }
+        return lsym_exec(lbuiltin_op_sub, acc, x);
+    }
     if (strcmp(op, "*") == 0) return lsym_exec(lbuiltin_op_mul, acc, x);
     if (strcmp(op, "/") == 0) return lsym_exec(lbuiltin_op_div, acc, x);
     if (strcmp(op, "%") == 0) return lsym_exec(lbuiltin_op_mod, acc, x);
@@ -60,7 +65,7 @@ static bool leval_expr(struct lval* v, struct lval* r) {
             break;
         }
         lval_free(child);
-        int err = leval_exec(op, r, x);
+        int err = leval_exec(op, r, x, len - 1);
         /* Error handling. */
         switch (err) {
             case -1: r->ast = sym->ast; break;

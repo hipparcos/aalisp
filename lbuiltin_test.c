@@ -205,6 +205,35 @@ describe(builtin, {
 
     });
 
+    subdesc(op_sub_unary, {
+
+        it("passes for LVAL_NUM", {
+            test_helper_builtin_pass(lbuiltin_op_sub_unary,
+                lval_mut_num, 2,
+                discard, NULL,
+                lval_mut_num, -2);
+        });
+        it("passes for LVAL_DBL", {
+            test_helper_builtin_pass(lbuiltin_op_sub_unary,
+                lval_mut_dbl, 2.0,
+                discard, NULL,
+                lval_mut_dbl, -2.0);
+        });
+        it("passes for LVAL_BIGNUM", {
+            test_helper_builtin_pass(lbuiltin_op_sub_unary,
+                lval_mut_bignum, bn_maxlong_succ,
+                discard, NULL,
+                lval_mut_bignum, bn_minlong);
+        });
+        it("fails for 2 operands", {
+            test_helper_builtin_fail(lbuiltin_op_sub_unary,
+                lval_mut_dbl,    2.0,
+                lval_mut_dbl,    2.0,
+                lval_mut_err, LERR_TOO_MANY_ARGS);
+        });
+
+    });
+
     subdesc(op_mul, {
 
         it("passes for LVAL_NUM", {

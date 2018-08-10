@@ -65,6 +65,17 @@ const struct lsym lbuiltin_op_sub = {
     .op_bignum    = mpz_sub,
     .op_dbl       = op_dbl_sub
 };
+const struct lsym lbuiltin_op_sub_unary = {
+    .symbol       = "-",
+    .unary        = true,
+    .guards       = guards_op_sub,
+    .guardc       = LENGTH(guards_op_sub),
+    .neutral      = &lzero,
+    .op_num       = op_num_sub_unary,
+    .cnd_overflow = cnd_num_sub_overflow,
+    .op_bignum    = op_bignum_sub_unary,
+    .op_dbl       = op_dbl_sub_unary
+};
 
 static const struct lguard* guards_op_mul[] = {
     &guard_are_numeric,

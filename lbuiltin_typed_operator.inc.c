@@ -47,6 +47,11 @@ INLINE static long op_num_sub(const long a, const long b) {
     return a - b;
 }
 
+INLINE static long op_num_sub_unary(const long a, const long b) {
+    UNUSED(b);
+    return -a;
+}
+
 INLINE static long op_num_mul(const long a, const long b) {
     return a * b;
 }
@@ -95,6 +100,11 @@ INLINE static double op_dbl_sub(const double a, const double b) {
     return a - b;
 }
 
+INLINE static double op_dbl_sub_unary(const double a, const double b) {
+    UNUSED(b);
+    return -a;
+}
+
 INLINE static double op_dbl_mul(const double a, const double b) {
     return a * b;
 }
@@ -108,6 +118,11 @@ INLINE static double op_dbl_pow(const double a, const double b) {
 }
 
 /* Operators: bignum. */
+static void op_bignum_sub_unary(mpz_t r, const mpz_t a, const mpz_t b) {
+    UNUSED(b);
+    mpz_ui_sub(r, 0, a);
+}
+
 static void op_bignum_fac(mpz_t r, const mpz_t a, const mpz_t b) {
     UNUSED(b);
     unsigned long n = mpz_get_ui(a);

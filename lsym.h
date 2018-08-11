@@ -29,6 +29,9 @@ struct lsym {
     double (*op_dbl)(const double, const double);
 };
 
+/** lsym_lookup returns the lsym associated to sym. */
+const struct lsym* lsym_lookup(const char* sym, size_t operands);
+
 /** lsym_exec returns
  **   0 if success
  **  -1 if error

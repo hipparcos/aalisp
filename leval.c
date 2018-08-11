@@ -27,18 +27,10 @@ static int leval_exec(const char* op, struct lval* acc, const struct lval* x, si
         return -1;
     }
 
-    if (strcmp(op, "+") == 0) return lsym_exec(lbuiltin_op_add, acc, x);
-    if (strcmp(op, "-") == 0) {
-        if (operands == 1) {
-            return lsym_exec(lbuiltin_op_sub_unary, acc, x);
-        }
-        return lsym_exec(lbuiltin_op_sub, acc, x);
+    const struct lsym* descriptor = NULL;
+    if (NULL != (descriptor = lsym_lookup(op, operands))) {
+        return lsym_exec(*descriptor, acc, x);
     }
-    if (strcmp(op, "*") == 0) return lsym_exec(lbuiltin_op_mul, acc, x);
-    if (strcmp(op, "/") == 0) return lsym_exec(lbuiltin_op_div, acc, x);
-    if (strcmp(op, "%") == 0) return lsym_exec(lbuiltin_op_mod, acc, x);
-    if (strcmp(op, "^") == 0) return lsym_exec(lbuiltin_op_pow, acc, x);
-    if (strcmp(op, "!") == 0) return lsym_exec(lbuiltin_op_fac, acc, x);
 
     lval_mut_err(acc, LERR_BAD_SYMBOL);
     return -1;

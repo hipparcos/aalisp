@@ -1,5 +1,41 @@
 #include "lsym.h"
 
+#include <string.h>
+
+#include "lbuiltin.h"
+
+struct lsym_table {
+    const char*        symbol;
+    size_t             operands;
+    const struct lsym* descriptor;
+};
+
+static struct lsym_table registered_symbols[] = {
+    {"+", 2, &lbuiltin_op_add},
+    {"-", 1, &lbuiltin_op_sub_unary},
+    {"-", 2, &lbuiltin_op_sub},
+    {"*", 2, &lbuiltin_op_mul},
+    {"/", 2, &lbuiltin_op_div},
+    {"%", 2, &lbuiltin_op_mod},
+    {"^", 2, &lbuiltin_op_pow},
+    {"!", 1, &lbuiltin_op_fac},
+    {NULL, 0, NULL},
+};
+
+const struct lsym* lsym_lookup(const char* sym, size_t operands) {
+    struct lsym_table* table = &registered_symbols[0];
+    do {
+        if (strcmp(sym, table->symbol) == 0) {
+            if (table->operands < 2 && table->operands != operands) {
+                continue;
+            }
+            return table->descriptor;
+        }
+    } while ((++table)->symbol);
+    return NULL;
+}
+
+
 #define EITHER_IS(type, a, b) (lval_type(a) == type || lval_type(b) == type)
 static enum ltype typeof_op(const struct lval* a, const struct lval *b) {
     if (EITHER_IS(LVAL_DBL, a, b))    return LVAL_DBL;

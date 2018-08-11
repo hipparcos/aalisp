@@ -187,7 +187,7 @@ static void lval_connect(struct lval* v, struct ldata* d) {
 /** lval_disconnect disconnects v from its ldata.
  ** v->data is reclaimed if refc = 0. */
 static struct ldata* lval_disconnect(struct lval* v, bool reuse) {
-    if (!lval_is_mutable(v)) {
+    if (!v->data->mutable) {
         return NULL;
     }
     if (v->data->refc > 0) {
@@ -465,18 +465,21 @@ struct lval* lval_pop(struct lval* v, size_t c) {
     return val;
 }
 
-struct lval* lval_index(struct lval* v, size_t c) {
+bool lval_index(const struct lval* v, size_t c, struct lval* dest) {
     if (lval_type(v) != LVAL_SEXPR) {
         return false;
     }
-    if (c >= v->data->len) {
-        return NULL;
+    if (!lval_is_mutable(dest)) {
+        return false;
     }
-    struct lval* r = lval_alloc_handle();
+    if (c >= v->data->len) {
+        return false;
+    }
+    lval_disconnect(dest, false);
     struct lval* e = v->data->payload.cell[c];
-    lval_connect(r, e->data);
-    r->ast = e->ast;
-    return r;
+    lval_connect(dest, e->data);
+    dest->ast = e->ast;
+    return true;
 }
 
 size_t lval_len(struct lval* v) {

@@ -698,12 +698,13 @@ describe(lval, {
             assert(lval_push(sexpr, sym));
             assert(lval_push(sexpr, a));
             assert(lval_push(sexpr, b));
-            struct lval* val;
-            assert(val = lval_index(sexpr, 1));
-            defer(lval_free(val));
-            size_t len = lval_printlen(val);
+            struct lval* got = lval_alloc();
+            defer(lval_free(got));
+            assert(lval_index(sexpr, 1, got));
+            defer(lval_free(got));
+            size_t len = lval_printlen(got);
             char* s = calloc(len, sizeof(char));
-            lval_as_str(val, s, len);
+            lval_as_str(got, s, len);
             defer(free(s));
             assert(strcmp(s, "1") == 0);
         });

@@ -93,9 +93,9 @@ bool lval_push(struct lval* v, const struct lval* cell);
 /** lval_pop remove cell c from v and returns it.
  ** Caller is responsible for calling free on returned value. */
 struct lval* lval_pop(struct lval* v, size_t c);
-/** lval_index returns the c-th child of a sexpr.
+/** lval_index returns the c-th child of a sexpr in dest.
  ** It copies ast pointer. */
-struct lval* lval_index(struct lval* v, size_t c);
+bool lval_index(const struct lval* v, size_t c, struct lval* dest);
 /** lval_len returns the length of an sexpr. */
 size_t lval_len(struct lval* v);
 

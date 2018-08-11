@@ -38,7 +38,7 @@ const struct lsym* lsym_lookup(const char* sym, size_t operands);
  **   1 if acc generate an error
  **   2 if x generate an error */
 int lsym_exec(
-    const struct lsym sym,
+    const struct lsym* sym,
     struct lval* acc, const struct lval* x);
 
 #endif

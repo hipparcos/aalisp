@@ -29,7 +29,7 @@ static int leval_exec(const char* op, struct lval* acc, const struct lval* x, si
 
     const struct lsym* descriptor = NULL;
     if (NULL != (descriptor = lsym_lookup(op, operands))) {
-        return lsym_exec(*descriptor, acc, x);
+        return lsym_exec(descriptor, acc, x);
     }
 
     lval_mut_err(acc, LERR_BAD_SYMBOL);

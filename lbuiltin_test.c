@@ -126,37 +126,37 @@ describe(builtin, {
     subdesc(op_add, {
 
         it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(lbuiltin_op_add,
+            test_helper_builtin_pass(&lbuiltin_op_add,
                 lval_mut_num, 1,
                 lval_mut_num, 1,
                 lval_mut_num, 2);
         });
         it("passes for LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_add,
+            test_helper_builtin_pass(&lbuiltin_op_add,
                 lval_mut_dbl, 1.0,
                 lval_mut_dbl, 1.0,
                 lval_mut_dbl, 2.0);
         });
         it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_add,
+            test_helper_builtin_pass(&lbuiltin_op_add,
                 lval_mut_bignum, bn_maxlong_succ,
                 lval_mut_bignum, bn_maxlong_succ,
                 lval_mut_bignum, bn_maxlong_succx2);
         });
         it("passes for LVAL_BIGNUM and LVAL_NUM casted to LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_add,
+            test_helper_builtin_pass(&lbuiltin_op_add,
                 lval_mut_num,    1,
                 lval_mut_bignum, bn_maxlong,
                 lval_mut_bignum, bn_maxlong_succ);
         });
         it("passes for LVAL_DBL and LVAL_NUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_add,
+            test_helper_builtin_pass(&lbuiltin_op_add,
                 lval_mut_num, 1,
                 lval_mut_dbl, 1.0,
                 lval_mut_dbl, 2.0);
         });
         it("passes for LVAL_DBL and LVAL_BIGNUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_add,
+            test_helper_builtin_pass(&lbuiltin_op_add,
                 lval_mut_dbl,    1.0,
                 lval_mut_bignum, bn_one,
                 lval_mut_dbl,    2.0);
@@ -167,37 +167,37 @@ describe(builtin, {
     subdesc(op_sub, {
 
         it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(lbuiltin_op_sub,
+            test_helper_builtin_pass(&lbuiltin_op_sub,
                 lval_mut_num, 2,
                 lval_mut_num, 1,
                 lval_mut_num, 1);
         });
         it("passes for LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_sub,
+            test_helper_builtin_pass(&lbuiltin_op_sub,
                 lval_mut_dbl, 2.0,
                 lval_mut_dbl, 1.0,
                 lval_mut_dbl, 1.0);
         });
         it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_sub,
+            test_helper_builtin_pass(&lbuiltin_op_sub,
                 lval_mut_bignum, bn_maxlong_succ,
                 lval_mut_bignum, bn_maxlong,
                 lval_mut_bignum, bn_one);
         });
         it("passes for LVAL_BIGNUM and LVAL_NUM casted to LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_sub,
+            test_helper_builtin_pass(&lbuiltin_op_sub,
                 lval_mut_bignum, bn_maxlong_succ,
                 lval_mut_num,    1,
                 lval_mut_bignum, bn_maxlong);
         });
         it("passes for LVAL_DBL and LVAL_NUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_sub,
+            test_helper_builtin_pass(&lbuiltin_op_sub,
                 lval_mut_num,   2,
                 lval_mut_dbl, 1.0,
                 lval_mut_dbl, 1.0);
         });
         it("passes for LVAL_DBL and LVAL_BIGNUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_sub,
+            test_helper_builtin_pass(&lbuiltin_op_sub,
                 lval_mut_dbl,    2.0,
                 lval_mut_bignum, bn_one,
                 lval_mut_dbl,    1.0);
@@ -208,25 +208,25 @@ describe(builtin, {
     subdesc(op_sub_unary, {
 
         it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(lbuiltin_op_sub_unary,
+            test_helper_builtin_pass(&lbuiltin_op_sub_unary,
                 lval_mut_num, 2,
                 discard, NULL,
                 lval_mut_num, -2);
         });
         it("passes for LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_sub_unary,
+            test_helper_builtin_pass(&lbuiltin_op_sub_unary,
                 lval_mut_dbl, 2.0,
                 discard, NULL,
                 lval_mut_dbl, -2.0);
         });
         it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_sub_unary,
+            test_helper_builtin_pass(&lbuiltin_op_sub_unary,
                 lval_mut_bignum, bn_maxlong_succ,
                 discard, NULL,
                 lval_mut_bignum, bn_minlong);
         });
         it("fails for 2 operands", {
-            test_helper_builtin_fail(lbuiltin_op_sub_unary,
+            test_helper_builtin_fail(&lbuiltin_op_sub_unary,
                 lval_mut_dbl,    2.0,
                 lval_mut_dbl,    2.0,
                 lval_mut_err, LERR_TOO_MANY_ARGS);
@@ -237,37 +237,37 @@ describe(builtin, {
     subdesc(op_mul, {
 
         it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(lbuiltin_op_mul,
+            test_helper_builtin_pass(&lbuiltin_op_mul,
                 lval_mut_num, 10,
                 lval_mut_num, 20,
                 lval_mut_num, 200);
         });
         it("passes for LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_mul,
+            test_helper_builtin_pass(&lbuiltin_op_mul,
                 lval_mut_dbl, 10.0,
                 lval_mut_dbl, 20.0,
                 lval_mut_dbl, 200.0);
         });
         it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_mul,
+            test_helper_builtin_pass(&lbuiltin_op_mul,
                 lval_mut_bignum, bn_10pow1,
                 lval_mut_bignum, bn_10pow10,
                 lval_mut_bignum, bn_10pow11);
         });
         it("passes for LVAL_BIGNUM and LVAL_NUM casted to LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_mul,
+            test_helper_builtin_pass(&lbuiltin_op_mul,
                 lval_mut_bignum, bn_10pow10,
                 lval_mut_num,    10,
                 lval_mut_bignum, bn_10pow11);
         });
         it("passes for LVAL_DBL and LVAL_NUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_mul,
+            test_helper_builtin_pass(&lbuiltin_op_mul,
                 lval_mut_num, 20,
                 lval_mut_dbl, 10.0,
                 lval_mut_dbl, 200.0);
         });
         it("passes for LVAL_DBL and LVAL_BIGNUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_mul,
+            test_helper_builtin_pass(&lbuiltin_op_mul,
                 lval_mut_dbl,    2.0,
                 lval_mut_bignum, bn_10pow1,
                 lval_mut_dbl,    20.0);
@@ -278,55 +278,55 @@ describe(builtin, {
     subdesc(op_div, {
 
         it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(lbuiltin_op_div,
+            test_helper_builtin_pass(&lbuiltin_op_div,
                 lval_mut_num, 20,
                 lval_mut_num, 10,
                 lval_mut_num, 2);
         });
         it("passes for LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_div,
+            test_helper_builtin_pass(&lbuiltin_op_div,
                 lval_mut_dbl, 20.0,
                 lval_mut_dbl, 10.0,
                 lval_mut_dbl, 2.0);
         });
         it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_div,
+            test_helper_builtin_pass(&lbuiltin_op_div,
                 lval_mut_bignum, bn_10pow11,
                 lval_mut_bignum, bn_10pow1,
                 lval_mut_bignum, bn_10pow10);
         });
         it("passes for LVAL_BIGNUM and LVAL_NUM casted to LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_div,
+            test_helper_builtin_pass(&lbuiltin_op_div,
                 lval_mut_bignum, bn_10pow11,
                 lval_mut_num,    10,
                 lval_mut_bignum, bn_10pow10);
         });
         it("passes for LVAL_DBL and LVAL_NUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_div,
+            test_helper_builtin_pass(&lbuiltin_op_div,
                 lval_mut_num, 20,
                 lval_mut_dbl, 10.0,
                 lval_mut_dbl, 2.0);
         });
         it("passes for LVAL_DBL and LVAL_BIGNUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_div,
+            test_helper_builtin_pass(&lbuiltin_op_div,
                 lval_mut_dbl,    20.0,
                 lval_mut_bignum, bn_10pow1,
                 lval_mut_dbl,    2.0);
         });
         it("fails when the divisor is 0 (LVAL_NUM)", {
-            test_helper_builtin_fail(lbuiltin_op_div,
+            test_helper_builtin_fail(&lbuiltin_op_div,
                 lval_mut_num, 20,
                 lval_mut_num, 0,
                 lval_mut_err, LERR_DIV_ZERO);
         });
         it("fails when the divisor is 0 (LVAL_DBL)", {
-            test_helper_builtin_fail(lbuiltin_op_div,
+            test_helper_builtin_fail(&lbuiltin_op_div,
                 lval_mut_dbl, 20.0,
                 lval_mut_dbl, 0.0,
                 lval_mut_err, LERR_DIV_ZERO);
         });
         it("fails when the divisor is 0 (LVAL_DBL & LVAL_BIGNUM", {
-            test_helper_builtin_fail(lbuiltin_op_div,
+            test_helper_builtin_fail(&lbuiltin_op_div,
                 lval_mut_dbl,    20.0,
                 lval_mut_bignum, bn_zero,
                 lval_mut_err,    LERR_DIV_ZERO);
@@ -337,37 +337,37 @@ describe(builtin, {
     subdesc(op_mod, {
 
         it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(lbuiltin_op_mod,
+            test_helper_builtin_pass(&lbuiltin_op_mod,
                 lval_mut_num, 20,
                 lval_mut_num, 18,
                 lval_mut_num, 2);
         });
         it("fails for LVAL_DBL", {
-            test_helper_builtin_fail(lbuiltin_op_mod,
+            test_helper_builtin_fail(&lbuiltin_op_mod,
                 lval_mut_dbl, 20.0,
                 lval_mut_dbl, 18.0,
                 lval_mut_err, LERR_BAD_OPERAND);
         });
         it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_mod,
+            test_helper_builtin_pass(&lbuiltin_op_mod,
                 lval_mut_bignum, bn_maxlong_succ,
                 lval_mut_bignum, bn_maxlong,
                 lval_mut_bignum, bn_one);
         });
         it("passes for LVAL_BIGNUM and LVAL_NUM casted to LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_mod,
+            test_helper_builtin_pass(&lbuiltin_op_mod,
                 lval_mut_bignum, bn_maxlong_succ,
                 lval_mut_num,    LONG_MAX,
                 lval_mut_bignum, bn_one);
         });
         it("fails when the modisor is 0 (LVAL_NUM)", {
-            test_helper_builtin_fail(lbuiltin_op_mod,
+            test_helper_builtin_fail(&lbuiltin_op_mod,
                 lval_mut_num, 20,
                 lval_mut_num, 0,
                 lval_mut_err, LERR_DIV_ZERO);
         });
         it("fails when the modisor is 0 (LVAL_DBL & LVAL_BIGNUM", {
-            test_helper_builtin_fail(lbuiltin_op_mod,
+            test_helper_builtin_fail(&lbuiltin_op_mod,
                 lval_mut_bignum, bn_maxlong_succ,
                 lval_mut_bignum, bn_zero,
                 lval_mut_err,    LERR_DIV_ZERO);
@@ -378,31 +378,31 @@ describe(builtin, {
     subdesc(op_fac, {
 
         it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(lbuiltin_op_fac,
+            test_helper_builtin_pass(&lbuiltin_op_fac,
                 lval_mut_num, 20,
                 discard, NULL,
                 lval_mut_num, fac20);
         });
         it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_fac,
+            test_helper_builtin_pass(&lbuiltin_op_fac,
                 lval_mut_bignum, bn_21,
                 discard, NULL,
                 lval_mut_bignum, bn_fac21);
         });
         it("fails for LVAL_DBL", {
-            test_helper_builtin_fail(lbuiltin_op_fac,
+            test_helper_builtin_fail(&lbuiltin_op_fac,
                 lval_mut_dbl, 20.0,
                 discard, NULL,
                 lval_mut_err, LERR_BAD_OPERAND);
         });
         it("fails for LVAL_NUM < 0", {
-            test_helper_builtin_fail(lbuiltin_op_fac,
+            test_helper_builtin_fail(&lbuiltin_op_fac,
                 lval_mut_num, -20,
                 discard, NULL,
                 lval_mut_err, LERR_BAD_OPERAND);
         });
         it("fails for 2 operands", {
-            test_helper_builtin_fail(lbuiltin_op_fac,
+            test_helper_builtin_fail(&lbuiltin_op_fac,
                 lval_mut_num, 20,
                 lval_mut_num, 20,
                 lval_mut_err, LERR_TOO_MANY_ARGS);
@@ -413,37 +413,37 @@ describe(builtin, {
     subdesc(op_pow, {
 
         it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(lbuiltin_op_pow,
+            test_helper_builtin_pass(&lbuiltin_op_pow,
                 lval_mut_num, 2,
                 lval_mut_num, 8,
                 lval_mut_num, 256);
         });
         it("passes for LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_pow,
+            test_helper_builtin_pass(&lbuiltin_op_pow,
                 lval_mut_dbl, 2.0,
                 lval_mut_dbl, 8.0,
                 lval_mut_dbl, 256.0);
         });
         it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_pow,
+            test_helper_builtin_pass(&lbuiltin_op_pow,
                 lval_mut_bignum, bn_10pow10,
                 lval_mut_bignum, bn_10pow1,
                 lval_mut_bignum, bn_10pow100);
         });
         it("passes for LVAL_BIGNUM and LVAL_NUM casted to LVAL_BIGNUM", {
-            test_helper_builtin_pass(lbuiltin_op_pow,
+            test_helper_builtin_pass(&lbuiltin_op_pow,
                 lval_mut_bignum, bn_10pow10,
                 lval_mut_num,    10,
                 lval_mut_bignum, bn_10pow100);
         });
         it("passes for LVAL_DBL and LVAL_NUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_pow,
+            test_helper_builtin_pass(&lbuiltin_op_pow,
                 lval_mut_num, 2,
                 lval_mut_dbl, 8.0,
                 lval_mut_dbl, 256.0);
         });
         it("passes for LVAL_DBL and LVAL_BIGNUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(lbuiltin_op_pow,
+            test_helper_builtin_pass(&lbuiltin_op_pow,
                 lval_mut_dbl,    2.0,
                 lval_mut_bignum, bn_8,
                 lval_mut_dbl,    256.0);

@@ -45,29 +45,29 @@ static enum ltype typeof_op(const struct lval* a, const struct lval *b) {
 }
 
 int lsym_exec(
-    const struct lsym sym,
+    const struct lsym* sym,
     struct lval* acc, const struct lval* x
 ) {
     /* Local x operand */
     const struct lval* lx = x;
     if (lval_is_nil(acc)) {
         lval_dup(acc, x);
-        if (sym.unary) {
+        if (sym->unary) {
             lx = &lnil;
         } else {
-            lx = sym.neutral;
+            lx = sym->neutral;
         }
     }
-    if (sym.unary && !lval_is_nil(lx)) {
+    if (sym->unary && !lval_is_nil(lx)) {
         lval_mut_err(acc, LERR_TOO_MANY_ARGS);
         return 2;
     }
 
     /* Guards */
     int s = 0;
-    for (int i = 0; i < sym.guardc; i++) {
-        if ((s = (sym.guards[i]->condition)(acc, lx)) != 0) {
-            lval_mut_err(acc, sym.guards[i]->error);
+    for (int i = 0; i < sym->guardc; i++) {
+        if ((s = (sym->guards[i]->condition)(acc, lx)) != 0) {
+            lval_mut_err(acc, sym->guards[i]->error);
             return s;
         }
     }
@@ -79,7 +79,7 @@ int lsym_exec(
         double a, b;
         lval_as_dbl(acc, &a);
         lval_as_dbl(lx, &b);
-        lval_mut_dbl(acc, sym.op_dbl(a, b));
+        lval_mut_dbl(acc, sym->op_dbl(a, b));
         return 0;
         }
     case LVAL_BIGNUM:
@@ -91,7 +91,7 @@ int lsym_exec(
         lval_as_bignum(lx, b);
         mpz_t rbn;
         mpz_init(rbn);
-        sym.op_bignum(rbn, a, b);
+        sym->op_bignum(rbn, a, b);
         mpz_clear(a);
         mpz_clear(b);
         lval_mut_bignum(acc, rbn);
@@ -103,7 +103,7 @@ int lsym_exec(
         long a, b;
         lval_as_num(acc, &a);
         lval_as_num(lx, &b);
-        if (sym.cnd_overflow && sym.cnd_overflow(a, b)) {
+        if (sym->cnd_overflow && sym->cnd_overflow(a, b)) {
             mpz_t bna;
             mpz_init_set_si(bna, a);
             lval_mut_bignum(acc, bna);
@@ -111,7 +111,7 @@ int lsym_exec(
             mpz_clear(bna);
             return s;
         }
-        lval_mut_num(acc, sym.op_num(a, b));
+        lval_mut_num(acc, sym->op_num(a, b));
         return 0;
         }
     default: break;

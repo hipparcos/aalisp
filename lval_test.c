@@ -364,23 +364,6 @@ describe(lval, {
             assert(lval_free(v));
             assert(lval_free(cpy));
         });
-
-        it("fails to copy to a non nil lval and leaves it unmodified", {
-            long expected = 20;
-            struct lval* v = lval_alloc();
-            struct lval* cpy = lval_alloc();
-            assert(lval_mut_num(v, 10));
-            assert(lval_type(v) == LVAL_NUM);
-            assert(lval_mut_num(cpy, expected));
-            assert(lval_type(cpy) == LVAL_NUM);
-            assert(!lval_copy(cpy, v));
-            assert(lval_type(cpy) == LVAL_NUM);
-            long got = 0;
-            assert(lval_as_num(cpy, &got));
-            assert(got == expected);
-            assert(lval_free(v));
-            assert(lval_free(cpy));
-        });
     });
 
     subdesc(is_numeric, {

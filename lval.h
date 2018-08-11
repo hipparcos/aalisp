@@ -66,8 +66,7 @@ bool lval_clear(struct lval* v);
  ** lval_dup fails when dest == src.
  ** It copies ast pointer. */
 bool lval_dup(struct lval* dest, const struct lval* src);
-/** lval_copy does a deep copy of src into dest.
- ** dest must be of type LVAL_NIL. */
+/** lval_copy does a deep copy of src into dest. */
 bool lval_copy(struct lval* dest, const struct lval* src);
 
 /* Mutators */

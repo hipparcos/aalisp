@@ -38,7 +38,7 @@ struct ldata {
     int alive;
     /** refc is the number of lval referencing this ldata. */
     int refc;
-    /** ldata.mutable tells if the ldata is mutable. */
+    /** ldata.mutable tells if the ldata is mutable, associated lval can't be modified. */
     bool mutable;
     /** ldata.type to use the union. */
     enum ltype type;
@@ -61,18 +61,14 @@ struct ldata {
 
 /* ldata.alive special status. */
 #define DEAD      0
-#define IMMORTAL -1 /** and immutable. */
+#define IMMORTAL -1
 
 static INLINE bool lval_is_alive(const struct lval* v) {
     return v && v->alive != DEAD && v->alive == v->data->alive;
 }
 
-static INLINE bool lval_is_immortal(const struct lval* v) {
-    return lval_is_alive(v) && v->alive == IMMORTAL;
-}
-
 static INLINE bool lval_is_mutable(const struct lval* v) {
-    return lval_is_alive(v) && !lval_is_immortal(v) && v->data->mutable;
+    return lval_is_alive(v) && v->data->mutable;
 }
 
 /* Special lval definitions. */
@@ -108,6 +104,16 @@ const struct lval lzero = {
 const struct lval lone = {
     .alive = IMMORTAL,
     .data  = (struct ldata*) &ldata_one
+};
+/** ldata_init is used as init data for lval.
+ ** It is mutable but a new data is always allocated because refc starts at 1.*/
+static struct ldata ldata_init = {
+    .alive       = IMMORTAL,
+    .mutable     = true,
+    .refc        = 1, /* Here's the trick: is mutable but refc starts at 1. */
+    .type        = LVAL_NIL,
+    .len         = 0,
+    .payload.num = 0
 };
 
 /** lvalp_unique returns a hopefully unique number. */
@@ -157,6 +163,7 @@ static struct ldata* ldata_alloc(void) {
      * Allocation from a ldata pool later.
      * Memory is set to 0. */
     struct ldata* data = calloc(1, sizeof(struct ldata));
+    data->type = LVAL_NIL;
     data->mutable = true;
     ldata_clear(data);
     return data;
@@ -166,44 +173,50 @@ static struct ldata* ldata_alloc(void) {
  ** v is connected to lnil (immutable) by default. */
 static void lval_connect(struct lval* v, struct ldata* d) {
     if (!d) {
-        d = (struct ldata*) &ldata_nil;
+        d = (struct ldata*) &ldata_init;
+    }
+    if (v->data == d) {
+        v->alive = d->alive; // Keep alive updated.
+        return;
     }
     v->data  = d;
-    v->alive = v->data->alive;
+    v->alive = d->alive;
     v->data->refc++;
 }
 
 /** lval_disconnect disconnects v from its ldata.
  ** v->data is reclaimed if refc = 0. */
 static struct ldata* lval_disconnect(struct lval* v, bool reuse) {
-    if (!v->data->mutable) {
-        lval_connect(v, (struct ldata*)&lnil);
+    if (!lval_is_mutable(v)) {
         return NULL;
     }
     if (v->data->refc > 0) {
         v->data->refc--;
     }
+    bool dead = v->data->refc == 0;
     if (reuse) {
-        /* Can't reuse ldata. */
-        if (v->data->refc > 0) {
-            struct ldata* data = ldata_alloc();
-            return data;
-        } else {
+        if (dead) {
             ldata_clear(v->data);
             return v->data;
         }
+        /* Can't reuse ldata. */
+        struct ldata* data = ldata_alloc();
+        return data;
     }
-    if (v->data->refc == 0) {
+    if (dead) {
         ldata_clear(v->data);
-        free(v->data);
+        if (v->data->alive != IMMORTAL) {
+            free(v->data);
+        }
     }
+    lval_connect(v, &ldata_init);
     return NULL;
 }
 
 struct lval* lval_alloc(void) {
-    struct ldata* data = ldata_alloc();
     struct lval* v = calloc(1, sizeof(struct lval));
-    lval_connect(v, data);
+    /* Don't alloc data yet, let mutation functions do it. */
+    lval_connect(v, &ldata_init);
     v->ast = NULL;
     return v;
 }
@@ -251,7 +264,7 @@ bool lval_dup(struct lval* dest, const struct lval* src) {
 }
 
 bool ldata_copy(struct ldata* dest, const struct ldata* src) {
-    if (!ldata_clear(dest)) {
+    if (!dest->mutable) {
         return false;
     }
     switch (src->type) {
@@ -266,7 +279,7 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
     case LVAL_ERR:
         dest->payload.err = src->payload.err;
         break;
-    case LVAL_SEXPR: // TODO: deep copy sexpr?
+    case LVAL_SEXPR:
         dest->payload.cell = calloc(src->len, sizeof(struct lval*));
         for (size_t c = 0; c < src->len; c++) {
             struct lval* val = lval_alloc_handle();
@@ -297,7 +310,7 @@ bool lval_copy(struct lval* dest, const struct lval* src) {
     if (!lval_is_mutable(dest)) {
         return false;
     }
-    if (!lval_is_nil(dest)) {
+    if (!lval_clear(dest)) {
         return false;
     }
     if (!ldata_copy(dest->data, src->data)) {

@@ -253,7 +253,7 @@ static struct ltok* llex(const char* input, struct ltok** error, bool surround) 
     scanner.col = 1;
     struct ltok *first = NULL, *curr = NULL, *last = NULL;
     *error = NULL;
-    while (llex_next(&scanner)) {
+    while (input && llex_next(&scanner)) {
         curr = llex_emit(&scanner);
         if (!first) {
             first = curr;

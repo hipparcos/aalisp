@@ -35,6 +35,14 @@ int main(int argc, char** argv) {
     /* REPL loop */
     while (true) {
         char* input = readline(prompt);
+        /* Ctrl+D was hit; quit. */
+        if (!input || strncmp(input, "quit", 4) == 0) {
+            if (!input) {
+                fputs("quit\n", stdout);
+            }
+            free(input);
+            break;
+        }
         add_history(input);
         lisp_eval_from_string(input, prompt_len);
         free(input);

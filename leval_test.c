@@ -11,7 +11,6 @@
 
 #define test_pass(input, ouput, ...) \
     it("passes: "input" => "ouput, { \
-        defer(cleanup()); \
         struct lval *expected = lval_alloc(); \
         defer(lval_free(expected)); \
         __VA_ARGS__ \
@@ -23,7 +22,6 @@
 
 #define test_fail(input, err) \
     it("fails: "input" => "#err, { \
-        defer(cleanup()); \
         struct lval *expected = lval_alloc(); \
         defer(lval_free(expected)); \
         lval_mut_err(expected, err); \
@@ -33,20 +31,7 @@
         assert( lval_are_equal(result, expected)); \
     })
 
-/** Test fixtures */
-const long fac20 = 2432902008176640000;
-mpz_t bn_fac21;
-
-void cleanup(void) {
-    mpz_clear(bn_fac21);
-}
-
 describe(lisp_eval, {
-    before_each({
-        mpz_init_set_ui(bn_fac21, fac20);
-        mpz_mul_si(bn_fac21, bn_fac21, 21);
-    });
-
     /* Happy path. */
     test_pass("", "nil", {
             lval_mut_nil(expected);
@@ -67,7 +52,12 @@ describe(lisp_eval, {
             lval_mut_dbl(expected, 2.0);
         });
     test_pass("! 21", "2432902008176640000", {
+            const long fac20 = 2432902008176640000;
+            mpz_t bn_fac21;
+            mpz_init_set_ui(bn_fac21, fac20);
+            mpz_mul_si(bn_fac21, bn_fac21, 21);
             lval_mut_bignum(expected, bn_fac21);
+            mpz_clear(bn_fac21);
         });
     test_pass("* 10 (- 20 10)", "100", {
             lval_mut_num(expected, 100);

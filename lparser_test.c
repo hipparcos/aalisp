@@ -1,267 +1,178 @@
 #include "lparser.h"
 
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "llexer.h"
 
 #include "vendor/snow/snow/snow.h"
 
-bool test_helper_pass(struct ltok* input, const struct last* expected) {
-    struct last* got = NULL;
-    struct last* error = NULL;
-    got = lisp_parse(input, &error);
-    if (!got || error != NULL || !last_are_all_equal(got, expected)) {
-        fputc('\n', stdout);
-        fputs("Input:\n", stdout);
-        llex_print_all(input);
-        fputs("Expected:\n", stdout);
-        last_print_all(expected);
-        fputs("Got:\n", stdout);
-        last_print_all(got);
-        fputs("Error:\n", stdout);
-        last_print(error);
-        fputc('\n', stdout);
-        last_free(got);
-        return false;
+struct ast_list {
+    size_t  id;
+    size_t* children;
+    enum ltag tag;
+    char* content;
+    struct last* node;
+};
+
+/** ast_builder builds an ast from the given list.
+ ** list must end with the LTAG_PROG node and then an element with id=0. */
+struct last* ast_builder(struct ast_list* list) {
+    if (!list) {
+        return NULL;
     }
-    last_free(got);
-    return true;
+    struct last *root = NULL;
+    struct ast_list* curr = list;
+    /* Create all ast nodes. */
+    do {
+        /* Create node. */
+        struct last* node = calloc(1, sizeof(struct last));
+        node->tag = curr->tag;
+        size_t len = strlen(curr->content);
+        node->content = calloc(1, len + 1);
+        strncpy(node->content, curr->content, len);
+        /* Save node into current list element. */
+        curr->node = node;
+        /* Set new root. */
+        root = node;
+    } while (++curr && curr->id);
+    /* Attach children. */
+    curr = list;
+    do {
+        for (size_t* c = curr->children; c && *c; c++) {
+            /* Look for existing child */
+            struct ast_list* child = list;
+            do {
+                if (child->id == *c) {
+                    break;
+                }
+            } while (++child && child->id);
+            /* Append child to node. */
+            struct last* node = curr->node;
+            node->childrenc++;
+            node->children = realloc(node->children, node->childrenc * sizeof(struct last*));
+            node->children[node->childrenc-1] = child->node;
+        }
+    } while (++curr && curr->id);
+    return root;
 }
-bool test_helper_fail(struct ltok* input) {
-    struct last* got = NULL;
-    struct last* error = NULL;
-    got = lisp_parse(input, &error);
-    if (!got || error == NULL) {
-        fputc('\n', stdout);
-        fputs("Input:\n", stdout);
-        llex_print_all(input);
-        fputs("Got:\n", stdout);
-        last_print_all(got);
-        fputs("Error:\n", stdout);
-        last_print(error);
-        fputc('\n', stdout);
-        last_free(got);
-        return false;
-    }
-    last_free(got);
-    return true;
-}
+
+#define test_pass(msg, input, expected) \
+    it("passes for " msg " `" input "`", { \
+        struct last* expec = ast_builder(expected); \
+        defer(last_free(expec)); \
+        struct ltok *tokens = NULL, *lexer_error = NULL; \
+        defer(llex_free(tokens)); \
+        assert(tokens = lisp_lex(input, &lexer_error)); \
+        struct last *got = NULL, *error = NULL; \
+        defer(last_free(got)); \
+        assert(got = lisp_parse(tokens, &error)); \
+        assert(last_are_all_equal(got, expec)); \
+    })
+
+#define test_fail(msg, input) \
+    it("fails for " msg, { \
+        struct ltok *tokens = NULL, *lexer_error = NULL; \
+        defer(llex_free(tokens)); \
+        assert(tokens = lisp_lex(input, &lexer_error)); \
+        struct last *got = NULL, *error = NULL; \
+        defer(last_free(got)); \
+        assert(!(got = lisp_parse(tokens, &error)) || error != NULL); \
+    })
 
 describe(lparse, {
 
-    it("works for 0 length token list", {
-        struct ltok tEOF = {.type= LTOK_EOF, .content= NULL};
-        struct last* error = NULL;
-        assert(lisp_parse(&tEOF, &error) == NULL);
-    });
+    test_pass("s-expression",
+            "(+ 1 2)",
+            &((struct ast_list[]){
+                {.id= 1, .tag= LTAG_SYM, .content= "+", .children= NULL},
+                {.id= 2, .tag= LTAG_NUM, .content= "1", .children= NULL},
+                {.id= 3, .tag= LTAG_NUM, .content= "2", .children= NULL},
+                {.id= 4, .tag= LTAG_EXPR, .content= "",
+                    .children= &((size_t[]){1, 2, 3, 0}[0])},
+                {.id= 5, .tag= LTAG_SEXPR, .content= "",
+                    .children= &((size_t[]){4, 0}[0])},
+                {.id= 6, .tag= LTAG_PROG, .content= "",
+                    .children= &((size_t[]){5, 0}[0])},
+                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+            })[0]
+        );
 
-    it("works for s-expression `(+ 1 2)`", {
-        /* Input */
-        const char* lexer_input = "(+ 1 2)";
-        struct ltok* lexer_error = NULL;
-        struct ltok* tokens = lisp_lex(lexer_input, &lexer_error);
-        defer(llex_free(tokens));
+    test_pass("s-expression",
+            "(+ 1 +)",
+            &((struct ast_list[]){
+                {.id= 1, .tag= LTAG_SYM, .content= "+", .children= NULL},
+                {.id= 2, .tag= LTAG_NUM, .content= "1", .children= NULL},
+                {.id= 3, .tag= LTAG_SYM, .content= "+", .children= NULL},
+                {.id= 4, .tag= LTAG_EXPR, .content= "",
+                    .children= &((size_t[]){1, 2, 3, 0}[0])},
+                {.id= 5, .tag= LTAG_SEXPR, .content= "",
+                    .children= &((size_t[]){4, 0}[0])},
+                {.id= 6, .tag= LTAG_PROG, .content= "",
+                    .children= &((size_t[]){5, 0}[0])},
+                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+            })[0]
+        );
 
-        /* Expected */
-        struct last symb = {.tag= LTAG_SYM, .content= "+"};
-        struct last opr1 = {.tag= LTAG_NUM, .content= "1"};
-        struct last opr2 = {.tag= LTAG_NUM, .content= "2"};
-        struct last *expr_children[] = { &symb, &opr1, &opr2 };
-        struct last expr = {
-            .tag= LTAG_EXPR, .content= "",
-            .children= (struct last**) &expr_children,
-            .childrenc = 3,
-        };
-        struct last *sexpr_children[] = { &expr };
-        struct last sexpr = {
-            .tag= LTAG_SEXPR, .content= "",
-            .children= (struct last**) &sexpr_children,
-            .childrenc = 1,
-        };
-        struct last *prgm_children[] = { &sexpr };
-        struct last prgm = {
-            .tag= LTAG_PROG, .content= "",
-            .children= (struct last**) &prgm_children,
-            .childrenc = 1,
-        };
+    test_pass("doubles",
+            "(+ 1.0 2.0)",
+            &((struct ast_list[]){
+                {.id= 1, .tag= LTAG_SYM, .content= "+", .children= NULL},
+                {.id= 2, .tag= LTAG_DBL, .content= "1.0", .children= NULL},
+                {.id= 3, .tag= LTAG_DBL, .content= "2.0", .children= NULL},
+                {.id= 4, .tag= LTAG_EXPR, .content= "",
+                    .children= &((size_t[]){1, 2, 3, 0}[0])},
+                {.id= 5, .tag= LTAG_SEXPR, .content= "",
+                    .children= &((size_t[]){4, 0}[0])},
+                {.id= 6, .tag= LTAG_PROG, .content= "",
+                    .children= &((size_t[]){5, 0}[0])},
+                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+            })[0]
+        );
 
-        assert(test_helper_pass(tokens, &prgm));
-    });
+    test_pass("strings",
+            "(concat \"test\" \"esc\\\"aped\")",
+            &((struct ast_list[]){
+                {.id= 1, .tag= LTAG_SYM, .content= "concat", .children= NULL},
+                {.id= 2, .tag= LTAG_STR, .content= "test", .children= NULL},
+                {.id= 3, .tag= LTAG_STR, .content= "esc\"aped", .children= NULL},
+                {.id= 4, .tag= LTAG_EXPR, .content= "",
+                    .children= &((size_t[]){1, 2, 3, 0}[0])},
+                {.id= 5, .tag= LTAG_SEXPR, .content= "",
+                    .children= &((size_t[]){4, 0}[0])},
+                {.id= 6, .tag= LTAG_PROG, .content= "",
+                    .children= &((size_t[]){5, 0}[0])},
+                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+            })[0]
+        );
 
-    it("works for expression `(+ 1 +)`", {
-        /* Input */
-        const char* lexer_input = "(+ 1 +)";
-        struct ltok* lexer_error = NULL;
-        struct ltok* tokens = lisp_lex(lexer_input, &lexer_error);
-        defer(llex_free(tokens));
+    test_pass("nested s-expressions",
+            "(+ 1 (! 2))",
+            &((struct ast_list[]){
+                {.id= 1, .tag= LTAG_SYM, .content= "!", .children= NULL},
+                {.id= 2, .tag= LTAG_NUM, .content= "2", .children= NULL},
+                {.id= 3, .tag= LTAG_EXPR, .content= "",
+                    .children= &((size_t[]){1, 2, 0}[0])},
+                {.id= 4, .tag= LTAG_SEXPR, .content= "",
+                    .children= &((size_t[]){3, 0}[0])},
+                {.id= 5, .tag= LTAG_SYM, .content= "+", .children= NULL},
+                {.id= 6, .tag= LTAG_NUM, .content= "1", .children= NULL},
+                {.id= 7, .tag= LTAG_EXPR, .content= "",
+                    .children= &((size_t[]){5, 6, 4, 0}[0])},
+                {.id= 8, .tag= LTAG_SEXPR, .content= "",
+                    .children= &((size_t[]){7, 0}[0])},
+                {.id= 9, .tag= LTAG_PROG, .content= "",
+                    .children= &((size_t[]){8, 0}[0])},
+                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+            })[0]
+        );
 
-        /* Expected */
-        struct last symb = {.tag= LTAG_SYM, .content= "+"};
-        struct last opr1 = {.tag= LTAG_NUM, .content= "1"};
-        struct last opr2 = {.tag= LTAG_SYM, .content= "+"};
-        struct last *expr_children[] = { &symb, &opr1, &opr2 };
-        struct last expr = {
-            .tag= LTAG_EXPR, .content= "",
-            .children= (struct last**) &expr_children,
-            .childrenc = 3,
-        };
-        struct last *sexpr_children[] = { &expr };
-        struct last sexpr = {
-            .tag= LTAG_SEXPR, .content= "",
-            .children= (struct last**) &sexpr_children,
-            .childrenc = 1,
-        };
-        struct last *prgm_children[] = { &sexpr };
-        struct last prgm = {
-            .tag= LTAG_PROG, .content= "",
-            .children= (struct last**) &prgm_children,
-            .childrenc = 1,
-        };
-
-        assert(test_helper_pass(tokens, &prgm));
-    });
-
-    it("works for double", {
-        /* Input */
-        const char* lexer_input = "(+ 1.0 2.0)";
-        struct ltok* lexer_error = NULL;
-        struct ltok* tokens = lisp_lex(lexer_input, &lexer_error);
-        defer(llex_free(tokens));
-
-        /* Expected */
-        struct last symb = {.tag= LTAG_SYM, .content= "+"};
-        struct last opr1 = {.tag= LTAG_DBL, .content= "1.0"};
-        struct last opr2 = {.tag= LTAG_DBL, .content= "2.0"};
-        struct last *expr_children[] = { &symb, &opr1, &opr2 };
-        struct last expr = {
-            .tag= LTAG_EXPR, .content= "",
-            .children= (struct last**) &expr_children,
-            .childrenc = 3,
-        };
-        struct last *sexpr_children[] = { &expr };
-        struct last sexpr = {
-            .tag= LTAG_SEXPR, .content= "",
-            .children= (struct last**) &sexpr_children,
-            .childrenc = 1,
-        };
-        struct last *prgm_children[] = { &sexpr };
-        struct last prgm = {
-            .tag= LTAG_PROG, .content= "",
-            .children= (struct last**) &prgm_children,
-            .childrenc = 1,
-        };
-
-        assert(test_helper_pass(tokens, &prgm));
-    });
-
-    it("works for strings", {
-        /* Input */
-        const char* lexer_input = "(concat \"test\" \"esc\\\"aped\")";
-        struct ltok* lexer_error = NULL;
-        struct ltok* tokens = lisp_lex(lexer_input, &lexer_error);
-        defer(llex_free(tokens));
-
-        /* Expected */
-        struct last symb = {.tag= LTAG_SYM, .content= "concat"};
-        struct last opr1 = {.tag= LTAG_STR, .content= "test"};
-        struct last opr2 = {.tag= LTAG_STR, .content= "esc\"aped"};
-        struct last *expr_children[] = { &symb, &opr1, &opr2 };
-        struct last expr = {
-            .tag= LTAG_EXPR, .content= "",
-            .children= (struct last**) &expr_children,
-            .childrenc = 3,
-        };
-        struct last *sexpr_children[] = { &expr };
-        struct last sexpr = {
-            .tag= LTAG_SEXPR, .content= "",
-            .children= (struct last**) &sexpr_children,
-            .childrenc = 1,
-        };
-        struct last *prgm_children[] = { &sexpr };
-        struct last prgm = {
-            .tag= LTAG_PROG, .content= "",
-            .children= (struct last**) &prgm_children,
-            .childrenc = 1,
-        };
-
-        assert(test_helper_pass(tokens, &prgm));
-    });
-
-    it("works for nested s-expressions `(+ 1 (! 2))`", {
-        /* Input */
-        const char* lexer_input = "(+ 1 (! 2))";
-        struct ltok* lexer_error = NULL;
-        struct ltok* tokens = lisp_lex(lexer_input, &lexer_error);
-        defer(llex_free(tokens));
-
-        /* Expected */
-        struct last symb2 = {.tag= LTAG_SYM, .content= "!"};
-        struct last opr2 = {.tag= LTAG_NUM, .content= "2"};
-        struct last *expr3_children[] = { &symb2, &opr2 };
-        struct last expr3 = {
-            .tag= LTAG_EXPR, .content= "",
-            .children= (struct last**) &expr3_children,
-            .childrenc = 2,
-        };
-        struct last *sexpr2_children[] = { &expr3 };
-        struct last sexpr2 = {
-            .tag= LTAG_SEXPR, .content= "",
-            .children= (struct last**) &sexpr2_children,
-            .childrenc = 1,
-        };
-        struct last symb1 = {.tag= LTAG_SYM, .content= "+"};
-        struct last opr1 = {.tag= LTAG_NUM, .content= "1"};
-        struct last *expr1_children[] = { &symb1, &opr1, &sexpr2 };
-        struct last expr1 = {
-            .tag= LTAG_EXPR, .content= "",
-            .children= (struct last**) &expr1_children,
-            .childrenc = 3,
-        };
-        struct last *sexpr_children[] = { &expr1 };
-        struct last sexpr = {
-            .tag= LTAG_SEXPR, .content= "",
-            .children= (struct last**) &sexpr_children,
-            .childrenc = 1,
-        };
-        struct last *prgm_children[] = { &sexpr };
-        struct last prgm = {
-            .tag= LTAG_PROG, .content= "",
-            .children= (struct last**) &prgm_children,
-            .childrenc = 1,
-        };
-
-        assert(test_helper_pass(tokens, &prgm));
-    });
-
-    it("fails for a s-expression which does not begin by a symbol `(1 + 2)`", {
-        /* Input */
-        const char* lexer_input = "(1 + 2)";
-        struct ltok* lexer_error = NULL;
-        struct ltok* tokens = lisp_lex(lexer_input, &lexer_error);
-        defer(llex_free(tokens));
-
-        assert(test_helper_fail(tokens));
-    });
-
-    it("fails for a s-expression which does not end by a `)`", {
-        /* Input */
-        const char* lexer_input = "(! 1";
-        struct ltok* lexer_error = NULL;
-        struct ltok* tokens = lisp_lex(lexer_input, &lexer_error);
-        defer(llex_free(tokens));
-
-        assert(test_helper_fail(tokens));
-    });
-
-    it("fails for a s-expression that starts right before the end of a line `- (`", {
-        /* Input */
-        const char* lexer_input = "(";
-        struct ltok* lexer_error = NULL;
-        struct ltok* tokens = lisp_lex(lexer_input, &lexer_error);
-        defer(llex_free(tokens));
-
-        assert(test_helper_fail(tokens));
-    });
+    test_fail("NULL", NULL);
+    test_fail("0-length input", "");
+    test_fail("s-expr which does not begin with a symbol", "(1 + 2)");
+    test_fail("s-expr which does not end with a `)`", "(! 1");
+    test_fail("s-expr that starts right before the end of a line", "(");
 
 });
 

@@ -233,17 +233,15 @@ static struct ltok* llex_emitCPAR() {
     return tok;
 }
 
-/** llex_append appends token to list. */
-static struct ltok* llex_append(struct ltok* last, struct ltok* curr) {
-    if (!last) {
-        curr->prev = NULL;
-        curr->next = NULL;
-        return curr;
+/** llex_append appends token to list.
+ ** Returns the address of the next element. */
+static struct ltok** llex_append(struct ltok** last, struct ltok* curr) {
+    if (*last) {
+        (*last)->next = curr;
+    } else {
+        *last = curr;
     }
-    last->next = curr;
-    curr->prev = last;
-    curr->next = NULL;
-    return curr;
+    return &((*last)->next);
 }
 
 static struct ltok* llex(const char* input, struct ltok** error, bool surround) {
@@ -251,13 +249,10 @@ static struct ltok* llex(const char* input, struct ltok** error, bool surround) 
     scanner.input = input;
     scanner.line = 1;
     scanner.col = 1;
-    struct ltok *first = NULL, *curr = NULL, *last = NULL;
+    struct ltok *head = NULL, *curr = NULL, **last = &head;
     *error = NULL;
     while (input && llex_next(&scanner)) {
         curr = llex_emit(&scanner);
-        if (!first) {
-            first = curr;
-        }
         last = llex_append(last, curr);
     }
     /* Check for lexing error & append EOF. */
@@ -269,24 +264,17 @@ static struct ltok* llex(const char* input, struct ltok** error, bool surround) 
         llex_append(last, llex_emitEOF());
     } else {
         /* Optional: ensure that it's a sexpr. */
-        if (surround && first && first->type != LTOK_OPAR) {
+        if (surround && head && head->type != LTOK_OPAR) {
             struct ltok* opar = llex_emitOPAR();
             struct ltok* cpar = llex_emitCPAR();
-            first->prev = opar;
-            opar->next = first;
-            first = opar;
-            last->next = cpar;
-            cpar->prev = last;
-            last = cpar;
+            llex_append(&opar, head);
+            last = llex_append(last, cpar);
+            head = opar;
         }
         /* Last call to emit returns a LTOK_EOF. */
         llex_append(last, curr);
     }
-    /* Corner case: empty string or the first character gives an error. */
-    if (!first) {
-        first = curr;
-    }
-    return first;
+    return head;
 }
 
 struct ltok* lisp_lex(const char* input, struct ltok** error) {

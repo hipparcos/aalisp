@@ -22,8 +22,7 @@ struct ltok {
     char* content;
     int   line;
     int   col;
-    /* double linked list */
-    struct ltok* prev;
+    /* singly linked list */
     struct ltok* next;
 };
 
@@ -61,6 +60,6 @@ void llex_print_to(struct ltok* token, FILE* out);
 /** llex_print_all_to prints the list of tokens to the out file. */
 void llex_print_all_to(struct ltok* tokens, FILE* out);
 /** llex_print_all prints the list of tokens to stdout. */
-#define llex_print_all(tokens) llex_print_all_to(tokens, stdout);
+#define llex_print_all(tokens) llex_print_all_to(tokens, stdout)
 
 #endif

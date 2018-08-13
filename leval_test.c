@@ -9,84 +9,93 @@
 
 #include "vendor/snow/snow/snow.h"
 
+#define test_pass(input, ouput, ...) \
+    it("passes: "input" => "ouput, { \
+        defer(cleanup()); \
+        struct lval *expected = lval_alloc(); \
+        defer(lval_free(expected)); \
+        __VA_ARGS__ \
+        struct lval *result = lval_alloc(); \
+        defer(lval_free(result)); \
+        assert( lisp_eval(input, result, -1)); \
+        assert( lval_are_equal(result, expected)); \
+    })
+
+#define test_fail(input, err) \
+    it("fails: "input" => "#err, { \
+        defer(cleanup()); \
+        struct lval *expected = lval_alloc(); \
+        defer(lval_free(expected)); \
+        lval_mut_err(expected, err); \
+        struct lval *result = lval_alloc(); \
+        defer(lval_free(result)); \
+        assert(!lisp_eval(input, result, -1)); \
+        assert( lval_are_equal(result, expected)); \
+    })
+
 /** Test fixtures */
 const long fac20 = 2432902008176640000;
 mpz_t bn_fac21;
 
-struct lval* result;
-struct lval* expected;
-
-#define it_pass(input, output) \
-    it(input" == "#output, { \
-        (void)output; \
-        defer(cleanup()); \
-        if (!lisp_eval(input, result, -1)) { \
-            fputs("\nGot: ", stdout); \
-            lval_println(result); \
-            fail("eval failed"); \
-        } \
-        if (!lval_are_equal(result, expected)) { \
-            fputs("\nGot: ", stdout); \
-            lval_println(result); \
-            fail("got != expected"); \
-        } \
-    })
-#define it_fail(input, output) \
-    it(input" == "#output, { \
-        (void)output; \
-        defer(cleanup()); \
-        if ( lisp_eval(input, result, -1)) { \
-            fputs("\nGot: ", stdout); \
-            lval_println(result); \
-            fail("eval pass"); \
-        } \
-        if (!lval_are_equal(result, expected)) { \
-            fputs("\nGot: ", stdout); \
-            lval_println(result); \
-            fail("got != expected"); \
-        } \
-    })
-
 void cleanup(void) {
-    lval_free(result);
-    lval_free(expected);
     mpz_clear(bn_fac21);
 }
 
 describe(lisp_eval, {
     before_each({
-        result = lval_alloc();
-        expected = lval_alloc();
-
         mpz_init_set_ui(bn_fac21, fac20);
         mpz_mul_si(bn_fac21, bn_fac21, 21);
     });
 
-    /* happy path */
-    it_pass("",                          &lnil);
-    it_pass("+ 1 1",                     lval_mut_num(expected, 2));
-    it_pass("+ 1",                       lval_mut_num(expected, 1));
-    it_pass("- 1",                       lval_mut_num(expected, -1));
-    it_pass("+ 1 1 1 1 1 1",             lval_mut_num(expected, 6));
-    it_pass("+ 1 1.0",                   lval_mut_dbl(expected, 2.0));
-    it_pass("! 21",                      lval_mut_bignum(expected, bn_fac21));
-    it_pass("* 10 (- 20 10)",            lval_mut_num(expected, 100));
-    /* sexpr */
-    it_pass("(+ 1 1)",                   lval_mut_num(expected, 2));
-    it_pass("(+ 1 1)(+ 2 2)",            lval_mut_num(expected, 4));
-    /* nested */
-    it_pass("- (! 21) (! 21) 2.0 1",     lval_mut_dbl(expected, -3.0));
-    it_pass("- 2.0 1 (- (! 21) (! 21))", lval_mut_dbl(expected, 1.0));
+    /* Happy path. */
+    test_pass("", "nil", {
+            lval_mut_nil(expected);
+        });
+    test_pass("+ 1 1", "2", {
+            lval_mut_num(expected, 2);
+        });
+    test_pass("+ 1", "1", {
+            lval_mut_num(expected, 1);
+        });
+    test_pass("- 1", "-1", {
+            lval_mut_num(expected, -1);
+        });
+    test_pass("+ 1 1 1 1 1 1", "6", {
+            lval_mut_num(expected, 6);
+        });
+    test_pass("+ 1 1.0", "2.0", {
+            lval_mut_dbl(expected, 2.0);
+        });
+    test_pass("! 21", "2432902008176640000", {
+            lval_mut_bignum(expected, bn_fac21);
+        });
+    test_pass("* 10 (- 20 10)", "100", {
+            lval_mut_num(expected, 100);
+        });
+    /* S-expressions. */
+    test_pass("(+ 1 1)", "2", {
+            lval_mut_num(expected, 2);
+        });
+    test_pass("(+ 1 1)(+ 2 2)", "4", {
+            lval_mut_num(expected, 4);
+        });
+    /* Nested s-expressions. */
+    test_pass("- (! 21) (! 21) 2.0 1", "-3.0", {
+            lval_mut_dbl(expected, -3.0);
+        });
+    test_pass("- 2.0 1 (- (! 21) (! 21))", "1.0", {
+            lval_mut_dbl(expected, 1.0);
+        });
 
-    /* erros */
-    it_fail("/ 10 0",    lval_mut_err(expected, LERR_DIV_ZERO));
-    it_fail("1 + 1",     lval_mut_err(expected, LERR_EVAL));
-    it_fail("!1",        lval_mut_err(expected, LERR_BAD_SYMBOL));
-    it_fail("gibberish", lval_mut_err(expected, LERR_BAD_SYMBOL));
-    it_fail("+ 1 +",     lval_mut_err(expected, LERR_BAD_OPERAND));
-    it_fail("+ 1 \"string\"",     lval_mut_err(expected, LERR_BAD_OPERAND));
-    it_fail("+ 1 (!1)",  lval_mut_err(expected, LERR_BAD_SYMBOL));
-    it_fail("- (",       lval_mut_err(expected, LERR_EVAL));
+    /* Errors. */
+    test_fail("/ 10 0", LERR_DIV_ZERO);
+    test_fail("1 + 1", LERR_EVAL);
+    test_fail("!1", LERR_BAD_SYMBOL);
+    test_fail("gibberish", LERR_BAD_SYMBOL);
+    test_fail("+ 1 +", LERR_BAD_OPERAND);
+    test_fail("+ 1 \"string\"", LERR_BAD_OPERAND);
+    test_fail("+ 1 (!1)", LERR_BAD_SYMBOL);
+    test_fail("- (", LERR_EVAL);
 
 });
 

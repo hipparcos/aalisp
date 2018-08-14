@@ -50,12 +50,10 @@ static struct lval* lmut_str(const struct last* ast, struct last** error) {
     return v;
 }
 
-static struct lval* lmut_sexpr(const struct last* ast, struct last** error) {
-    struct lval* v = lval_alloc();
-    lval_mut_sexpr(v);
-    v->ast = ast;
-    /* Dereference the inner expression. */
-    ast = ast->children[0];
+static struct lval* lmut_sexpr(const struct last* ast, struct last** error);
+static struct lval* lmut_qexpr(const struct last* ast, struct last** error);
+
+void lmut_fill_list(struct lval* list, const struct last* ast, struct last** error) {
     for (size_t c = 0; c < ast->childrenc; c++) {
         struct lval* o = NULL;
         switch (ast->children[c]->tag) {
@@ -64,6 +62,7 @@ static struct lval* lmut_sexpr(const struct last* ast, struct last** error) {
         case LTAG_SYM: o = lmut_sym(ast->children[c], error); break;
         case LTAG_STR: o = lmut_str(ast->children[c], error); break;
         case LTAG_SEXPR: o = lmut_sexpr(ast->children[c], error); break;
+        case LTAG_QEXPR: o = lmut_qexpr(ast->children[c], error); break;
         default:
             o = lval_alloc();
             lval_mut_err(o, LERR_AST);
@@ -71,12 +70,31 @@ static struct lval* lmut_sexpr(const struct last* ast, struct last** error) {
             *error = (struct last*)ast;
             break;
         }
-        lval_push(v, o);
+        lval_push(list, o);
         /* Stop on error. */
         if (*error != NULL) {
             break;
         }
     }
+}
+
+static struct lval* lmut_qexpr(const struct last* ast, struct last** error) {
+    struct lval* v = lval_alloc();
+    lval_mut_qexpr(v);
+    v->ast = ast;
+    /* Add children to the qexpr. */
+    lmut_fill_list(v, ast, error);
+    return v;
+}
+
+static struct lval* lmut_sexpr(const struct last* ast, struct last** error) {
+    struct lval* v = lval_alloc();
+    lval_mut_sexpr(v);
+    v->ast = ast;
+    /* Dereference the inner expression. */
+    ast = ast->children[0];
+    /* Add children to the sexpr. */
+    lmut_fill_list(v, ast, error);
     return v;
 }
 

@@ -127,6 +127,26 @@ describe(lmut, {
         lval_dup(expected, prog);
     });
 
+    test_pass("q-expressions", "(head {1 1 1})", {
+        struct lval* sym = lval_alloc(); defer(lval_free(sym));
+        lval_mut_sym(sym, "head");
+        struct lval* opr1 = lval_alloc(); defer(lval_free(opr1));
+        lval_mut_num(opr1, 1);
+        struct lval* qexpr1 = lval_alloc(); defer(lval_free(qexpr1));
+        lval_mut_qexpr(qexpr1);
+        lval_push(qexpr1, opr1);
+        lval_push(qexpr1, opr1);
+        lval_push(qexpr1, opr1);
+        struct lval* sexpr1 = lval_alloc(); defer(lval_free(sexpr1));
+        lval_mut_sexpr(sexpr1);
+        lval_push(sexpr1, sym);
+        lval_push(sexpr1, qexpr1);
+        struct lval* prog = lval_alloc(); defer(lval_free(prog));
+        lval_mut_sexpr(prog);
+        lval_push(prog, sexpr1);
+        lval_dup(expected, prog);
+    });
+
     test_fail("NULL AST", NULL);
 
 });

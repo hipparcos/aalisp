@@ -9,4 +9,7 @@ bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len);
 /** lisp_eval_from_string evaluates input and prints result to stdout. */
 void lisp_eval_from_string(const char* restrict input, int prompt_len);
 
+/** leval evaluates v into r */
+bool leval(const struct lval* v, struct lval* r);
+
 #endif

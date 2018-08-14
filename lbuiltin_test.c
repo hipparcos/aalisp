@@ -492,6 +492,24 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_eval, {
+        it("eval a Q-Expr", {
+            struct lval* x = lval_alloc(); defer(lval_free(x));
+            lval_mut_num(x, 1);
+            struct lval* o = lval_alloc(); defer(lval_free(o));
+            lval_mut_sym(o, "+");
+            struct lval* s = lval_alloc(); defer(lval_free(s));
+            lval_mut_sexpr(s);
+            lval_push(s, o);
+            lval_push(s, x);
+            lval_push(s, x);
+            test_helper_builtin_pass(&lbuiltin_eval,
+                discard, NULL,
+                lval_dup, s,
+                lval_mut_num, 2);
+        });
+    });
+
 });
 
 snow_main();

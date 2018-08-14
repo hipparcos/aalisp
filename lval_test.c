@@ -347,10 +347,10 @@ describe(lval, {
             struct lval* dest = lval_alloc();
             defer(lval_free(dest));
             struct lval* src = lval_alloc();
-            defer(lval_free(src));
             lval_mut_num(src, 10);
             assert(lval_dup(dest, src));
             assert(dest->data == src->data);
+            lval_free(src);
             long got = 0;
             assert(lval_as_num(dest, &got));
             assert(got == 10);

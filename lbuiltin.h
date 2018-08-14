@@ -18,5 +18,6 @@ extern const struct lsym lbuiltin_head;
 extern const struct lsym lbuiltin_tail;
 extern const struct lsym lbuiltin_join;
 extern const struct lsym lbuiltin_list;
+extern const struct lsym lbuiltin_eval;
 
 #endif

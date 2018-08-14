@@ -28,6 +28,7 @@ struct lsym_table lbuiltins[] = {
     {"tail", &lbuiltin_tail},
     {"join", &lbuiltin_join},
     {"list", &lbuiltin_list},
+    {"eval", &lbuiltin_eval},
     /* ... */
     {NULL, NULL},
 };
@@ -55,9 +56,7 @@ static int leval_exec(const char* op, struct lval* acc, const struct lval* x, si
     return -1;
 }
 
-static bool leval(struct lval* v, struct lval* r);
-
-static bool leval_expr(struct lval* v, struct lval* r) {
+static bool leval_expr(const struct lval* v, struct lval* r) {
     struct lval* sym = lval_alloc();
     /* Empty sexpr. */
     if (!lval_index(v, 0, sym)) {
@@ -100,7 +99,7 @@ static bool leval_expr(struct lval* v, struct lval* r) {
     return lval_type(r) != LVAL_ERR;
 }
 
-static bool leval_sexpr(struct lval* v, struct lval* r) {
+static bool leval_sexpr(const struct lval* v, struct lval* r) {
     struct lval* child0 = lval_alloc();
     lval_index(v, 0, child0);
     /* First child is a symbol, it's an expression. */
@@ -124,7 +123,7 @@ static bool leval_sexpr(struct lval* v, struct lval* r) {
     return true;
 }
 
-static bool leval(struct lval* v, struct lval* r) {
+bool leval(const struct lval* v, struct lval* r) {
     if (!v) {
         lval_mut_err(r, LERR_EVAL);
         return false;

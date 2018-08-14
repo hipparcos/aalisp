@@ -15,5 +15,7 @@ int lbi_func_tail(struct lval* acc, const struct lval* x);
 int lbi_func_join(struct lval* acc, const struct lval* x);
 /** lbi_func_list push x in to acc. acc is mutated into a qexpr. */
 int lbi_func_list(struct lval* acc, const struct lval* x);
+/** lbi_func_eval evaluates x and put the result into acc. */
+int lbi_func_eval(struct lval* acc, const struct lval* x);
 
 #endif

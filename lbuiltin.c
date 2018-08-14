@@ -169,3 +169,13 @@ const struct lsym lbuiltin_list = {
     .neutral      = &lnil,
     .op_all       = lbi_func_list,
 };
+
+static const struct lguard guards_eval[] = {
+};
+const struct lsym lbuiltin_eval = {
+    .symbol       = "eval",
+    .guards       = &guards_eval[0],
+    .guardc       = LENGTH(guards_eval),
+    .neutral      = &lnil,
+    .op_all       = lbi_func_eval,
+};

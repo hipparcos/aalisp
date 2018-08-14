@@ -475,6 +475,25 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_len, {
+        it("passes", {
+            struct lval* x = lval_alloc(); defer(lval_free(x));
+            lval_mut_num(x, 1);
+            struct lval* q1 = lval_alloc(); defer(lval_free(q1));
+            lval_mut_qexpr(q1);
+            lval_push(q1, x);
+            lval_push(q1, x);
+            lval_push(q1, x);
+            lval_push(q1, x);
+            lval_push(q1, x);
+            test_helper_builtin_pass(&lbuiltin_len,
+                discard, NULL,
+                lval_dup, q1,
+                lval_mut_num, 5);
+        });
+    });
+
+
     subdesc(func_join, {
         it("join Q-Expr", {
             struct lval* x = lval_alloc(); defer(lval_free(x));

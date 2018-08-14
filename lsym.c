@@ -2,31 +2,14 @@
 
 #include <string.h>
 
-#include "lbuiltin.h"
-
-struct lsym_table {
-    const char*        symbol;
-    size_t             operands;
-    const struct lsym* descriptor;
-};
-
-static struct lsym_table registered_symbols[] = {
-    {"+", 2, &lbuiltin_op_add},
-    {"-", 1, &lbuiltin_op_sub_unary},
-    {"-", 2, &lbuiltin_op_sub},
-    {"*", 2, &lbuiltin_op_mul},
-    {"/", 2, &lbuiltin_op_div},
-    {"%", 2, &lbuiltin_op_mod},
-    {"^", 2, &lbuiltin_op_pow},
-    {"!", 1, &lbuiltin_op_fac},
-    {NULL, 0, NULL},
-};
-
-const struct lsym* lsym_lookup(const char* sym, size_t operands) {
-    struct lsym_table* table = &registered_symbols[0];
+const struct lsym* lsym_lookup(const struct lsym_table* symbols, const char* sym, size_t operands) {
+    if (!symbols) {
+        return NULL;
+    }
+    const struct lsym_table* table = &symbols[0];
     do {
         if (strcmp(sym, table->symbol) == 0) {
-            if (table->operands < 2 && table->operands != operands) {
+            if (table->descriptor->unary && operands != 1) {
                 continue;
             }
             return table->descriptor;
@@ -66,10 +49,15 @@ int lsym_exec(
     /* Guards */
     int s = 0;
     for (int i = 0; i < sym->guardc; i++) {
-        if ((s = (sym->guards[i]->condition)(acc, lx)) != 0) {
-            lval_mut_err(acc, sym->guards[i]->error);
+        if ((s = (sym->guards[i].condition)(acc, lx)) != 0) {
+            lval_mut_err(acc, sym->guards[i].error);
             return s;
         }
+    }
+
+    /* If op_all is set, execute it then return. */
+    if (sym->op_all) {
+        return sym->op_all(acc, x);
     }
 
     /* Eval */

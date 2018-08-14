@@ -499,7 +499,7 @@ bool lval_index(const struct lval* v, size_t c, struct lval* dest) {
     return true;
 }
 
-size_t lval_len(struct lval* v) {
+size_t lval_len(const struct lval* v) {
     if (!lval_is_list(v)) {
         return 0;
     }

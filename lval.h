@@ -100,7 +100,7 @@ struct lval* lval_pop(struct lval* v, size_t c);
  ** It copies ast pointer. */
 bool lval_index(const struct lval* v, size_t c, struct lval* dest);
 /** lval_len returns the length of an {s,q}expr. */
-size_t lval_len(struct lval* v);
+size_t lval_len(const struct lval* v);
 
 /* Accessors */
 /** lval_type returns the type of v. */

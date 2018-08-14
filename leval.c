@@ -13,6 +13,23 @@
 #include "lparser.h"
 #include "lmut.h"
 
+struct lsym_table lbuiltins[] = {
+    /* Arithmetic operators. */
+    {"+", &lbuiltin_op_add},
+    {"-", &lbuiltin_op_sub_unary},
+    {"-", &lbuiltin_op_sub},
+    {"*", &lbuiltin_op_mul},
+    {"/", &lbuiltin_op_div},
+    {"%", &lbuiltin_op_mod},
+    {"^", &lbuiltin_op_pow},
+    {"!", &lbuiltin_op_fac},
+    /* List functions. */
+    {"head", &lbuiltin_head},
+    {"tail", &lbuiltin_tail},
+    /* ... */
+    {NULL, NULL},
+};
+
 /** level_exec returns
  **   0 if success
  **  -1 if error
@@ -28,7 +45,7 @@ static int leval_exec(const char* op, struct lval* acc, const struct lval* x, si
     }
 
     const struct lsym* descriptor = NULL;
-    if (NULL != (descriptor = lsym_lookup(op, operands))) {
+    if (NULL != (descriptor = lsym_lookup(lbuiltins, op, operands))) {
         return lsym_exec(descriptor, acc, x);
     }
 

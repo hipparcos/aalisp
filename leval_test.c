@@ -62,19 +62,32 @@ describe(lisp_eval, {
     test_pass("* 10 (- 20 10)", "100", {
             lval_mut_num(expected, 100);
         });
-    /* S-expressions. */
+    /* S-Expressions. */
     test_pass("(+ 1 1)", "2", {
             lval_mut_num(expected, 2);
         });
     test_pass("(+ 1 1)(+ 2 2)", "4", {
             lval_mut_num(expected, 4);
         });
-    /* Nested s-expressions. */
+    /* Nested S-Expressions. */
     test_pass("- (! 21) (! 21) 2.0 1", "-3.0", {
             lval_mut_dbl(expected, -3.0);
         });
     test_pass("- 2.0 1 (- (! 21) (! 21))", "1.0", {
             lval_mut_dbl(expected, 1.0);
+        });
+    /* Q-Expressions */
+    test_pass("(head {1 2 3})", "1", {
+            lval_mut_num(expected, 1);
+        });
+    test_pass("(tail {1 2 3})", "{2 3}", {
+            struct lval* two = lval_alloc(); defer(lval_free(two));
+            lval_mut_num(two, 2);
+            struct lval* thr = lval_alloc(); defer(lval_free(thr));
+            lval_mut_num(thr, 3);
+            lval_mut_qexpr(expected);
+            lval_push(expected, two);
+            lval_push(expected, thr);
         });
 
     /* Errors. */

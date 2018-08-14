@@ -14,4 +14,7 @@ extern const struct lsym lbuiltin_op_mod;
 extern const struct lsym lbuiltin_op_fac;
 extern const struct lsym lbuiltin_op_pow;
 
+extern const struct lsym lbuiltin_head;
+extern const struct lsym lbuiltin_tail;
+
 #endif

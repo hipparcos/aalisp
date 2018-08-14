@@ -96,6 +96,17 @@ describe(llex, {
             })[0]
         );
 
+    test_pass("braces",
+            "{{}",
+            &((struct token_list[]){
+                {LTOK_OBRC, "{"},
+                {LTOK_OBRC, "{"},
+                {LTOK_CBRC, "}"},
+                {LTOK_EOF, ""},
+                {0, NULL}
+            })[0]
+        );
+
     test_pass("integers",
             "1 234  -32",
             &((struct token_list[]){

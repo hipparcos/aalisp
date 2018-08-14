@@ -10,12 +10,14 @@ enum ltok_type {
     LTOK_ERR,
     LTOK_OPAR,
     LTOK_CPAR,
+    LTOK_OBRC,
+    LTOK_CBRC,
     LTOK_SYM,
     LTOK_NUM,
     LTOK_DBL,
     LTOK_STR,
 };
-extern const char* ltok_type_string[8];
+extern const char* ltok_type_string[10];
 
 struct ltok {
     enum ltok_type type;

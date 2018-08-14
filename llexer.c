@@ -8,6 +8,8 @@ const char* ltok_type_string[] = {
     "error",
     "(",
     ")",
+    "{",
+    "}",
     "symbol",
     "number",
     "double",
@@ -165,6 +167,14 @@ static bool llex_next(struct lscanner* scanner) {
         return true;
     case ')':
         scanner->tok = LTOK_CPAR;
+        llex_retain(scanner);
+        return true;
+    case '{':
+        scanner->tok = LTOK_OBRC;
+        llex_retain(scanner);
+        return true;
+    case '}':
+        scanner->tok = LTOK_CBRC;
         llex_retain(scanner);
         return true;
     case '"':

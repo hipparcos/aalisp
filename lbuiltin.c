@@ -159,3 +159,13 @@ const struct lsym lbuiltin_join = {
     .neutral      = &lnil,
     .op_all       = lbi_func_join,
 };
+
+static const struct lguard guards_list[] = {
+};
+const struct lsym lbuiltin_list = {
+    .symbol       = "list",
+    .guards       = &guards_list[0],
+    .guardc       = LENGTH(guards_list),
+    .neutral      = &lnil,
+    .op_all       = lbi_func_list,
+};

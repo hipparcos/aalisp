@@ -478,6 +478,20 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_list, {
+        it("create a Q-Expr", {
+            struct lval* x = lval_alloc(); defer(lval_free(x));
+            lval_mut_num(x, 1);
+            struct lval* q1 = lval_alloc(); defer(lval_free(q1));
+            lval_mut_qexpr(q1);
+            lval_push(q1, x);
+            test_helper_builtin_pass(&lbuiltin_list,
+                discard, NULL,
+                lval_dup, x,
+                lval_dup, q1);
+        });
+    });
+
 });
 
 snow_main();

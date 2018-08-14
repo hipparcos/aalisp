@@ -42,6 +42,11 @@ int lbi_func_init(struct lval* acc, const struct lval* x) {
     return 0;
 }
 
+int lbi_func_cons(struct lval* acc, const struct lval* x) {
+    lval_cons(acc, x);
+    return 0;
+}
+
 int lbi_func_len(struct lval* acc, const struct lval* x) {
     size_t len = lval_len(x);
     lval_mut_num(acc, len);

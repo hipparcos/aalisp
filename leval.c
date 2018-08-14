@@ -27,6 +27,7 @@ struct lsym_table lbuiltins[] = {
     {"head", &lbuiltin_head},
     {"tail", &lbuiltin_tail},
     {"init", &lbuiltin_init},
+    {"cons", &lbuiltin_cons},
     {"len",  &lbuiltin_len},
     {"join", &lbuiltin_join},
     {"list", &lbuiltin_list},

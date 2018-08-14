@@ -48,8 +48,14 @@ int lsym_exec(
 
     /* Guards */
     int s = 0;
+    const struct lval* a = acc;
+    const struct lval* b = lx;
+    if (sym->swap) {
+        a = lx;
+        b = acc;
+    }
     for (int i = 0; i < sym->guardc; i++) {
-        if ((s = (sym->guards[i].condition)(acc, lx)) != 0) {
+        if ((s = (sym->guards[i].condition)(a, b)) != 0) {
             lval_mut_err(acc, sym->guards[i].error);
             return s;
         }
@@ -57,6 +63,14 @@ int lsym_exec(
 
     /* If op_all is set, execute it then return. */
     if (sym->op_all) {
+        if (sym->swap) {
+            struct lval* lx = lval_alloc();
+            lval_dup(lx, x);
+            int s = sym->op_all(lx, acc);
+            lval_dup(acc, lx);
+            lval_free(lx);
+            return s;
+        }
         return sym->op_all(acc, x);
     }
 

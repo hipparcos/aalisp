@@ -160,6 +160,18 @@ const struct lsym lbuiltin_init = {
     .op_all       = lbi_func_init,
 };
 
+static const struct lguard guards_cons[] = {
+    /* {lbi_cond_qexpr, LERR_BAD_OPERAND}, */
+};
+const struct lsym lbuiltin_cons = {
+    .symbol       = "cons",
+    .swap         = true,
+    .guards       = &guards_cons[0],
+    .guardc       = LENGTH(guards_cons),
+    .neutral      = &lnil,
+    .op_all       = lbi_func_cons,
+};
+
 static const struct lguard guards_len[] = {
     {lbi_cond_qexpr, LERR_BAD_OPERAND},
 };

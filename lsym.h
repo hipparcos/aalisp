@@ -20,6 +20,8 @@ struct lsym {
     const char* symbol;
     /** lsym.unary tells is the symbol takes only one argument. */
     bool unary;
+    /** lsym.swap tells if the operands need to be swaped before execution. */
+    bool swap;
     /** lsym.guards are functions that prevent execution of the symbol. */
     const struct lguard* guards;
     int guardc; /* Number of guards. */

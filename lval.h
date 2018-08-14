@@ -15,9 +15,10 @@ enum ltype {
     LVAL_ERR,
     LVAL_STR,
     LVAL_SYM,
-    LVAL_SEXPR
+    LVAL_SEXPR,
+    LVAL_QEXPR,
 };
-extern const char* const ltype_string[8];
+extern const char* const ltype_string[9];
 
 /** lerr is an error code. */
 enum lerr {
@@ -72,31 +73,33 @@ bool lval_copy(struct lval* dest, const struct lval* src);
 /* Mutators */
 /** lval_mut_nil mutates v to LVAL_NIL type. */
 bool lval_mut_nil(struct lval* v);
-/** lval_mut_nil mutates v to LVAL_NUM type. */
+/** lval_mut_num mutates v to LVAL_NUM type. */
 bool lval_mut_num(struct lval* v, long x);
-/** lval_mut_nil mutates v to LVAL_BIGNUM type. x is copied. */
+/** lval_mut_bignum mutates v to LVAL_BIGNUM type. x is copied. */
 bool lval_mut_bignum(struct lval* v, const mpz_t x);
-/** lval_mut_nil mutates v to LVAL_DBL type. */
+/** lval_mut_dbl mutates v to LVAL_DBL type. */
 bool lval_mut_dbl(struct lval* v, double x);
-/** lval_mut_nil mutates v to LVAL_ERR type. */
+/** lval_mut_err mutates v to LVAL_ERR type. */
 bool lval_mut_err(struct lval* v, enum lerr err);
-/** lval_mut_nil mutates v to LVAL_STR type. str is copied. */
+/** lval_mut_str mutates v to LVAL_STR type. str is copied. */
 bool lval_mut_str(struct lval* v, const char* str);
-/** lval_mut_nil mutates v to LVAL_SYM type. sym is copied */
+/** lval_mut_sym mutates v to LVAL_SYM type. sym is copied */
 bool lval_mut_sym(struct lval* v, const char* const sym);
-/** lval_mut_nil mutates v to LVAL_SEXPR type. Underlying data are not copied. */
+/** lval_mut_sexpr mutates v to LVAL_SEXPR type. */
 bool lval_mut_sexpr(struct lval* v);
-/** lval_push add cell to v. v must be of type sexpr.
+/** lval_mut_qexpr mutates v to LVAL_QEXPR type. */
+bool lval_mut_qexpr(struct lval* v);
+/** lval_push add cell to v. v must be of type sexpr or qexpr.
  ** cell is safe to be freed by the caller after.
  ** It copies ast pointer. */
 bool lval_push(struct lval* v, const struct lval* cell);
 /** lval_pop remove cell c from v and returns it.
  ** Caller is responsible for calling free on returned value. */
 struct lval* lval_pop(struct lval* v, size_t c);
-/** lval_index returns the c-th child of a sexpr in dest.
+/** lval_index returns the c-th child of a {s,q}expr in dest.
  ** It copies ast pointer. */
 bool lval_index(const struct lval* v, size_t c, struct lval* dest);
-/** lval_len returns the length of an sexpr. */
+/** lval_len returns the length of an {s,q}expr. */
 size_t lval_len(struct lval* v);
 
 /* Accessors */
@@ -132,6 +135,8 @@ bool lval_is_numeric(const struct lval* v);
 bool lval_is_zero(const struct lval* v);
 /** lval_sign returns {-1, 0, 1} based on the sign of v. */
 int lval_sign(const struct lval* v);
+/** lval_is_list returns true is v is of type LVAL_SEXPR or LVAL_QEXPR. */
+bool lval_is_list(const struct lval* v);
 /** lval_are_equal returns true if x and y data are equal. */
 bool lval_are_equal(const struct lval* x, const struct lval* y);
 /** lval_printlen returns the minimum size in bytes required to print v. */

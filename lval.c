@@ -19,6 +19,7 @@ const char* const ltype_string[] = {
     "string",
     "symbol",
     "sexpr",
+    "qexpr",
 };
 const char* const lerr_string[] = {
     "unknown error",
@@ -46,7 +47,7 @@ struct ldata {
      ** LVAL_NIL = 0;
      ** LVAL_NUM, LVAL_BIGNUM, LVAL_DBL, LVAL_ERR = 1;
      ** LVAL_STR, LVAL_SYM = strlen(str);
-     ** LVAL_SEXPR = number of elements. */
+     ** LVAL_SEXPR, LVAL_QEXPR = number of elements. */
     size_t len;
     /** ldata.payload must be considered according to ldata.type */
     union {
@@ -140,6 +141,7 @@ static bool ldata_clear(struct ldata* d) {
         }
         break;
     case LVAL_SEXPR:
+    case LVAL_QEXPR:
         for (size_t c = 0; c < d->len; c++) {
             lval_free(d->payload.cell[c]);
         }
@@ -280,6 +282,7 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
         dest->payload.err = src->payload.err;
         break;
     case LVAL_SEXPR:
+    case LVAL_QEXPR:
         dest->payload.cell = calloc(src->len, sizeof(struct lval*));
         for (size_t c = 0; c < src->len; c++) {
             struct lval* val = lval_alloc_handle();
@@ -435,8 +438,22 @@ bool lval_mut_sexpr(struct lval* v) {
     return true;
 }
 
+bool lval_mut_qexpr(struct lval* v) {
+    if (!lval_is_mutable(v)) {
+        return false;
+    }
+    struct ldata* data = NULL;
+    if (!(data = lval_disconnect(v, true))) {
+        return false;
+    }
+    data->type = LVAL_QEXPR;
+    data->len = 0;
+    lval_connect(v, data);
+    return true;
+}
+
 bool lval_push(struct lval* v, const struct lval* cell) {
-    if (lval_type(v) != LVAL_SEXPR || !lval_is_alive(cell)) {
+    if (!lval_is_list(v) || !lval_is_alive(cell)) {
         return false;
     }
     /* Create a new handle. */
@@ -452,7 +469,7 @@ bool lval_push(struct lval* v, const struct lval* cell) {
 }
 
 struct lval* lval_pop(struct lval* v, size_t c) {
-    if (lval_type(v) != LVAL_SEXPR) {
+    if (!lval_is_list(v)) {
         return false;
     }
     if (c >= v->data->len) {
@@ -466,7 +483,7 @@ struct lval* lval_pop(struct lval* v, size_t c) {
 }
 
 bool lval_index(const struct lval* v, size_t c, struct lval* dest) {
-    if (lval_type(v) != LVAL_SEXPR) {
+    if (!lval_is_list(v)) {
         return false;
     }
     if (!lval_is_mutable(dest)) {
@@ -483,7 +500,7 @@ bool lval_index(const struct lval* v, size_t c, struct lval* dest) {
 }
 
 size_t lval_len(struct lval* v) {
-    if (!lval_is_alive(v)) {
+    if (!lval_is_list(v)) {
         return 0;
     }
     return v->data->len;
@@ -545,6 +562,34 @@ bool lval_as_dbl(const struct lval* v, double* r) {
     return true;
 }
 
+static size_t lval_list_as_str(
+        const struct lval* v, char* out, size_t len,
+        char opening, char closing) {
+    if (!lval_is_list(v)) {
+        return 0;
+    }
+    if (len < 3) {
+        return 0;
+    }
+    char* s = out;
+    *s++ = opening;
+    struct ldata* data = v->data;
+    for (size_t c = 0; c < data->len; c++) {
+        if (c > 0) *s++ = ' ';
+        size_t clen = lval_printlen(data->payload.cell[c]);
+        if (clen > len-2) clen = len;
+        lval_as_str(data->payload.cell[c], s, clen);
+        s += clen-1; // - '\0'.
+        len -= clen;
+        if (len < 2) {
+            break;
+        }
+    }
+    *s++ = closing;
+    *s   = '\0';
+    return strlen(s);
+}
+
 bool lval_as_str(const struct lval* v, char* r, size_t len) {
     if (!lval_is_alive(v)) {
         r = NULL;
@@ -568,19 +613,11 @@ bool lval_as_str(const struct lval* v, char* r, size_t len) {
         strncpy(r, v->data->payload.str,
                 (len > v->data->len) ? v->data->len : len);
         break;
+    case LVAL_QEXPR:
+        lval_list_as_str(v, r, len, '{', '}');
+        break;
     case LVAL_SEXPR:
-        {
-        char* s = r;
-        *s++ = '(';
-        for (size_t c = 0; c < v->data->len; c++) {
-            if (c > 0) *s++ = ' ';
-            size_t len = lval_printlen(v->data->payload.cell[c]);
-            lval_as_str(v->data->payload.cell[c], s, len);
-            s += len-1; // - '\0'.
-        }
-        *s++ = ')';
-        *s   = '\0';
-        }
+        lval_list_as_str(v, r, len, '(', ')');
         break;
     case LVAL_ERR:
         {
@@ -635,8 +672,12 @@ int lval_sign(const struct lval* v) {
     case LVAL_NUM:    return (v->data->payload.num > 0) - (v->data->payload.num < 0);
     case LVAL_DBL:    return (v->data->payload.dbl > .0) - (v->data->payload.dbl < .0);
     case LVAL_BIGNUM: return mpz_sgn(v->data->payload.bignum);
-    default:          return false;
+    default:          return 0;
     };
+}
+
+bool lval_is_list(const struct lval* v) {
+    return lval_type(v) == LVAL_SEXPR || lval_type(v) == LVAL_QEXPR;
 }
 
 bool lval_are_equal(const struct lval* x, const struct lval* y) {
@@ -655,6 +696,7 @@ bool lval_are_equal(const struct lval* x, const struct lval* y) {
     case LVAL_SYM:
     case LVAL_STR:    return strcmp(x->data->payload.str, y->data->payload.str) == 0;
     case LVAL_SEXPR:
+    case LVAL_QEXPR:
         for (size_t c = 0; c < x->data->len; c++) {
             if (!lval_are_equal(x->data->payload.cell[c], y->data->payload.cell[c])) {
                 return false;
@@ -700,6 +742,7 @@ size_t lval_printlen(const struct lval* v) {
     case LVAL_SYM:
     case LVAL_STR:    len = v->data->len; break;
     case LVAL_SEXPR:
+    case LVAL_QEXPR:
         len = 1 + 1; // ( )
         if (v->data->len > 0) {
             len += v->data->len - 1; // ' '.

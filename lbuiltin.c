@@ -147,3 +147,15 @@ const struct lsym lbuiltin_tail = {
     .neutral      = &lnil,
     .op_all       = lbi_func_tail,
 };
+
+static const struct lguard guards_join[] = {
+    {lbi_cond_qexpr, LERR_BAD_OPERAND},
+    {lbi_cond_list,  LERR_BAD_OPERAND},
+};
+const struct lsym lbuiltin_join = {
+    .symbol       = "join",
+    .guards       = &guards_join[0],
+    .guardc       = LENGTH(guards_join),
+    .neutral      = &lnil,
+    .op_all       = lbi_func_join,
+};

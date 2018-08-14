@@ -757,6 +757,30 @@ describe(lval, {
     });
 
     subdesc(qexpr, {
+        it("lval_cons works", {
+            struct lval* a = lval_alloc();
+            lval_mut_num(a, 1);
+            defer(lval_free(a));
+            struct lval* b = lval_alloc();
+            lval_mut_num(b, 2);
+            defer(lval_free(b));
+            struct lval* c = lval_alloc();
+            lval_mut_num(c, 3);
+            defer(lval_free(c));
+            struct lval* qexpr = lval_alloc();
+            defer(lval_free(qexpr));
+            assert(lval_mut_qexpr(qexpr));
+            assert(lval_cons(qexpr, c));
+            assert(lval_cons(qexpr, b));
+            assert(lval_cons(qexpr, a));
+            size_t len = lval_printlen(qexpr);
+            char* s = calloc(len, sizeof(char));
+            lval_as_str(qexpr, s, len);
+            fputs(s,stdout);
+            defer(free(s));
+            assert(strcmp(s, "{1 2 3}") == 0);
+        });
+
         it("lval_push works", {
             struct lval* sym = lval_alloc();
             lval_mut_sym(sym, "+");

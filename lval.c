@@ -452,6 +452,23 @@ bool lval_mut_qexpr(struct lval* v) {
     return true;
 }
 
+bool lval_cons(struct lval* v, const struct lval* cell) {
+    if (!lval_is_list(v) || !lval_is_alive(cell)) {
+        return false;
+    }
+    /* Create a new handle. */
+    struct lval* handle = lval_alloc_handle();
+    lval_connect(handle, cell->data);
+    handle->ast = cell->ast;
+    /* Add it to the list. */
+    v->data->len++;
+    v->data->payload.cell = realloc(v->data->payload.cell,
+            sizeof(struct lval*) * v->data->len);
+    memmove(&v->data->payload.cell[1], &v->data->payload.cell[0], sizeof(struct lval*) * (v->data->len - 1));
+    v->data->payload.cell[0] = handle;
+    return true;
+}
+
 bool lval_push(struct lval* v, const struct lval* cell) {
     if (!lval_is_list(v) || !lval_is_alive(cell)) {
         return false;

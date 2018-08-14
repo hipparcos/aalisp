@@ -89,6 +89,9 @@ bool lval_mut_sym(struct lval* v, const char* const sym);
 bool lval_mut_sexpr(struct lval* v);
 /** lval_mut_qexpr mutates v to LVAL_QEXPR type. */
 bool lval_mut_qexpr(struct lval* v);
+/** lval_cons add cell at the beginning of v.
+ ** cell is safe to be freed by the caller after. */
+bool lval_cons(struct lval* v, const struct lval* cell);
 /** lval_push add cell to v. v must be of type sexpr or qexpr.
  ** cell is safe to be freed by the caller after.
  ** It copies ast pointer. */

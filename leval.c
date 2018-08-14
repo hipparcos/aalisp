@@ -26,6 +26,7 @@ struct lsym_table lbuiltins[] = {
     /* List functions. */
     {"head", &lbuiltin_head},
     {"tail", &lbuiltin_tail},
+    {"init", &lbuiltin_init},
     {"join", &lbuiltin_join},
     {"list", &lbuiltin_list},
     {"eval", &lbuiltin_eval},

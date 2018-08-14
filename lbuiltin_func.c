@@ -34,6 +34,14 @@ int lbi_func_tail(struct lval* acc, const struct lval* x) {
     return 0;
 }
 
+int lbi_func_init(struct lval* acc, const struct lval* x) {
+    lval_copy(acc, x);
+    size_t len = lval_len(acc);
+    struct lval* child = lval_pop(acc, len-1);
+    lval_free(child);
+    return 0;
+}
+
 int lbi_func_join(struct lval* acc, const struct lval* x) {
     size_t len = lval_len(x);
     struct lval* child = lval_alloc();

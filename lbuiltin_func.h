@@ -11,6 +11,8 @@ int lbi_cond_list(const struct lval* x, const struct lval* y);
 int lbi_func_head(struct lval* acc, const struct lval* x);
 /** lbi_func_tail returns a Q-Expression without its head. */
 int lbi_func_tail(struct lval* acc, const struct lval* x);
+/** lbi_func_init returns a Q-Expression without its last element. */
+int lbi_func_init(struct lval* acc, const struct lval* x);
 /** lbi_func_join push all children of x in acc. */
 int lbi_func_join(struct lval* acc, const struct lval* x);
 /** lbi_func_list push x in to acc. acc is mutated into a qexpr. */

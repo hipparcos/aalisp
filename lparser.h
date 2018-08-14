@@ -16,8 +16,9 @@ enum ltag {
     LTAG_SYM,
     LTAG_STR,
     LTAG_SEXPR,
+    LTAG_QEXPR,
 };
-extern const char* ltag_string[8];
+extern const char* ltag_string[9];
 
 struct last {
     enum ltag tag;

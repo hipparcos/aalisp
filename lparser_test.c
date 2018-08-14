@@ -115,6 +115,25 @@ describe(lparse, {
             })[0]
         );
 
+    test_pass("q-expression",
+            "(head {1 2 3})",
+            &((struct ast_list[]){
+                {.id= 1, .tag= LTAG_SYM, .content= "head", .children= NULL},
+                {.id= 2, .tag= LTAG_NUM, .content= "1", .children= NULL},
+                {.id= 3, .tag= LTAG_NUM, .content= "2", .children= NULL},
+                {.id= 4, .tag= LTAG_NUM, .content= "3", .children= NULL},
+                {.id= 5, .tag= LTAG_QEXPR, .content= "",
+                    .children= &((size_t[]){2, 3, 4, 0}[0])},
+                {.id= 6, .tag= LTAG_EXPR, .content= "",
+                    .children= &((size_t[]){1, 5, 0}[0])},
+                {.id= 7, .tag= LTAG_SEXPR, .content= "",
+                    .children= &((size_t[]){6, 0}[0])},
+                {.id= 8, .tag= LTAG_PROG, .content= "",
+                    .children= &((size_t[]){7, 0}[0])},
+                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+            })[0]
+        );
+
     test_pass("doubles",
             "(+ 1.0 2.0)",
             &((struct ast_list[]){
@@ -173,6 +192,7 @@ describe(lparse, {
     test_fail("s-expr which does not begin with a symbol", "(1 + 2)");
     test_fail("s-expr which does not end with a `)`", "(! 1");
     test_fail("s-expr that starts right before the end of a line", "(");
+    test_fail("q-expr which does not end with a `}`", "(head {1 2 3)");
 
 });
 

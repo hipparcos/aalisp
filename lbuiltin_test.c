@@ -451,6 +451,50 @@ describe(builtin, {
 
     });
 
+    subdesc(func_head, {
+        it("passes", {
+            struct lval* x = lval_alloc(); defer(lval_free(x));
+            lval_mut_num(x, 1);
+            struct lval* y = lval_alloc(); defer(lval_free(y));
+            lval_mut_num(y, 2);
+            struct lval* z = lval_alloc(); defer(lval_free(z));
+            lval_mut_num(z, 3);
+            struct lval* q1 = lval_alloc(); defer(lval_free(q1));
+            lval_mut_qexpr(q1);
+            lval_push(q1, x);
+            lval_push(q1, y);
+            lval_push(q1, z);
+            test_helper_builtin_pass(&lbuiltin_head,
+                discard, NULL,
+                lval_dup, q1,
+                lval_dup, x);
+        });
+    });
+
+    subdesc(func_tail, {
+        it("passes", {
+            struct lval* x = lval_alloc(); defer(lval_free(x));
+            lval_mut_num(x, 1);
+            struct lval* y = lval_alloc(); defer(lval_free(y));
+            lval_mut_num(y, 2);
+            struct lval* z = lval_alloc(); defer(lval_free(z));
+            lval_mut_num(z, 3);
+            struct lval* q1 = lval_alloc(); defer(lval_free(q1));
+            lval_mut_qexpr(q1);
+            lval_push(q1, x);
+            lval_push(q1, y);
+            lval_push(q1, z);
+            struct lval* q2 = lval_alloc(); defer(lval_free(q2));
+            lval_mut_qexpr(q2);
+            lval_push(q2, y);
+            lval_push(q2, z);
+            test_helper_builtin_pass(&lbuiltin_tail,
+                discard, NULL,
+                lval_dup, q1,
+                lval_dup, q2);
+        });
+    });
+
     subdesc(func_init, {
         it("passes", {
             struct lval* x = lval_alloc(); defer(lval_free(x));
@@ -515,7 +559,7 @@ describe(builtin, {
 
 
     subdesc(func_join, {
-        it("join Q-Expr", {
+        it("passes", {
             struct lval* x = lval_alloc(); defer(lval_free(x));
             lval_mut_num(x, 1);
             struct lval* y = lval_alloc(); defer(lval_free(y));
@@ -542,7 +586,7 @@ describe(builtin, {
     });
 
     subdesc(func_list, {
-        it("create a Q-Expr", {
+        it("passes", {
             struct lval* x = lval_alloc(); defer(lval_free(x));
             lval_mut_num(x, 1);
             struct lval* q1 = lval_alloc(); defer(lval_free(q1));
@@ -556,7 +600,7 @@ describe(builtin, {
     });
 
     subdesc(func_eval, {
-        it("eval a Q-Expr", {
+        it("passes", {
             struct lval* x = lval_alloc(); defer(lval_free(x));
             lval_mut_num(x, 1);
             struct lval* o = lval_alloc(); defer(lval_free(o));

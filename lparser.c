@@ -29,7 +29,7 @@ static const char* lparser_error_string[] = {
     "an expression must start with a symbol or a `(`",
 };
 
-static struct last* last_alloc(enum ltag tag, const char* content, struct ltok* tok) {
+static struct last* last_alloc(enum ltag tag, const char* content, const struct ltok* tok) {
     struct last* ast = calloc(1, sizeof(struct last));
     ast->tag = tag;
     size_t len = strlen(content);
@@ -40,6 +40,10 @@ static struct last* last_alloc(enum ltag tag, const char* content, struct ltok* 
         ast->col = tok->col;
     }
     return ast;
+}
+
+static struct last* last_error(enum lparser_error error, const struct ltok* tok) {
+    return last_alloc(LTAG_ERR, lparser_error_string[error], tok);
 }
 
 static bool last_attach(struct last* child, struct last* parent) {
@@ -159,9 +163,7 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
                     operand = lparse_qexpr(curr, &curr);
                     break;
                 default:
-                    operand = last_alloc(LTAG_ERR,
-                            lparser_error_string[LPARSER_ERR_BAD_OPERAND],
-                            curr);
+                    operand = last_error(LPARSER_ERR_BAD_OPERAND, curr);
                     break;
                 }
             }
@@ -177,9 +179,7 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
     case LTOK_EOF:
         break;
     default:
-        expr = last_alloc(LTAG_ERR,
-                lparser_error_string[LPARSER_ERR_BAD_EXPR],
-                curr);
+        expr = last_error(LPARSER_ERR_BAD_EXPR, curr);
         break;
     }
     *last = curr;
@@ -196,9 +196,7 @@ static struct last* lparse_sexpr(struct ltok* first, struct ltok** last) {
     }
     // (.
     if (curr->type != LTOK_OPAR) {
-        sexpr = last_alloc(LTAG_ERR,
-                lparser_error_string[LPARSER_ERR_MISSING_OPAR],
-                curr);
+        sexpr = last_error(LPARSER_ERR_MISSING_OPAR, curr);
         *last = curr;
         return sexpr;
     }
@@ -211,9 +209,7 @@ static struct last* lparse_sexpr(struct ltok* first, struct ltok** last) {
     }
     // ) or error.
     if (curr->type != LTOK_CPAR) {
-        sexpr = last_alloc(LTAG_ERR,
-                lparser_error_string[LPARSER_ERR_MISSING_CPAR],
-                curr);
+        sexpr = last_error(LPARSER_ERR_MISSING_CPAR, curr);
     } else {
         sexpr = last_alloc(LTAG_SEXPR, "", curr);
         curr = curr->next; // Skip ).
@@ -243,9 +239,7 @@ static struct last* lparse_qexpr(struct ltok* first, struct ltok** last) {
                 operand = lparse_qexpr(curr, &curr);
                 break;
             default:
-                operand = last_alloc(LTAG_ERR,
-                        lparser_error_string[LPARSER_ERR_BAD_OPERAND],
-                        curr);
+                operand = last_error(LPARSER_ERR_BAD_OPERAND, curr);
                 break;
             }
         }
@@ -263,9 +257,7 @@ static struct last* lparse_qexpr(struct ltok* first, struct ltok** last) {
     }
     // } or error.
     if (curr->type != LTOK_CBRC) {
-        struct last* err = last_alloc(LTAG_ERR,
-                lparser_error_string[LPARSER_ERR_MISSING_CBRC],
-                curr);
+        struct last* err = last_error(LPARSER_ERR_MISSING_CBRC, curr);
         last_attach(qexpr, err);
         return err;
     }

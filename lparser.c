@@ -25,7 +25,7 @@ static const char* lparser_error_string[] = {
     "missing opening parenthesis",
     "missing closing parenthesis",
     "missing closing brace",
-    "operands must be of types num|double|string|symbol|sexpr",
+    "operands must be of types num|double|string|symbol|sexpr|qexpr",
     "an expression must start with a symbol or a `(`",
 };
 
@@ -228,7 +228,8 @@ static struct last* lparse_qexpr(struct ltok* first, struct ltok** last) {
     curr = curr->next; // Skip {.
     // Inner list.
     struct last* qexpr = last_alloc(LTAG_QEXPR, "", curr);
-    while (curr->type != LTOK_CBRC && curr->type != LTOK_EOF) {
+    // LTOK_CPAR needed to detect missing `}`.
+    while (curr->type != LTOK_CBRC && curr->type != LTOK_CPAR && curr->type != LTOK_EOF) {
         struct last* operand = NULL;
         if (!(operand = lparse_atom(curr, &curr))) {
             switch (curr->type) {
@@ -259,7 +260,7 @@ static struct last* lparse_qexpr(struct ltok* first, struct ltok** last) {
     if (curr->type != LTOK_CBRC) {
         struct last* err = last_error(LPARSER_ERR_MISSING_CBRC, curr);
         last_attach(qexpr, err);
-        return err;
+        qexpr = err;
     }
     curr = curr->next; // Skip }.
     *last = curr;

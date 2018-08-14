@@ -277,6 +277,8 @@ static struct ltok* llex(const char* input, struct ltok** error, bool surround) 
         if (surround && head && head->type != LTOK_OPAR) {
             struct ltok* opar = llex_emitOPAR();
             struct ltok* cpar = llex_emitCPAR();
+            cpar->line = curr->line;
+            cpar->col = curr->col++;
             llex_append(&opar, head);
             last = llex_append(last, cpar);
             head = opar;

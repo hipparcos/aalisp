@@ -53,12 +53,12 @@ size_t last_printlen(const struct last* ast);
 /** last_print_to prints the ast node to the file out. */
 void last_print_to(const struct last* ast, FILE* out);
 /** last_println prints the ast node to stdout. */
-#define last_print(ast) last_print_to(ast, stdout);
+#define last_print(ast) last_print_to(ast, stdout)
 /** last_println prints the ast node to stdout. A newline is added. */
 #define last_println(ast) last_print_to(ast, stdout); putchar('\n');
 /** last_print_all_to prints the ast to the file out. */
 void last_print_all_to(const struct last* ast, FILE* out);
 /** last_print_all prints the ast to stdout. */
-#define last_print_all(ast) last_print_all_to(ast, stdout);
+#define last_print_all(ast) last_print_all_to(ast, stdout)
 
 #endif

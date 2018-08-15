@@ -9,584 +9,485 @@
 #include "vendor/mini-gmp/mini-gmp.h"
 #include "vendor/snow/snow/snow.h"
 
-#define LENGTH(array) sizeof(array)/sizeof(array[0])
-
 /* Globals. */
 const long fac20 = 2432902008176640000;
-mpz_t bn_maxlong_succx2;
-mpz_t bn_maxlong_succ;
-mpz_t bn_maxlong;
-mpz_t bn_maxlong_pred;
-mpz_t bn_21;
-mpz_t bn_20;
-mpz_t bn_8;
-mpz_t bn_one;
-mpz_t bn_zero;
-mpz_t bn_minlong_succ;
-mpz_t bn_minlong;
-mpz_t bn_minlong_pred;
-mpz_t bn_minlong_predx2;
-mpz_t bn_10pow1;
-mpz_t bn_10pow10;
-mpz_t bn_10pow11;
-mpz_t bn_10pow100;
-mpz_t bn_fac21;
 
-#define test_helper_builtin_pass(op, \
-            mut_func_x, x, \
-            mut_func_y, y, \
-            mut_func_e, expected) \
-    test_helper_builtin(op, true, mut_func_x, x, mut_func_y, y, mut_func_e, expected)
+#define test_pass(descriptor, msg, ...) \
+    it("passes for "msg, { \
+        struct lval* args = lval_alloc(); defer(lval_free(args)); \
+        lval_mut_qexpr(args); \
+        struct lval* expected = lval_alloc(); defer(lval_free(expected)); \
+        struct lval* got = lval_alloc(); defer(lval_free(got)); \
+        __VA_ARGS__ \
+        assert(0 == lsym_exec(descriptor, got, args)); \
+        assert(lval_are_equal(got, expected)); \
+    });
 
-#define test_helper_builtin_fail(op, \
-            mut_func_x, x, \
-            mut_func_y, y, \
-            mut_func_e, expected) \
-    test_helper_builtin(op, false, mut_func_x, x, mut_func_y, y, mut_func_e, expected)
+#define test_fail(descriptor, msg, ...) \
+    it("fails for "msg, { \
+        struct lval* args = lval_alloc(); defer(lval_free(args)); \
+        lval_mut_qexpr(args); \
+        struct lval* expected = lval_alloc(); defer(lval_free(expected)); \
+        struct lval* got = lval_alloc(); defer(lval_free(got)); \
+        __VA_ARGS__ \
+        assert(0 != lsym_exec(descriptor, got, args)); \
+        assert(lval_are_equal(got, expected)); \
+    });
 
-#define test_helper_builtin(op, must_pass, \
-            mut_func_x, x, \
-            mut_func_y, y, \
-            mut_func_e, expected) \
-    struct lval* a = lval_alloc(); \
-    struct lval* r = lval_alloc(); struct lval* e = lval_alloc(); \
-    mut_func_x(r, x); \
-    mut_func_y(a, y); \
-    mut_func_e(e, expected); \
-    defer(lval_free(e)); defer(lval_free(r)); defer(lval_free(a)); \
-    int code = 0; \
-    if (must_pass) { (0 == (code = lsym_exec(op, r, a))); } \
-    else {           (0 != (code = lsym_exec(op, r, a))); } \
-    printf("\ncode: %d\n", code); \
-    assert(lval_are_equal(r, e)); \
+#define push_symbol(args, sym) \
+    do { \
+        struct lval* x = lval_alloc(); \
+        lval_mut_sym(x, sym); \
+        lval_push(args, x); \
+        lval_free(x); \
+    } while (0);
 
-/** discard is a helper used to do nothing instead of mut_func_y. */
-static void discard(struct lval* v, void* i) {
-    (void)(v);
-    (void)(i);
-}
+#define push_num(args, num) \
+    do { \
+        struct lval* x = lval_alloc(); \
+        lval_mut_num(x, num); \
+        lval_push(args, x); \
+        lval_free(x); \
+    } while (0);
+
+#define push_dbl(args, dbl) \
+    do { \
+        struct lval* x = lval_alloc(); \
+        lval_mut_dbl(x, dbl); \
+        lval_push(args, x); \
+        lval_free(x); \
+    } while (0);
+
+#define push_bignum(args, ul) \
+    do { \
+        mpz_t bn; \
+        mpz_init_set_ui(bn, ul); \
+        struct lval* x = lval_alloc(); \
+        lval_mut_bignum(x, bn); \
+        lval_push(args, x); \
+        lval_free(x); \
+        mpz_clear(bn); \
+    } while (0);
+
+#define push_bignum_mul(args, ul, si) \
+    do { \
+        mpz_t bn; \
+        mpz_init_set_ui(bn, ul); \
+        mpz_mul_si(bn, bn, si); \
+        struct lval* x = lval_alloc(); \
+        lval_mut_bignum(x, bn); \
+        lval_push(args, x); \
+        lval_free(x); \
+        mpz_clear(bn); \
+    } while (0);
+
+#define mut_bignum(arg, ul) \
+    do { \
+        mpz_t bn; \
+        mpz_init_set_ui(bn, ul); \
+        lval_mut_bignum(arg, bn); \
+        mpz_clear(bn); \
+    } while(0);
+
+#define mut_bignum_add(arg, ul, si) \
+    do { \
+        mpz_t bn; \
+        mpz_init_set_ui(bn, ul); \
+        if (si > 0) { \
+            mpz_add_ui(bn, bn, si); \
+        } else { \
+            mpz_sub_ui(bn, bn, -si); \
+        } \
+        lval_mut_bignum(arg, bn); \
+        mpz_clear(bn); \
+    } while(0);
+
+#define mut_bignum_mul(arg, ul, si) \
+    do { \
+        mpz_t bn; \
+        mpz_init_set_ui(bn, ul); \
+        mpz_mul_si(bn, bn, si); \
+        lval_mut_bignum(arg, bn); \
+        mpz_clear(bn); \
+    } while(0);
 
 describe(builtin, {
-    before_each({
-        mpz_init_set_si(bn_maxlong, LONG_MAX);
-        mpz_init_set_si(bn_maxlong_succ, LONG_MAX);
-        mpz_add_ui(bn_maxlong_succ, bn_maxlong_succ, 1);
-        mpz_init_set_si(bn_maxlong_pred, LONG_MAX);
-        mpz_sub_ui(bn_maxlong_pred, bn_maxlong_pred, 1);
-        mpz_init_set_si(bn_maxlong_succx2, LONG_MAX);
-        mpz_add(bn_maxlong_succx2, bn_maxlong_succ, bn_maxlong_succ);
-
-        mpz_init_set_si(bn_21, 21);
-        mpz_init_set_si(bn_20, 20);
-        mpz_init_set_si(bn_8, 8);
-        mpz_init_set_si(bn_one, 1);
-        mpz_init_set_si(bn_zero, 0);
-
-        mpz_init_set_si(bn_minlong, LONG_MIN);
-        mpz_init_set_si(bn_minlong_succ, LONG_MIN);
-        mpz_add_ui(bn_minlong_succ, bn_minlong_succ, 1);
-        mpz_init_set_si(bn_minlong_pred, LONG_MIN);
-        mpz_sub_ui(bn_minlong_pred, bn_minlong_pred, 1);
-        mpz_init_set_si(bn_minlong_predx2, LONG_MIN);
-        mpz_sub(bn_minlong_predx2, bn_minlong_pred, bn_minlong_pred);
-
-        mpz_init(bn_10pow1);
-        mpz_set_ui(bn_10pow1, 10);
-        mpz_init(bn_10pow10);
-        mpz_ui_pow_ui(bn_10pow10, 10, 10);
-        mpz_init(bn_10pow11);
-        mpz_ui_pow_ui(bn_10pow11, 10, 11);
-        mpz_init(bn_10pow100);
-        mpz_ui_pow_ui(bn_10pow100, 10, 100);
-
-        // fac(20) * 21.
-        mpz_init_set_ui(bn_fac21, fac20);
-        mpz_mul_si(bn_fac21, bn_fac21, 21);
-    });
-
-    after_each({
-        mpz_clear(bn_maxlong_succx2);
-        mpz_clear(bn_maxlong_succ);
-        mpz_clear(bn_maxlong);
-        mpz_clear(bn_maxlong_pred);
-        mpz_clear(bn_21);
-        mpz_clear(bn_20);
-        mpz_clear(bn_8);
-        mpz_clear(bn_one);
-        mpz_clear(bn_zero);
-        mpz_clear(bn_minlong_succ);
-        mpz_clear(bn_minlong);
-        mpz_clear(bn_minlong_pred);
-        mpz_clear(bn_minlong_predx2);
-        mpz_clear(bn_10pow1);
-        mpz_clear(bn_10pow10);
-        mpz_clear(bn_10pow11);
-        mpz_clear(bn_10pow100);
-        mpz_clear(bn_fac21);
-    });
 
     subdesc(op_add, {
-
-        it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(&lbuiltin_op_add,
-                lval_mut_num, 1,
-                lval_mut_num, 1,
-                lval_mut_num, 2);
+        test_pass(&lbuiltin_op_add, "LVAL_NUM", {
+            push_num(args, 1);
+            push_num(args, 2);
+            lval_mut_num(expected, 3);
         });
-        it("passes for LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_add,
-                lval_mut_dbl, 1.0,
-                lval_mut_dbl, 1.0,
-                lval_mut_dbl, 2.0);
+        test_pass(&lbuiltin_op_add, "LVAL_DBL", {
+            push_dbl(args, 1.0);
+            push_dbl(args, 2.0);
+            lval_mut_dbl(expected, 3.0);
         });
-        it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_add,
-                lval_mut_bignum, bn_maxlong_succ,
-                lval_mut_bignum, bn_maxlong_succ,
-                lval_mut_bignum, bn_maxlong_succx2);
+        test_pass(&lbuiltin_op_add, "LVAL_BIGNUM", {
+            push_bignum(args, ULONG_MAX);
+            push_bignum(args, 2);
+            mut_bignum_add(expected, ULONG_MAX, 2);
         });
-        it("passes for LVAL_BIGNUM and LVAL_NUM casted to LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_add,
-                lval_mut_num,    1,
-                lval_mut_bignum, bn_maxlong,
-                lval_mut_bignum, bn_maxlong_succ);
+        test_pass(&lbuiltin_op_add, "LVAL_BIGNUM & LVAL_NUM casted to LVAL_BIGNUM", {
+            push_num(args, 2);
+            push_bignum(args, ULONG_MAX);
+            mut_bignum_add(expected, ULONG_MAX, 2);
         });
-        it("passes for LVAL_DBL and LVAL_NUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_add,
-                lval_mut_num, 1,
-                lval_mut_dbl, 1.0,
-                lval_mut_dbl, 2.0);
+        test_pass(&lbuiltin_op_add, "LVAL_DBL & LVAL_NUM casted to LVAL_DBL", {
+            push_num(args, 1);
+            push_dbl(args, 2.0);
+            lval_mut_dbl(expected, 3.0);
         });
-        it("passes for LVAL_DBL and LVAL_BIGNUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_add,
-                lval_mut_dbl,    1.0,
-                lval_mut_bignum, bn_one,
-                lval_mut_dbl,    2.0);
+        test_pass(&lbuiltin_op_add, "LVAL_DBL & LVAL_BIGNUM casted to LVAL_DBL", {
+            push_dbl(args, 1.0);
+            push_bignum(args, 2);
+            lval_mut_dbl(expected, 3.0);
         });
-
     });
 
     subdesc(op_sub, {
+        test_pass(&lbuiltin_op_sub, "LVAL_NUM", {
+            push_num(args, 3);
+            push_num(args, 1);
+            lval_mut_num(expected, 2);
+        });
+        test_pass(&lbuiltin_op_sub, "LVAL_DBL", {
+            push_dbl(args, 3.0);
+            push_dbl(args, 1.0);
+            lval_mut_dbl(expected, 2.0);
+        });
+        test_pass(&lbuiltin_op_sub, "LVAL_BIGNUM", {
+            push_bignum(args, ULONG_MAX);
+            push_bignum(args, 2);
+            mut_bignum_add(expected, ULONG_MAX, -2);
+        });
+        test_pass(&lbuiltin_op_sub, "LVAL_BIGNUM & LVAL_NUM casted to LVAL_BIGNUM", {
+            push_num(args, 3);
+            push_bignum(args, 1);
+            mut_bignum_add(expected, 2, 0);
+        });
+        test_pass(&lbuiltin_op_sub, "LVAL_DBL & LVAL_NUM casted to LVAL_DBL", {
+            push_num(args, 3);
+            push_dbl(args, 1.0);
+            lval_mut_dbl(expected, 2.0);
+        });
+        test_pass(&lbuiltin_op_sub, "LVAL_DBL & LVAL_BIGNUM casted to LVAL_DBL", {
+            push_dbl(args, 3.0);
+            push_bignum(args, 1);
+            lval_mut_dbl(expected, 2.0);
+        });
+    });
 
-        it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(&lbuiltin_op_sub,
-                lval_mut_num, 2,
-                lval_mut_num, 1,
-                lval_mut_num, 1);
+    subdesc(op_sub_unary, {
+        test_pass(&lbuiltin_op_sub, "LVAL_NUM", {
+            push_num(args, 2);
+            lval_mut_num(expected, -2);
         });
-        it("passes for LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_sub,
-                lval_mut_dbl, 2.0,
-                lval_mut_dbl, 1.0,
-                lval_mut_dbl, 1.0);
+        test_pass(&lbuiltin_op_sub, "LVAL_DBL", {
+            push_dbl(args, 2.0);
+            lval_mut_dbl(expected, -2.0);
         });
-        it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_sub,
-                lval_mut_bignum, bn_maxlong_succ,
-                lval_mut_bignum, bn_maxlong,
-                lval_mut_bignum, bn_one);
+        test_pass(&lbuiltin_op_sub, "LVAL_BIGNUM", {
+            push_bignum(args, 2);
+            mut_bignum_add(expected, 0, -2);
         });
-        it("passes for LVAL_BIGNUM and LVAL_NUM casted to LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_sub,
-                lval_mut_bignum, bn_maxlong_succ,
-                lval_mut_num,    1,
-                lval_mut_bignum, bn_maxlong);
-        });
-        it("passes for LVAL_DBL and LVAL_NUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_sub,
-                lval_mut_num,   2,
-                lval_mut_dbl, 1.0,
-                lval_mut_dbl, 1.0);
-        });
-        it("passes for LVAL_DBL and LVAL_BIGNUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_sub,
-                lval_mut_dbl,    2.0,
-                lval_mut_bignum, bn_one,
-                lval_mut_dbl,    1.0);
-        });
-
     });
 
     subdesc(op_mul, {
-
-        it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(&lbuiltin_op_mul,
-                lval_mut_num, 10,
-                lval_mut_num, 20,
-                lval_mut_num, 200);
+        test_pass(&lbuiltin_op_mul, "LVAL_NUM", {
+            push_num(args, 10);
+            push_num(args, 20);
+            lval_mut_num(expected, 200);
         });
-        it("passes for LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_mul,
-                lval_mut_dbl, 10.0,
-                lval_mut_dbl, 20.0,
-                lval_mut_dbl, 200.0);
+        test_pass(&lbuiltin_op_mul, "LVAL_DBL", {
+            push_dbl(args, 10.0);
+            push_dbl(args, 20.0);
+            lval_mut_dbl(expected, 200.0);
         });
-        it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_mul,
-                lval_mut_bignum, bn_10pow1,
-                lval_mut_bignum, bn_10pow10,
-                lval_mut_bignum, bn_10pow11);
+        test_pass(&lbuiltin_op_mul, "LVAL_BIGNUM", {
+            push_bignum(args, ULONG_MAX);
+            push_bignum(args, 10);
+            mut_bignum_mul(expected, ULONG_MAX, 10);
         });
-        it("passes for LVAL_BIGNUM and LVAL_NUM casted to LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_mul,
-                lval_mut_bignum, bn_10pow10,
-                lval_mut_num,    10,
-                lval_mut_bignum, bn_10pow11);
+        test_pass(&lbuiltin_op_mul, "LVAL_BIGNUM & LVAL_NUM casted to LVAL_BIGNUM", {
+            push_num(args, 2);
+            push_bignum(args, ULONG_MAX);
+            mut_bignum_mul(expected, ULONG_MAX, 2);
         });
-        it("passes for LVAL_DBL and LVAL_NUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_mul,
-                lval_mut_num, 20,
-                lval_mut_dbl, 10.0,
-                lval_mut_dbl, 200.0);
+        test_pass(&lbuiltin_op_mul, "LVAL_DBL & LVAL_NUM casted to LVAL_DBL", {
+            push_num(args, 10);
+            push_dbl(args, 20.0);
+            lval_mut_dbl(expected, 200.0);
         });
-        it("passes for LVAL_DBL and LVAL_BIGNUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_mul,
-                lval_mut_dbl,    2.0,
-                lval_mut_bignum, bn_10pow1,
-                lval_mut_dbl,    20.0);
+        test_pass(&lbuiltin_op_mul, "LVAL_DBL & LVAL_BIGNUM casted to LVAL_DBL", {
+            push_dbl(args, 10.0);
+            push_bignum(args, 20);
+            lval_mut_dbl(expected, 200.0);
         });
-
     });
 
     subdesc(op_div, {
-
-        it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(&lbuiltin_op_div,
-                lval_mut_num, 20,
-                lval_mut_num, 10,
-                lval_mut_num, 2);
+        test_pass(&lbuiltin_op_div, "LVAL_NUM", {
+            push_num(args, 20);
+            push_num(args, 10);
+            lval_mut_num(expected, 2);
         });
-        it("passes for LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_div,
-                lval_mut_dbl, 20.0,
-                lval_mut_dbl, 10.0,
-                lval_mut_dbl, 2.0);
+        test_pass(&lbuiltin_op_div, "LVAL_DBL", {
+            push_dbl(args, 20.0);
+            push_dbl(args, 10.0);
+            lval_mut_dbl(expected, 2.0);
         });
-        it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_div,
-                lval_mut_bignum, bn_10pow11,
-                lval_mut_bignum, bn_10pow1,
-                lval_mut_bignum, bn_10pow10);
+        test_pass(&lbuiltin_op_div, "LVAL_BIGNUM", {
+            push_bignum_mul(args, ULONG_MAX, 10);
+            push_bignum(args, 10);
+            mut_bignum_mul(expected, ULONG_MAX, 1);
         });
-        it("passes for LVAL_BIGNUM and LVAL_NUM casted to LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_div,
-                lval_mut_bignum, bn_10pow11,
-                lval_mut_num,    10,
-                lval_mut_bignum, bn_10pow10);
+        test_pass(&lbuiltin_op_div, "LVAL_BIGNUM & LVAL_NUM casted to LVAL_BIGNUM", {
+            push_num(args, 200);
+            push_bignum(args, 10);
+            mut_bignum(expected, 20);
         });
-        it("passes for LVAL_DBL and LVAL_NUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_div,
-                lval_mut_num, 20,
-                lval_mut_dbl, 10.0,
-                lval_mut_dbl, 2.0);
+        test_pass(&lbuiltin_op_div, "LVAL_DBL & LVAL_NUM casted to LVAL_DBL", {
+            push_num(args, 200);
+            push_dbl(args, 10.0);
+            lval_mut_dbl(expected, 20.0);
         });
-        it("passes for LVAL_DBL and LVAL_BIGNUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_div,
-                lval_mut_dbl,    20.0,
-                lval_mut_bignum, bn_10pow1,
-                lval_mut_dbl,    2.0);
+        test_pass(&lbuiltin_op_div, "LVAL_DBL & LVAL_BIGNUM casted to LVAL_DBL", {
+            push_dbl(args, 200.0);
+            push_bignum(args, 10);
+            lval_mut_dbl(expected, 20.0);
         });
-        it("fails when the divisor is 0 (LVAL_NUM)", {
-            test_helper_builtin_fail(&lbuiltin_op_div,
-                lval_mut_num, 20,
-                lval_mut_num, 0,
-                lval_mut_err, LERR_DIV_ZERO);
+        test_fail(&lbuiltin_op_div, "divisor of type LVAL_NUM = 0", {
+            push_num(args, 200);
+            push_num(args, 0);
+            lval_mut_err(expected, LERR_DIV_ZERO);
         });
-        it("fails when the divisor is 0 (LVAL_DBL)", {
-            test_helper_builtin_fail(&lbuiltin_op_div,
-                lval_mut_dbl, 20.0,
-                lval_mut_dbl, 0.0,
-                lval_mut_err, LERR_DIV_ZERO);
+        test_fail(&lbuiltin_op_div, "divisor of type LVAL_BIGNUM = 0", {
+            push_bignum(args, 200);
+            push_bignum(args, 0);
+            lval_mut_err(expected, LERR_DIV_ZERO);
         });
-        it("fails when the divisor is 0 (LVAL_DBL & LVAL_BIGNUM", {
-            test_helper_builtin_fail(&lbuiltin_op_div,
-                lval_mut_dbl,    20.0,
-                lval_mut_bignum, bn_zero,
-                lval_mut_err,    LERR_DIV_ZERO);
+        test_fail(&lbuiltin_op_div, "divisor of type LVAL_DBL = 0", {
+            push_dbl(args, 200);
+            push_dbl(args, 0.0);
+            lval_mut_err(expected, LERR_DIV_ZERO);
         });
-
     });
 
     subdesc(op_mod, {
-
-        it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(&lbuiltin_op_mod,
-                lval_mut_num, 20,
-                lval_mut_num, 18,
-                lval_mut_num, 2);
+        test_pass(&lbuiltin_op_mod, "LVAL_NUM", {
+            push_num(args, 10);
+            push_num(args, 8);
+            lval_mut_num(expected, 2);
         });
-        it("fails for LVAL_DBL", {
-            test_helper_builtin_fail(&lbuiltin_op_mod,
-                lval_mut_dbl, 20.0,
-                lval_mut_dbl, 18.0,
-                lval_mut_err, LERR_BAD_OPERAND);
+        test_fail(&lbuiltin_op_mod, "LVAL_DBL", {
+            push_dbl(args, 10.0);
+            push_dbl(args, 8.0);
+            lval_mut_dbl(expected, 2.0);
         });
-        it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_mod,
-                lval_mut_bignum, bn_maxlong_succ,
-                lval_mut_bignum, bn_maxlong,
-                lval_mut_bignum, bn_one);
+        test_pass(&lbuiltin_op_mod, "LVAL_BIGNUM", {
+            push_bignum(args, 10);
+            push_bignum(args, 8);
+            mut_bignum(expected, 2);
         });
-        it("passes for LVAL_BIGNUM and LVAL_NUM casted to LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_mod,
-                lval_mut_bignum, bn_maxlong_succ,
-                lval_mut_num,    LONG_MAX,
-                lval_mut_bignum, bn_one);
+        test_pass(&lbuiltin_op_mod, "LVAL_BIGNUM & LVAL_NUM casted to LVAL_BIGNUM", {
+            push_num(args, 10);
+            push_bignum(args, 8);
+            mut_bignum(expected, 2);
         });
-        it("fails when the modisor is 0 (LVAL_NUM)", {
-            test_helper_builtin_fail(&lbuiltin_op_mod,
-                lval_mut_num, 20,
-                lval_mut_num, 0,
-                lval_mut_err, LERR_DIV_ZERO);
+        test_fail(&lbuiltin_op_mod, "divisor of type LVAL_NUM = 0", {
+            push_num(args, 10);
+            push_num(args, 0);
+            lval_mut_err(expected, LERR_DIV_ZERO);
         });
-        it("fails when the modisor is 0 (LVAL_DBL & LVAL_BIGNUM", {
-            test_helper_builtin_fail(&lbuiltin_op_mod,
-                lval_mut_bignum, bn_maxlong_succ,
-                lval_mut_bignum, bn_zero,
-                lval_mut_err,    LERR_DIV_ZERO);
+        test_fail(&lbuiltin_op_mod, "divisor of type LVAL_BIGNUM = 0", {
+            push_bignum(args, 10);
+            push_bignum(args, 0);
+            lval_mut_err(expected, LERR_DIV_ZERO);
         });
-
     });
 
     subdesc(op_fac, {
-
-        it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(&lbuiltin_op_fac,
-                lval_mut_num, 20,
-                discard, NULL,
-                lval_mut_num, fac20);
+        test_pass(&lbuiltin_op_fac, "LVAL_NUM", {
+            push_num(args, 20);
+            lval_mut_num(expected, fac20);
         });
-        it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_fac,
-                lval_mut_bignum, bn_21,
-                discard, NULL,
-                lval_mut_bignum, bn_fac21);
+        test_fail(&lbuiltin_op_fac, "LVAL_DBL", {
+            push_dbl(args, 20.0);
+            lval_mut_err(expected, LERR_BAD_OPERAND);
         });
-        it("fails for LVAL_DBL", {
-            test_helper_builtin_fail(&lbuiltin_op_fac,
-                lval_mut_dbl, 20.0,
-                discard, NULL,
-                lval_mut_err, LERR_BAD_OPERAND);
+        test_pass(&lbuiltin_op_fac, "LVAL_BIGNUM", {
+            push_bignum(args, 20);
+            mut_bignum(expected, fac20);
         });
-        it("fails for LVAL_NUM < 0", {
-            test_helper_builtin_fail(&lbuiltin_op_fac,
-                lval_mut_num, -20,
-                discard, NULL,
-                lval_mut_err, LERR_BAD_OPERAND);
+        test_pass(&lbuiltin_op_fac, "LVAL_NUM which overflows to LVAL_BIGNUM", {
+            push_bignum(args, 21);
+            mut_bignum_mul(expected, fac20, 21);
         });
-        it("fails for 2 operands", {
-            test_helper_builtin_fail(&lbuiltin_op_fac,
-                lval_mut_num, 20,
-                lval_mut_num, 20,
-                lval_mut_err, LERR_TOO_MANY_ARGS);
+        test_fail(&lbuiltin_op_fac, "LVAL_NUM < 0", {
+            push_num(args, -20);
+            lval_mut_err(expected, LERR_BAD_OPERAND);
         });
-
+        test_fail(&lbuiltin_op_fac, "number of operands > 1", {
+            push_num(args, 9);
+            push_num(args, 8);
+            lval_mut_err(expected, LERR_TOO_MANY_ARGS);
+        });
     });
 
     subdesc(op_pow, {
-
-        it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(&lbuiltin_op_pow,
-                lval_mut_num, 2,
-                lval_mut_num, 8,
-                lval_mut_num, 256);
+        test_pass(&lbuiltin_op_pow, "LVAL_NUM", {
+            push_num(args, 2);
+            push_num(args, 8);
+            lval_mut_num(expected, 256);
         });
-        it("passes for LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_pow,
-                lval_mut_dbl, 2.0,
-                lval_mut_dbl, 8.0,
-                lval_mut_dbl, 256.0);
+        test_pass(&lbuiltin_op_pow, "LVAL_DBL", {
+            push_dbl(args, 2);
+            push_dbl(args, 8);
+            lval_mut_dbl(expected, 256.0);
         });
-        it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_pow,
-                lval_mut_bignum, bn_10pow10,
-                lval_mut_bignum, bn_10pow1,
-                lval_mut_bignum, bn_10pow100);
+        test_pass(&lbuiltin_op_pow, "LVAL_BIGNUM", {
+            push_bignum(args, 2);
+            push_bignum(args, 8);
+            mut_bignum(expected, 256);
         });
-        it("passes for LVAL_BIGNUM and LVAL_NUM casted to LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_pow,
-                lval_mut_bignum, bn_10pow10,
-                lval_mut_num,    10,
-                lval_mut_bignum, bn_10pow100);
+        test_pass(&lbuiltin_op_pow, "LVAL_BIGNUM & LVAL_NUM casted to LVAL_BIGNUM", {
+            push_num(args, 2);
+            push_bignum(args, 8);
+            mut_bignum(expected, 256);
         });
-        it("passes for LVAL_DBL and LVAL_NUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_pow,
-                lval_mut_num, 2,
-                lval_mut_dbl, 8.0,
-                lval_mut_dbl, 256.0);
+        test_pass(&lbuiltin_op_pow, "LVAL_DBL & LVAL_NUM casted to LVAL_DBL", {
+            push_num(args, 2);
+            push_dbl(args, 8.0);
+            lval_mut_dbl(expected, 256.0);
         });
-        it("passes for LVAL_DBL and LVAL_BIGNUM casted to LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_pow,
-                lval_mut_dbl,    2.0,
-                lval_mut_bignum, bn_8,
-                lval_mut_dbl,    256.0);
+        test_pass(&lbuiltin_op_pow, "LVAL_DBL & LVAL_BIGNUM casted to LVAL_DBL", {
+            push_dbl(args, 2.0);
+            push_bignum(args, 8);
+            lval_mut_dbl(expected, 256.0);
         });
-
     });
 
     subdesc(func_head, {
-        it("passes", {
-            struct lval* x = lval_alloc(); defer(lval_free(x));
-            lval_mut_num(x, 1);
-            struct lval* y = lval_alloc(); defer(lval_free(y));
-            lval_mut_num(y, 2);
-            struct lval* z = lval_alloc(); defer(lval_free(z));
-            lval_mut_num(z, 3);
-            struct lval* q1 = lval_alloc(); defer(lval_free(q1));
-            lval_mut_qexpr(q1);
-            lval_push(q1, x);
-            lval_push(q1, y);
-            lval_push(q1, z);
-            test_helper_builtin_pass(&lbuiltin_head,
-                discard, NULL,
-                lval_dup, q1,
-                lval_dup, x);
+        test_pass(&lbuiltin_head, "happy path", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_num(expected, 1);
         });
     });
 
     subdesc(func_tail, {
-        it("passes", {
-            struct lval* x = lval_alloc(); defer(lval_free(x));
-            lval_mut_num(x, 1);
-            struct lval* y = lval_alloc(); defer(lval_free(y));
-            lval_mut_num(y, 2);
-            struct lval* z = lval_alloc(); defer(lval_free(z));
-            lval_mut_num(z, 3);
-            struct lval* q1 = lval_alloc(); defer(lval_free(q1));
-            lval_mut_qexpr(q1);
-            lval_push(q1, x);
-            lval_push(q1, y);
-            lval_push(q1, z);
-            struct lval* q2 = lval_alloc(); defer(lval_free(q2));
-            lval_mut_qexpr(q2);
-            lval_push(q2, y);
-            lval_push(q2, z);
-            test_helper_builtin_pass(&lbuiltin_tail,
-                discard, NULL,
-                lval_dup, q1,
-                lval_dup, q2);
+        test_pass(&lbuiltin_tail, "happy path", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_qexpr(expected);
+            push_num(expected, 2);
+            push_num(expected, 3);
         });
     });
 
     subdesc(func_init, {
-        it("passes", {
-            struct lval* x = lval_alloc(); defer(lval_free(x));
-            lval_mut_num(x, 1);
-            struct lval* y = lval_alloc(); defer(lval_free(y));
-            lval_mut_num(y, 2);
-            struct lval* z = lval_alloc(); defer(lval_free(z));
-            lval_mut_num(z, 3);
-            struct lval* q1 = lval_alloc(); defer(lval_free(q1));
-            lval_mut_qexpr(q1);
-            lval_push(q1, x);
-            lval_push(q1, y);
-            lval_push(q1, z);
-            struct lval* q2 = lval_alloc(); defer(lval_free(q2));
-            lval_mut_qexpr(q2);
-            lval_push(q2, x);
-            lval_push(q2, y);
-            test_helper_builtin_pass(&lbuiltin_init,
-                discard, NULL,
-                lval_dup, q1,
-                lval_dup, q2);
+        test_pass(&lbuiltin_init, "happy path", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 2);
         });
     });
 
     subdesc(func_cons, {
-        it("passes", {
-            struct lval* x = lval_alloc(); defer(lval_free(x));
-            lval_mut_num(x, 1);
-            struct lval* y = lval_alloc(); defer(lval_free(y));
-            lval_mut_num(y, 2);
-            struct lval* q1 = lval_alloc(); defer(lval_free(q1));
-            lval_mut_qexpr(q1);
-            lval_push(q1, y);
-            struct lval* q2 = lval_alloc(); defer(lval_free(q2));
-            lval_mut_qexpr(q2);
-            lval_push(q2, x);
-            lval_push(q2, y);
-            test_helper_builtin_pass(&lbuiltin_cons,
-                lval_dup, x,
-                lval_dup, q1,
-                lval_dup, q2);
+        test_pass(&lbuiltin_cons, "happy path", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            push_num(args, 1);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 2);
+            push_num(expected, 3);
         });
     });
 
     subdesc(func_len, {
-        it("passes", {
-            struct lval* x = lval_alloc(); defer(lval_free(x));
-            lval_mut_num(x, 1);
-            struct lval* q1 = lval_alloc(); defer(lval_free(q1));
-            lval_mut_qexpr(q1);
-            lval_push(q1, x);
-            lval_push(q1, x);
-            lval_push(q1, x);
-            lval_push(q1, x);
-            lval_push(q1, x);
-            test_helper_builtin_pass(&lbuiltin_len,
-                discard, NULL,
-                lval_dup, q1,
-                lval_mut_num, 5);
+        test_pass(&lbuiltin_len, "happy path", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_num(expected, 3);
         });
     });
 
-
     subdesc(func_join, {
-        it("passes", {
-            struct lval* x = lval_alloc(); defer(lval_free(x));
-            lval_mut_num(x, 1);
-            struct lval* y = lval_alloc(); defer(lval_free(y));
-            lval_mut_num(x, 2);
-            struct lval* z = lval_alloc(); defer(lval_free(z));
-            lval_mut_num(x, 3);
-            struct lval* q1 = lval_alloc(); defer(lval_free(q1));
-            lval_mut_qexpr(q1);
-            lval_push(q1, x);
-            struct lval* q2 = lval_alloc(); defer(lval_free(q2));
-            lval_mut_qexpr(q2);
-            lval_push(q2, y);
-            lval_push(q2, z);
-            struct lval* q3 = lval_alloc(); defer(lval_free(q3));
-            lval_mut_qexpr(q3);
-            lval_push(q3, x);
-            lval_push(q3, y);
-            lval_push(q3, z);
-            test_helper_builtin_pass(&lbuiltin_join,
-                lval_dup, q1,
-                lval_dup, q2,
-                lval_dup, q3);
+        test_pass(&lbuiltin_join, "happy path", {
+            struct lval* qexpr1 = lval_alloc();
+            lval_mut_qexpr(qexpr1);
+            push_num(qexpr1, 1);
+            push_num(qexpr1, 2);
+            lval_push(args, qexpr1);
+            lval_free(qexpr1);
+            struct lval* qexpr2 = lval_alloc();
+            lval_mut_qexpr(qexpr2);
+            push_num(qexpr2, 3);
+            push_num(qexpr2, 4);
+            lval_push(args, qexpr2);
+            lval_free(qexpr2);
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 2);
+            push_num(expected, 3);
+            push_num(expected, 4);
         });
     });
 
     subdesc(func_list, {
-        it("passes", {
-            struct lval* x = lval_alloc(); defer(lval_free(x));
-            lval_mut_num(x, 1);
-            struct lval* q1 = lval_alloc(); defer(lval_free(q1));
-            lval_mut_qexpr(q1);
-            lval_push(q1, x);
-            test_helper_builtin_pass(&lbuiltin_list,
-                discard, NULL,
-                lval_dup, x,
-                lval_dup, q1);
+        test_pass(&lbuiltin_list, "happy path", {
+            push_num(args, 1);
+            push_num(args, 2);
+            push_num(args, 3);
+            push_num(args, 4);
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 2);
+            push_num(expected, 3);
+            push_num(expected, 4);
         });
     });
 
     subdesc(func_eval, {
-        it("passes", {
-            struct lval* x = lval_alloc(); defer(lval_free(x));
-            lval_mut_num(x, 1);
-            struct lval* o = lval_alloc(); defer(lval_free(o));
-            lval_mut_sym(o, "+");
-            struct lval* s = lval_alloc(); defer(lval_free(s));
-            lval_mut_sexpr(s);
-            lval_push(s, o);
-            lval_push(s, x);
-            lval_push(s, x);
-            test_helper_builtin_pass(&lbuiltin_eval,
-                discard, NULL,
-                lval_dup, s,
-                lval_mut_num, 2);
+        test_pass(&lbuiltin_eval, "happy path", {
+            struct lval* sexpr = lval_alloc();
+            lval_mut_sexpr(sexpr);
+            push_symbol(sexpr, "+");
+            push_num(sexpr, 1);
+            push_num(sexpr, 2);
+            lval_mut_sexpr(sexpr);
+            lval_push(args, sexpr);
+            lval_free(sexpr);
+            lval_mut_num(expected, 3);
         });
     });
 

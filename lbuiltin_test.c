@@ -426,6 +426,24 @@ describe(builtin, {
             push_num(expected, 2);
             push_num(expected, 3);
         });
+
+        test_pass(&lbuiltin_cons, "prepending a Q-Expression", {
+            struct lval* qexpr1 = lval_alloc();
+            lval_mut_qexpr(qexpr1);
+            push_num(qexpr1, 2);
+            push_num(qexpr1, 3);
+            struct lval* qexpr2 = lval_alloc();
+            lval_mut_qexpr(qexpr2);
+            push_num(qexpr2, 1);
+            lval_push(args, qexpr2);
+            lval_push(args, qexpr1);
+            lval_free(qexpr1);
+            lval_mut_qexpr(expected);
+            lval_push(expected, qexpr2);
+            push_num(expected, 2);
+            push_num(expected, 3);
+            lval_free(qexpr2);
+        });
     });
 
     subdesc(func_len, {

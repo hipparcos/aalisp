@@ -2,16 +2,13 @@
 
 #include <string.h>
 
-const struct lsym* lsym_lookup(const struct lsym_table* symbols, const char* sym, size_t operands) {
+const struct lsym* lsym_lookup(const struct lsym_table* symbols, const char* sym) {
     if (!symbols) {
         return NULL;
     }
     const struct lsym_table* table = &symbols[0];
     do {
         if (strcmp(sym, table->symbol) == 0) {
-            if (table->descriptor->unary && operands != 1) {
-                continue;
-            }
             return table->descriptor;
         }
     } while ((++table)->symbol);
@@ -27,54 +24,60 @@ static enum ltype typeof_op(const struct lval* a, const struct lval *b) {
     return LVAL_NIL;
 }
 
-int lsym_exec(
-    const struct lsym* sym,
-    struct lval* acc, const struct lval* x
-) {
+static int lsym_exec_arg(const struct lsym* sym, struct lval* acc, const struct lval* args) {
+    if (!sym->op_all) {
+        lval_mut_err(acc, LERR_EVAL);
+        return -1;
+    }
+    /* Guards */
+    for (int i = 0; i < sym->guardc; i++) {
+        const struct lguard* guard = &sym->guards[i];
+        if (guard->argn) {
+            struct lval* child = lval_alloc();
+            lval_index(args, guard->argn-1, child);
+            if (0 != (guard->condition)(child)) {
+                lval_mut_err(acc, guard->error);
+                return guard->argn;
+            }
+            lval_free(child);
+            continue;
+        }
+        int s = 0;
+        if (0 != (s = (guard->condition)(args))) {
+            lval_mut_err(acc, guard->error);
+            return s;
+        }
+    }
+    /* Execution */
+    return sym->op_all(acc, args);
+}
+
+static int lsym_exec_acc(const struct lsym* sym, struct lval* acc, const struct lval* x) {
+    /* Guards */
+    for (int i = 0; i < sym->guardc; i++) {
+        const struct lguard* guard = &sym->guards[i];
+        if (0 != (guard->condition)(x)) {
+            lval_mut_err(acc, guard->error);
+            return 1;
+        }
+    }
+
     /* Local x operand */
     const struct lval* lx = x;
     if (lval_is_nil(acc)) {
-        lval_dup(acc, x);
-        if (sym->unary) {
-            lx = &lnil;
-        } else {
-            lx = sym->neutral;
-        }
-    }
-    if (sym->unary && !lval_is_nil(lx)) {
-        lval_mut_err(acc, LERR_TOO_MANY_ARGS);
-        return 2;
-    }
-
-    /* Guards */
-    int s = 0;
-    const struct lval* a = acc;
-    const struct lval* b = lx;
-    if (sym->swap) {
-        a = lx;
-        b = acc;
-    }
-    for (int i = 0; i < sym->guardc; i++) {
-        if ((s = (sym->guards[i].condition)(a, b)) != 0) {
-            lval_mut_err(acc, sym->guards[i].error);
-            return s;
-        }
-    }
-
-    /* If op_all is set, execute it then return. */
-    if (sym->op_all) {
         if (sym->swap) {
-            struct lval* lx = lval_alloc();
-            lval_dup(lx, x);
-            int s = sym->op_all(lx, acc);
-            lval_dup(acc, lx);
-            lval_free(lx);
-            return s;
+            lval_copy(acc, x);
+            lx = sym->neutral;
+        } else {
+            lval_copy(acc, sym->neutral);
         }
+    }
+
+    if (sym->op_all) {
         return sym->op_all(acc, x);
     }
 
-    /* Eval */
+    /* Accumulator based evaluation. */
     switch (typeof_op(acc, lx)) {
     case LVAL_DBL:
         {
@@ -121,4 +124,45 @@ int lsym_exec(
 
     lval_mut_err(acc, LERR_EVAL);
     return -1;
+}
+
+int lsym_exec(const struct lsym* sym, struct lval* acc, const struct lval* args) {
+    if (!sym) {
+        lval_mut_err(acc, LERR_EVAL);
+        return -1;
+    }
+    /* Check number of arguments. */
+    size_t len = lval_len(args);
+    int max = sym->max_argc;
+    if (max != -1 && (int)len > max) {
+        lval_mut_err(acc, LERR_TOO_MANY_ARGS);
+        return -1;
+    }
+    int min = sym->min_argc;
+    if (min != -1 && (int)len < min) {
+        lval_mut_err(acc, LERR_TOO_FEW_ARGS);
+        return -1;
+    }
+    /* Argument execution. */
+    if (!sym->accumulator) {
+        return lsym_exec_arg(sym, acc, args);
+    }
+    /* Accumulator execution. */
+    int s = 0;
+    for (size_t c = 0; c < len; c++) {
+        struct lval* child = lval_alloc();
+        lval_index(args, c, child);
+        int err = lsym_exec_acc(sym, acc, child);
+        /* Break on error. */
+        if (err != 0) {
+            if (err == -1) {
+                s = err;
+            } else {
+                s = c;
+            }
+            break;
+        }
+        lval_free(child);
+    }
+    return s;
 }

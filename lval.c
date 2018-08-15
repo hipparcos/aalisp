@@ -30,6 +30,7 @@ const char* const lerr_string[] = {
     "bad symbol",
     "bad operand",
     "too many arguments",
+    "too few arguments",
 };
 
 /** ldata is the return type of an evalution. */
@@ -105,6 +106,17 @@ const struct lval lzero = {
 const struct lval lone = {
     .alive = IMMORTAL,
     .data  = (struct ldata*) &ldata_one
+};
+ static const struct ldata ldata_emptyq = {
+    .alive        = IMMORTAL,
+    .mutable      = false,
+    .type         = LVAL_QEXPR,
+    .len          = 0,
+    .payload.cell = NULL
+};
+const struct lval lemptyq = {
+    .alive = IMMORTAL,
+    .data  = (struct ldata*) &ldata_emptyq
 };
 /** ldata_init is used as init data for lval.
  ** It is mutable but a new data is always allocated because refc starts at 1.*/

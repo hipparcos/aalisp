@@ -1,10 +1,10 @@
 out=$(PROGNAME)
 sources=$(PROGNAME).c vendor/mini-gmp/mini-gmp.c \
 		leval.c lval.c lsym.c lbuiltin.c llexer.c lparser.c lmut.c \
-		lbuiltin_func.c
+		lbuiltin_operator.c lbuiltin_func.c
 headers=vendor/mini-gmp/mini-gmp.h \
 		leval.h lval.h lsym.h lbuiltin.h llexer.h lparser.h lmut.h \
-		lbuiltin_func.h
+		lbuiltin_operator.h lbuiltin_func.h
 
 build_dir:=build
 version_file:=version.mk
@@ -53,8 +53,6 @@ $(out): $(objects)
 # Generate O file in $(build_dir); .f is a directory marker.
 $(build_dir)/%.o: %.c $$(@D)/.f
 	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(build_dir)/lbuiltin.o: lbuiltin_condition.inc.c lbuiltin_typed_operator.inc.c
 
 # Generate C source files dependancies in $(build_dir); .f is a directory marker.
 $(build_dir)/%.d: %.c $(version_header) $$(@D)/.f

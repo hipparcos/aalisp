@@ -29,9 +29,10 @@ enum lerr {
     LERR_DIV_ZERO,
     LERR_BAD_SYMBOL,
     LERR_BAD_OPERAND,
-    LERR_TOO_MANY_ARGS
+    LERR_TOO_MANY_ARGS,
+    LERR_TOO_FEW_ARGS,
 };
-extern const char* const lerr_string[8];
+extern const char* const lerr_string[9];
 
 /** lval is the public handle to a ldata.
  ** This level of indirection is used to prepare the work on a GC. */
@@ -46,9 +47,10 @@ struct lval {
 };
 
 /* Special lvals used in builtins. */
-extern const struct lval lnil;  /** = nil */
-extern const struct lval lzero; /** = 0   */
-extern const struct lval lone;  /** = 1   */
+extern const struct lval lnil;    /** = nil */
+extern const struct lval lzero;   /** = 0   */
+extern const struct lval lone;    /** = 1   */
+extern const struct lval lemptyq; /** = {}  */
 
 /* Constructor & Destructor */
 /** lval_alloc returns a handle to a new lval of type LVAL_NIL.

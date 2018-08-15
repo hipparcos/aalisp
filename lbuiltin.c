@@ -1,8 +1,7 @@
 #include "lbuiltin.h"
 
 /* C files included here. This file was split for clarity only. */
-#include "lbuiltin_condition.inc.c"
-#include "lbuiltin_typed_operator.inc.c"
+#include "lbuiltin_operator.h"
 #include "lbuiltin_func.h"
 
 /* Local macros. */
@@ -10,188 +9,208 @@
 
 /* Operator: declaration */
 static const struct lguard guards_op_add[] = {
-    {cnd_are_numeric,  LERR_BAD_OPERAND},
+    {.condition= lbi_cond_is_numeric, .error= LERR_BAD_OPERAND},
 };
 const struct lsym lbuiltin_op_add = {
     .symbol       = "+",
+    .accumulator  = true,
+    .neutral      = &lzero,
+    .min_argc     =  1,
+    .max_argc     = -1,
     .guards       = &guards_op_add[0],
     .guardc       = LENGTH(guards_op_add),
-    .neutral      = &lzero,
-    .op_num       = op_num_add,
-    .cnd_overflow = cnd_num_add_overflow,
+    .op_num       = lbi_op_num_add,
+    .cnd_overflow = lbi_cond_num_add_overflow,
     .op_bignum    = mpz_add,
-    .op_dbl       = op_dbl_add
+    .op_dbl       = lbi_op_dbl_add
 };
 
 static const struct lguard guards_op_sub[] = {
-    {cnd_are_numeric,  LERR_BAD_OPERAND},
+    {.condition= lbi_cond_is_numeric, .error= LERR_BAD_OPERAND},
 };
 const struct lsym lbuiltin_op_sub = {
     .symbol       = "-",
+    .accumulator  = true,
+    .neutral      = &lzero,
+    .min_argc     =  1,
+    .max_argc     = -1,
     .guards       = &guards_op_sub[0],
     .guardc       = LENGTH(guards_op_sub),
-    .neutral      = &lzero,
-    .op_num       = op_num_sub,
-    .cnd_overflow = cnd_num_sub_overflow,
+    .op_num       = lbi_op_num_sub,
+    .cnd_overflow = lbi_cond_num_sub_overflow,
     .op_bignum    = mpz_sub,
-    .op_dbl       = op_dbl_sub
-};
-const struct lsym lbuiltin_op_sub_unary = {
-    .symbol       = "-",
-    .unary        = true,
-    .guards       = &guards_op_sub[0],
-    .guardc       = LENGTH(guards_op_sub),
-    .neutral      = &lzero,
-    .op_num       = op_num_sub_unary,
-    .cnd_overflow = cnd_num_sub_overflow,
-    .op_bignum    = op_bignum_sub_unary,
-    .op_dbl       = op_dbl_sub_unary
+    .op_dbl       = lbi_op_dbl_sub
 };
 
 static const struct lguard guards_op_mul[] = {
-    {cnd_are_numeric,  LERR_BAD_OPERAND},
+    {.condition= lbi_cond_is_numeric, .error= LERR_BAD_OPERAND},
 };
 const struct lsym lbuiltin_op_mul = {
     .symbol       = "*",
+    .accumulator  = true,
+    .neutral      = &lone,
+    .min_argc     =  1,
+    .max_argc     = -1,
     .guards       = &guards_op_mul[0],
     .guardc       = LENGTH(guards_op_mul),
-    .neutral      = &lone,
-    .op_num       = op_num_mul,
-    .cnd_overflow = cnd_num_mul_overflow,
+    .op_num       = lbi_op_num_mul,
+    .cnd_overflow = lbi_cond_num_mul_overflow,
     .op_bignum    = mpz_mul,
-    .op_dbl       = op_dbl_mul
+    .op_dbl       = lbi_op_dbl_mul
 };
 
 static const struct lguard guards_op_div[] = {
-    {cnd_are_numeric,  LERR_BAD_OPERAND},
-    {cnd_y_is_not_zero, LERR_DIV_ZERO},
+    {.condition= lbi_cond_is_numeric,  .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_is_not_zero, .error= LERR_DIV_ZERO},
 };
 const struct lsym lbuiltin_op_div = {
     .symbol       = "/",
+    .accumulator  = true,
+    .neutral      = &lone,
+    .swap         = true,
+    .min_argc     =  1,
+    .max_argc     = -1,
     .guards       = &guards_op_div[0],
     .guardc       = LENGTH(guards_op_div),
-    .neutral      = &lone,
-    .op_num       = op_num_div,
+    .op_num       = lbi_op_num_div,
     .cnd_overflow = NULL,
     .op_bignum    = mpz_fdiv_q,
-    .op_dbl       = op_dbl_div,
+    .op_dbl       = lbi_op_dbl_div,
 };
 
 static const struct lguard guards_op_mod[] = {
-    {cnd_are_integral,  LERR_BAD_OPERAND},
-    {cnd_y_is_not_zero, LERR_DIV_ZERO},
+    {.condition= lbi_cond_is_integral, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_is_not_zero, .error= LERR_DIV_ZERO},
 };
 const struct lsym lbuiltin_op_mod = {
     .symbol       = "%",
+    .accumulator  = true,
+    .neutral      = &lone,
+    .swap         = true,
+    .min_argc     =  1,
+    .max_argc     = -1,
     .guards       = &guards_op_mod[0],
     .guardc       = LENGTH(guards_op_mod),
-    .neutral      = &lone,
-    .op_num       = op_num_mod,
+    .op_num       = lbi_op_num_mod,
     .cnd_overflow = NULL,
     .op_bignum    = mpz_mod,
-    .op_dbl       = op_dbl_nop
+    .op_dbl       = lbi_op_dbl_nop
 };
 
 static const struct lguard guards_op_fac[] = {
-    {cnd_x_is_integral, LERR_BAD_OPERAND},
-    {cnd_x_is_positive, LERR_BAD_OPERAND},
-    {cnd_x_is_ul,       LERR_BAD_OPERAND},
+    {.condition= lbi_cond_is_integral, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_is_positive, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_x_is_ul,     .error= LERR_BAD_OPERAND},
 };
 const struct lsym lbuiltin_op_fac = {
     .symbol       = "!",
-    .unary        = true,
+    .accumulator  = true,
+    .neutral      = &lone,
+    .swap         = true,
+    .min_argc     =  1,
+    .max_argc     =  1,
     .guards       = &guards_op_fac[0],
     .guardc       = LENGTH(guards_op_fac),
-    .neutral      = &lone,
-    .op_num       = op_num_fact,
-    .cnd_overflow = cnd_num_fact_overflow,
-    .op_bignum    = op_bignum_fac,
-    .op_dbl       = op_dbl_nop
+    .op_num       = lbi_op_num_fac,
+    .cnd_overflow = lbi_cond_num_fac_overflow,
+    .op_bignum    = lbi_op_bignum_fac,
+    .op_dbl       = lbi_op_dbl_nop
 };
 
 static const struct lguard guards_op_pow[] = {
-    {cnd_are_numeric, LERR_BAD_OPERAND},
-    {cnd_x_is_ul,     LERR_BAD_OPERAND},
+    {.condition= lbi_cond_is_numeric, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_x_is_ul,    .error= LERR_BAD_OPERAND},
 };
 const struct lsym lbuiltin_op_pow = {
     .symbol       = "^",
+    .accumulator  = true,
+    .neutral      = &lone,
+    .swap         = true,
+    .min_argc     =  1,
+    .max_argc     = -1,
     .guards       = &guards_op_pow[0],
     .guardc       = LENGTH(guards_op_pow),
-    .neutral      = &lone,
-    .op_num       = op_num_pow,
-    .cnd_overflow = cnd_num_pow_overflow,
-    .op_bignum    = op_bignum_pow,
-    .op_dbl       = op_dbl_pow
+    .op_num       = lbi_op_num_pow,
+    .cnd_overflow = lbi_cond_num_pow_overflow,
+    .op_bignum    = lbi_op_bignum_pow,
+    .op_dbl       = lbi_op_dbl_pow
 };
 
 static const struct lguard guards_head[] = {
-    {lbi_cond_qexpr, LERR_BAD_OPERAND},
-    {lbi_cond_list,  LERR_BAD_OPERAND},
+    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_list,  .argn= 1, .error= LERR_BAD_OPERAND},
 };
 const struct lsym lbuiltin_head = {
     .symbol       = "head",
+    .min_argc     =  1,
+    .max_argc     =  1,
     .guards       = &guards_head[0],
     .guardc       = LENGTH(guards_head),
-    .neutral      = &lnil,
     .op_all       = lbi_func_head,
 };
 
 static const struct lguard guards_tail[] = {
-    {lbi_cond_qexpr, LERR_BAD_OPERAND},
-    {lbi_cond_list,  LERR_BAD_OPERAND},
+    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_list,  .argn= 1, .error= LERR_BAD_OPERAND},
 };
 const struct lsym lbuiltin_tail = {
     .symbol       = "tail",
+    .min_argc     =  1,
+    .max_argc     =  1,
     .guards       = &guards_tail[0],
     .guardc       = LENGTH(guards_tail),
-    .neutral      = &lnil,
     .op_all       = lbi_func_tail,
 };
 
 static const struct lguard guards_init[] = {
-    {lbi_cond_qexpr, LERR_BAD_OPERAND},
-    {lbi_cond_list,  LERR_BAD_OPERAND},
+    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_list,  .argn= 1, .error= LERR_BAD_OPERAND},
 };
 const struct lsym lbuiltin_init = {
     .symbol       = "init",
+    .min_argc     =  1,
+    .max_argc     =  1,
     .guards       = &guards_init[0],
     .guardc       = LENGTH(guards_init),
-    .neutral      = &lnil,
     .op_all       = lbi_func_init,
 };
 
 static const struct lguard guards_cons[] = {
-    /* {lbi_cond_qexpr, LERR_BAD_OPERAND}, */
+    {.condition= lbi_cond_qexpr, .argn= 2, .error= LERR_BAD_OPERAND},
 };
 const struct lsym lbuiltin_cons = {
     .symbol       = "cons",
-    .swap         = true,
+    .min_argc     =  2,
+    .max_argc     =  2,
     .guards       = &guards_cons[0],
     .guardc       = LENGTH(guards_cons),
-    .neutral      = &lnil,
     .op_all       = lbi_func_cons,
 };
 
 static const struct lguard guards_len[] = {
-    {lbi_cond_qexpr, LERR_BAD_OPERAND},
+    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND},
 };
 const struct lsym lbuiltin_len = {
     .symbol       = "len",
+    .min_argc     =  1,
+    .max_argc     =  1,
     .guards       = &guards_len[0],
     .guardc       = LENGTH(guards_len),
-    .neutral      = &lnil,
     .op_all       = lbi_func_len,
 };
 
 static const struct lguard guards_join[] = {
-    {lbi_cond_qexpr, LERR_BAD_OPERAND},
-    {lbi_cond_list,  LERR_BAD_OPERAND},
+    {.condition= lbi_cond_qexpr, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_list,  .error= LERR_BAD_OPERAND},
 };
 const struct lsym lbuiltin_join = {
     .symbol       = "join",
+    .accumulator  = true,
+    .neutral      = &lemptyq,
+    .min_argc     =  1,
+    .max_argc     = -1,
     .guards       = &guards_join[0],
     .guardc       = LENGTH(guards_join),
-    .neutral      = &lnil,
     .op_all       = lbi_func_join,
 };
 
@@ -199,9 +218,12 @@ static const struct lguard guards_list[] = {
 };
 const struct lsym lbuiltin_list = {
     .symbol       = "list",
+    .accumulator  = true,
+    .neutral      = &lemptyq,
+    .min_argc     =  0,
+    .max_argc     = -1,
     .guards       = &guards_list[0],
     .guardc       = LENGTH(guards_list),
-    .neutral      = &lnil,
     .op_all       = lbi_func_list,
 };
 
@@ -209,8 +231,9 @@ static const struct lguard guards_eval[] = {
 };
 const struct lsym lbuiltin_eval = {
     .symbol       = "eval",
+    .min_argc     =  1,
+    .max_argc     =  1,
     .guards       = &guards_eval[0],
     .guardc       = LENGTH(guards_eval),
-    .neutral      = &lnil,
     .op_all       = lbi_func_eval,
 };

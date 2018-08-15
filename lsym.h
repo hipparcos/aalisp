@@ -5,22 +5,28 @@
 #include "lbuiltin.h"
 
 /* Condition: eval a condition for the given operands. */
-/** lcondition returns 0 if true, -1 if false,
- **   1 if first arg gives false, 2 if second arg gives false. */
-typedef int (*lcondition)(const struct lval*, const struct lval*);
+typedef int (*lcondition)(const struct lval*);
 
 /* Guard: a condition associated with an error. */
 struct lguard {
+    /** lguard.condition is the condition to be verified. */
     lcondition condition;
+    /** lguard.argn is the number of the argument concerned, -1 for all. */
+    int argn;
+    /** lguard.error is the error returned. */
     enum lerr error;
 };
 
 /* Symbol: generic */
 struct lsym {
     const char* symbol;
-    /** lsym.unary tells is the symbol takes only one argument. */
-    bool unary;
-    /** lsym.swap tells if the operands need to be swaped before execution. */
+    /** lsym.max_argc is the maximum number of arguments. */
+    int max_argc;
+    /** lsym.min_argc is the minimum number of arguments. */
+    int min_argc;
+    /** lsym.accumulator tells if the function is of accumulator type. */
+    bool accumulator;
+    /** lsym.swap tells if the operands need to be swapped before execution. */
     bool swap;
     /** lsym.guards are functions that prevent execution of the symbol. */
     const struct lguard* guards;
@@ -45,15 +51,12 @@ struct lsym_table {
 };
 
 /** lsym_lookup returns the lsym associated to sym. */
-const struct lsym* lsym_lookup(const struct lsym_table* table, const char* sym, size_t operands);
+const struct lsym* lsym_lookup(const struct lsym_table* table, const char* sym);
 
 /** lsym_exec returns
  **   0 if success
  **  -1 if error
- **   1 if acc generate an error
- **   2 if x generate an error */
-int lsym_exec(
-    const struct lsym* sym,
-    struct lval* acc, const struct lval* x);
+ **   n if nth argument generate an error */
+int lsym_exec(const struct lsym* sym, struct lval* acc, const struct lval* args);
 
 #endif

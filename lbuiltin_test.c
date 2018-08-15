@@ -54,8 +54,10 @@ mpz_t bn_fac21;
     mut_func_y(a, y); \
     mut_func_e(e, expected); \
     defer(lval_free(e)); defer(lval_free(r)); defer(lval_free(a)); \
-    if (must_pass) { assert(0 == lsym_exec(op, r, a)); } \
-    else {           assert(0 != lsym_exec(op, r, a)); } \
+    int code = 0; \
+    if (must_pass) { (0 == (code = lsym_exec(op, r, a))); } \
+    else {           (0 != (code = lsym_exec(op, r, a))); } \
+    printf("\ncode: %d\n", code); \
     assert(lval_are_equal(r, e)); \
 
 /** discard is a helper used to do nothing instead of mut_func_y. */
@@ -201,35 +203,6 @@ describe(builtin, {
                 lval_mut_dbl,    2.0,
                 lval_mut_bignum, bn_one,
                 lval_mut_dbl,    1.0);
-        });
-
-    });
-
-    subdesc(op_sub_unary, {
-
-        it("passes for LVAL_NUM", {
-            test_helper_builtin_pass(&lbuiltin_op_sub_unary,
-                lval_mut_num, 2,
-                discard, NULL,
-                lval_mut_num, -2);
-        });
-        it("passes for LVAL_DBL", {
-            test_helper_builtin_pass(&lbuiltin_op_sub_unary,
-                lval_mut_dbl, 2.0,
-                discard, NULL,
-                lval_mut_dbl, -2.0);
-        });
-        it("passes for LVAL_BIGNUM", {
-            test_helper_builtin_pass(&lbuiltin_op_sub_unary,
-                lval_mut_bignum, bn_maxlong_succ,
-                discard, NULL,
-                lval_mut_bignum, bn_minlong);
-        });
-        it("fails for 2 operands", {
-            test_helper_builtin_fail(&lbuiltin_op_sub_unary,
-                lval_mut_dbl,    2.0,
-                lval_mut_dbl,    2.0,
-                lval_mut_err, LERR_TOO_MANY_ARGS);
         });
 
     });

@@ -63,8 +63,8 @@ bool lbi_cond_num_pow_overflow(const long a, const long b) {
 }
 
 bool lbi_cond_num_fac_overflow(const long a, const long b) {
-    UNUSED(b);
-    return a > 20;
+    UNUSED(a);
+    return b > 20;
 }
 
 /* Operators: long. */
@@ -102,12 +102,12 @@ long lbi_op_num_pow(const long a, const long b) {
 }
 
 long lbi_op_num_fac(const long a, const long b) {
-    UNUSED(b);
-    if (a == 0) {
+    UNUSED(a);
+    if (b == 0) {
         return 1;
     }
-    long fact = a;
-    long n    = a;
+    long fact = b;
+    long n    = b;
     while (n > 2) {
         fact *= --n;
     }
@@ -153,8 +153,8 @@ void lbi_op_bignum_sub_unary(mpz_t r, const mpz_t a, const mpz_t b) {
 }
 
 void lbi_op_bignum_fac(mpz_t r, const mpz_t a, const mpz_t b) {
-    UNUSED(b);
-    unsigned long n = mpz_get_ui(a);
+    UNUSED(a);
+    unsigned long n = mpz_get_ui(b);
     if (n == 0 || n == 1) {
         mpz_set_si(r, 1);
     }

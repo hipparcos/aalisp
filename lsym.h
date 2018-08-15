@@ -26,11 +26,11 @@ struct lsym {
     int min_argc;
     /** lsym.accumulator tells if the function is of accumulator type. */
     bool accumulator;
-    /** lsym.swap tells if the operands need to be swapped before execution. */
-    bool swap;
     /** lsym.guards are functions that prevent execution of the symbol. */
     const struct lguard* guards;
     int guardc; /* Number of guards. */
+    /** lsym.init_neutral tells if the initial value of acc must be the neutral elem. */
+    bool init_neutral;
     /** lsym.neutral is the neutral element. */
     const struct lval* neutral;
     /** cnd_overflow tells if an operation on nums must be casted to bignum. */

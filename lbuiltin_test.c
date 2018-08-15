@@ -284,7 +284,7 @@ describe(builtin, {
         test_fail(&lbuiltin_op_mod, "LVAL_DBL", {
             push_dbl(args, 10.0);
             push_dbl(args, 8.0);
-            lval_mut_dbl(expected, 2.0);
+            lval_mut_err(expected, LERR_BAD_OPERAND);
         });
         test_pass(&lbuiltin_op_mod, "LVAL_BIGNUM", {
             push_bignum(args, 10);

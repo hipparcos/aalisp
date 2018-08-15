@@ -62,28 +62,17 @@ static int lsym_exec_acc(const struct lsym* sym, struct lval* acc, const struct 
         }
     }
 
-    /* Local x operand */
-    const struct lval* lx = x;
-    if (lval_is_nil(acc)) {
-        if (sym->swap) {
-            lval_copy(acc, x);
-            lx = sym->neutral;
-        } else {
-            lval_copy(acc, sym->neutral);
-        }
-    }
-
     if (sym->op_all) {
         return sym->op_all(acc, x);
     }
 
     /* Accumulator based evaluation. */
-    switch (typeof_op(acc, lx)) {
+    switch (typeof_op(acc, x)) {
     case LVAL_DBL:
         {
         double a, b;
         lval_as_dbl(acc, &a);
-        lval_as_dbl(lx, &b);
+        lval_as_dbl(x, &b);
         lval_mut_dbl(acc, sym->op_dbl(a, b));
         return 0;
         }
@@ -93,7 +82,7 @@ static int lsym_exec_acc(const struct lsym* sym, struct lval* acc, const struct 
         mpz_init(a);
         mpz_init(b);
         lval_as_bignum(acc, a);
-        lval_as_bignum(lx, b);
+        lval_as_bignum(x, b);
         mpz_t rbn;
         mpz_init(rbn);
         sym->op_bignum(rbn, a, b);
@@ -107,12 +96,12 @@ static int lsym_exec_acc(const struct lsym* sym, struct lval* acc, const struct 
         {
         long a, b;
         lval_as_num(acc, &a);
-        lval_as_num(lx, &b);
+        lval_as_num(x, &b);
         if (sym->cnd_overflow && sym->cnd_overflow(a, b)) {
             mpz_t bna;
             mpz_init_set_si(bna, a);
             lval_mut_bignum(acc, bna);
-            int s = lsym_exec(sym, acc, lx);
+            int s = lsym_exec(sym, acc, x);
             mpz_clear(bna);
             return s;
         }
@@ -149,7 +138,23 @@ int lsym_exec(const struct lsym* sym, struct lval* acc, const struct lval* args)
     }
     /* Accumulator execution. */
     int s = 0;
-    for (size_t c = 0; c < len; c++) {
+    if (len == 1) {
+        /* Special case for unary operations. */
+        struct lval* lx = lval_alloc();
+        lval_index(args, 0, lx);      // lx is the first argument.
+        lval_copy(acc, sym->neutral); // acc is the neutral element.
+        int s = lsym_exec_acc(sym, acc, lx);
+        lval_free(lx);
+        return s;
+    }
+    if (sym->init_neutral) {
+        /* Init acc with neutral. */
+        lval_copy(acc, sym->neutral);
+    } else {
+        /* Init acc with first argument. */
+        lval_index(args, 0, acc);
+    }
+    for (size_t c = (sym->init_neutral) ? 0 : 1; c < len; c++) {
         struct lval* child = lval_alloc();
         lval_index(args, c, child);
         int err = lsym_exec_acc(sym, acc, child);

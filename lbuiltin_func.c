@@ -86,9 +86,13 @@ int lbi_func_cons(struct lval* acc, const struct lval* x) {
     /* Retrieve arg 1. */
     struct lval* arg = lval_alloc();
     lval_index(x, 0, arg);
+    struct lval* list = lval_alloc();
+    lval_index(x, 1, list);
     /* Cons. */
+    lval_dup(acc, list);
     lval_cons(acc, arg);
     lval_free(arg);
+    lval_free(list);
     return 0;
 }
 

@@ -18,6 +18,7 @@ const char* const ltype_string[] = {
     "error",
     "string",
     "symbol",
+    "function",
     "sexpr",
     "qexpr",
 };
@@ -46,7 +47,7 @@ struct ldata {
     enum ltype type;
     /** ldata.len value:
      ** LVAL_NIL = 0;
-     ** LVAL_NUM, LVAL_BIGNUM, LVAL_DBL, LVAL_ERR = 1;
+     ** LVAL_NUM, LVAL_BIGNUM, LVAL_DBL, LVAL_FUNC, LVAL_ERR = 1;
      ** LVAL_STR, LVAL_SYM = strlen(str);
      ** LVAL_SEXPR, LVAL_QEXPR = number of elements. */
     size_t len;
@@ -58,6 +59,7 @@ struct ldata {
         enum lerr     err;    // error code.
         char*         str;    // string or symbol.
         struct lval** cell;   // list of lval (can detect data mutation).
+        lbuiltin      func;   // pointer to a builtin function.
     } payload;
 };
 
@@ -327,6 +329,9 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
             free(dest->payload.str);
         }
         break;
+    case LVAL_FUNC:
+        dest->payload.func = src->payload.func;
+        break;
     }
     dest->type = src->type;
     dest->len = src->len;
@@ -449,6 +454,21 @@ bool lval_mut_sym(struct lval* v, const char* const sym) {
         return false;
     }
     v->data->type = LVAL_SYM;
+    return true;
+}
+
+bool lval_mut_func(struct lval* v, const lbuiltin func) {
+    if (!lval_is_mutable(v)) {
+        return false;
+    }
+    struct ldata* data = NULL;
+    if (!(data = lval_disconnect(v, true))) {
+        return false;
+    }
+    data->type = LVAL_FUNC;
+    data->payload.func = func;
+    data->len = 1;
+    lval_connect(v, data);
     return true;
 }
 
@@ -674,6 +694,9 @@ bool lval_as_str(const struct lval* v, char* r, size_t len) {
         snprintf(r, len, "%s", format);
         }
         break;
+    case LVAL_FUNC:
+        snprintf(r, len, "func");
+        break;
     }
     return true;
 }
@@ -683,6 +706,13 @@ const char* lval_as_sym(const struct lval* v) {
         return NULL;
     }
     return v->data->payload.str;
+}
+
+lbuiltin lval_as_func(const struct lval* v) {
+    if (!lval_is_alive(v) || lval_type(v) != LVAL_FUNC) {
+        return NULL;
+    }
+    return v->data->payload.func;
 }
 
 bool lval_is_nil(const struct lval* v) {
@@ -751,6 +781,7 @@ bool lval_are_equal(const struct lval* x, const struct lval* y) {
             }
         }
         return true;
+    case LVAL_FUNC:   return x->data->payload.func == y->data->payload.func;
     default: return false;
     }
 }
@@ -799,6 +830,9 @@ size_t lval_printlen(const struct lval* v) {
             len += lval_printlen(v->data->payload.cell[c]);
             len--; // - '\0'.
         }
+        break;
+    case LVAL_FUNC:
+        len = 4; // func.
         break;
     }
     return len + 1; // + '\0'

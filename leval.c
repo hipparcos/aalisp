@@ -56,7 +56,7 @@ static int leval_exec(const char* op, const struct lval* args, struct lval* acc)
 static bool leval_expr(struct lval* expr, struct lval* r) {
     /* First child is the symbol. */
     struct lval* sym = lval_pop(expr, 0);
-    struct lval* args = expr;
+    struct lval* args = expr; // aliasing for clarity.
     const char* op = lval_as_sym(sym);
     /* Execute expression. */
     int err = leval_exec(op, args, r);
@@ -84,45 +84,41 @@ static bool leval_sexpr(const struct lval* v, struct lval* r) {
         return true;
     }
     /* Evaluates all children. */
-    /* struct lval* expr = lval_alloc(); */
-    /* lval_mut_sexpr(expr); */
-    /* for (size_t c = 0; c < len; c++) { */
-    /*     struct lval* child = lval_alloc(); */
-    /*     lval_index(v, c, child); */
-    /*     struct lval* x = lval_alloc(); */
-    /*     if (!leval(child, x)) { */
-    /*         r->ast = child->ast; */
-    /*         lval_free(x); */
-    /*         lval_free(child); */
-    /*         lval_free(expr); */
-    /*         return false; */
-    /*     } */
-    /*     lval_push(expr, x); */
-    /*     lval_free(x); */
-    /*     lval_free(child); */
-    /* } */
     struct lval* expr = lval_alloc();
-    lval_copy(expr, v);
+    lval_mut_sexpr(expr);
+    for (size_t c = 0; c < len; c++) {
+        struct lval* child = lval_alloc();
+        lval_index(v, c, child);
+        struct lval* x = lval_alloc();
+        if (!leval(child, x)) {
+            lval_dup(r, x);
+            r->ast = child->ast;
+            lval_free(x);
+            lval_free(child);
+            lval_free(expr);
+            return false;
+        }
+        lval_push(expr, x);
+        if (c == len-1) {
+            /* r = last argument value */
+            lval_mut_nil(r);
+            lval_dup(r, x);
+        }
+        lval_free(x);
+        lval_free(child);
+    }
     /* First child is a symbol, it's an expression. */
     struct lval* child = lval_alloc();
     lval_index(expr, 0, child);
     if (lval_type(child) == LVAL_SYM) {
         lval_free(child);
-        return leval_expr(expr, r);
+        lval_mut_nil(r);
+        bool s = leval_expr(expr, r);
+        lval_free(expr);
+        return s;
     }
     lval_free(child);
     lval_free(expr);
-    /* Eval it as a list of sexpr; return the last value. */
-    for (size_t c = 0; c < len; c++) {
-        lval_mut_nil(r);
-        struct lval* child = lval_alloc();
-        lval_index(v, c, child);
-        leval(child, r);
-        lval_free(child);
-        if (lval_type(r) == LVAL_ERR) {
-            return false;
-        }
-    }
     return true;
 }
 

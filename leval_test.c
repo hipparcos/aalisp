@@ -96,6 +96,10 @@ describe(lisp_eval, {
             lval_push(expected, two);
             lval_push(expected, thr);
         });
+    /* Variables definition. */
+    test_pass("(def {x y} 1 2)(+ x y)", "3", {
+            lval_mut_num(expected, 3);
+        });
 
     /* Errors. */
     test_fail("/ 10 0", LERR_DIV_ZERO);

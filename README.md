@@ -67,13 +67,19 @@ List operations:
 > eval (head {(+ 1 1) (+ 2 2)})
 2
 ```
+Environment operations:
+```lisp
+> (def {x y} 1 2)(+ x y)
+3
+```
 
 ## TODO
 
 - [x] Rewrite the parser myself (see llexer & lparser);
 - [x] Implement S-Expressions (chapter 9);
 - [x] Implement Q-Expressions (chapter 10);
-- [ ] Implement variables (chapter 11);
+- [x] Implement variables (chapter 11);
+- [ ] Improve error reporting;
 - [ ] Implement functions (chapter 12);
 - [ ] Implement conditionals (chapter 13);
 - [ ] Implement strings (chapter 14);

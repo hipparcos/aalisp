@@ -106,7 +106,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "%", lbuiltin_op_mod);
     lenv_put_builtin(env, "^", lbuiltin_op_pow);
     lenv_put_builtin(env, "!", lbuiltin_op_fac);
-    /* List functions. */
+    /* List manipulation functions. */
     lenv_put_builtin(env, "head", lbuiltin_head);
     lenv_put_builtin(env, "tail", lbuiltin_tail);
     lenv_put_builtin(env, "init", lbuiltin_init);
@@ -115,5 +115,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "join", lbuiltin_join);
     lenv_put_builtin(env, "list", lbuiltin_list);
     lenv_put_builtin(env, "eval", lbuiltin_eval);
+    /* Environment manipulation functions. */
+    lenv_put_builtin(env, "def", lbuiltin_def);
     return true;
 }

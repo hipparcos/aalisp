@@ -279,3 +279,19 @@ const struct ldescriptor lbi_descriptor_eval = {
 int lbuiltin_eval(struct lenv* env, const struct lval* args, struct lval* acc) {
     return lbuiltin_exec(&lbi_descriptor_eval, env, args, acc);
 }
+
+static const struct lguard guards_def[] = {
+    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_list_of_sym, .argn= 1, .error= LERR_BAD_OPERAND},
+};
+const struct ldescriptor lbi_descriptor_def = {
+    .symbol       = "def",
+    .min_argc     =  2,
+    .max_argc     =  -1,
+    .guards       = &guards_def[0],
+    .guardc       = LENGTH(guards_def),
+    .op_all       = lbi_func_def,
+};
+int lbuiltin_def(struct lenv* env, const struct lval* args, struct lval* acc) {
+    return lbuiltin_exec(&lbi_descriptor_def, env, args, acc);
+}

@@ -522,6 +522,42 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_def, {
+        test_pass(lbuiltin_def, "happy path", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_sym(qexpr, "x");
+            push_sym(qexpr, "y");
+            lval_push(args, qexpr);
+            push_num(args, 100);
+            push_num(args, 200);
+            lval_dup(expected, qexpr);
+            lval_free(qexpr);
+        });
+
+        test_fail(lbuiltin_def, "symbols > args", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_sym(qexpr, "x");
+            push_sym(qexpr, "y");
+            lval_push(args, qexpr);
+            push_num(args, 100);
+            lval_free(qexpr);
+            lval_mut_err(expected, LERR_TOO_FEW_ARGS);
+        });
+
+        test_fail(lbuiltin_def, "symbols < args", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_sym(qexpr, "x");
+            lval_push(args, qexpr);
+            push_num(args, 100);
+            push_num(args, 200);
+            lval_free(qexpr);
+            lval_mut_err(expected, LERR_TOO_MANY_ARGS);
+        });
+    });
+
 });
 
 snow_main();

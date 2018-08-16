@@ -15,7 +15,7 @@ int lbuiltin_op_mod(struct lenv*, const struct lval*, struct lval*);
 int lbuiltin_op_pow(struct lenv*, const struct lval*, struct lval*);
 int lbuiltin_op_fac(struct lenv*, const struct lval*, struct lval*);
 
-/* List functions. */
+/* List manipulation functions. */
 int lbuiltin_head(struct lenv*, const struct lval*, struct lval*);
 int lbuiltin_tail(struct lenv*, const struct lval*, struct lval*);
 int lbuiltin_init(struct lenv*, const struct lval*, struct lval*);
@@ -24,5 +24,8 @@ int lbuiltin_len(struct lenv*, const struct lval*, struct lval*);
 int lbuiltin_join(struct lenv*, const struct lval*, struct lval*);
 int lbuiltin_list(struct lenv*, const struct lval*, struct lval*);
 int lbuiltin_eval(struct lenv*, const struct lval*, struct lval*);
+
+/* Environment manipulation functions. */
+int lbuiltin_def(struct lenv*, const struct lval*, struct lval*);
 
 #endif

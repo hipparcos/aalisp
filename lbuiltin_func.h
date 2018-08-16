@@ -5,6 +5,7 @@
 #include "lenv.h"
 
 int lbi_cond_qexpr(const struct lenv* env, const struct lval* arg);
+int lbi_cond_list_of_sym(const struct lenv* env, const struct lval* arg);
 int lbi_cond_qexpr_or_nil(const struct lenv* env, const struct lval* arg);
 int lbi_cond_list(const struct lenv* env, const struct lval* arg);
 int lbi_cond_qexpr_all(const struct lenv* env, const struct lval* args);
@@ -26,5 +27,8 @@ int lbi_func_join(struct lenv* env, struct lval* acc, const struct lval* args);
 int lbi_func_list(struct lenv* env, struct lval* acc, const struct lval* args);
 /** lbi_func_eval evaluates x and put the result into acc. */
 int lbi_func_eval(struct lenv* env, struct lval* acc, const struct lval* args);
+
+/** lbi_func_def defines a symbol in the environment. */
+int lbi_func_def(struct lenv* env, struct lval* acc, const struct lval* args);
 
 #endif

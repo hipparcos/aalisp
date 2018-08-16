@@ -24,6 +24,23 @@ int lbi_cond_list(const struct lenv* env, const struct lval* arg) {
     return (lval_len(arg) > 0) ? 0 : 1;
 }
 
+int lbi_cond_list_of_sym(const struct lenv* env, const struct lval* arg) {
+    UNUSED(env);
+    if (!lval_is_list(arg)) {
+        return 1;
+    }
+    size_t len = lval_len(arg);
+    for (size_t c = 0; c < len; c++) {
+        struct lval* child = lval_alloc();
+        lval_index(arg, c, child);
+        if (lval_type(child) != LVAL_SYM) {
+            return 1;
+        }
+        lval_free(child);
+    }
+    return 0;
+}
+
 int lbi_cond_qexpr_all(const struct lenv* env, const struct lval* args) {
     UNUSED(env);
     size_t len = lval_len(args);
@@ -152,4 +169,40 @@ int lbi_func_eval(struct lenv* env, struct lval* acc, const struct lval* args) {
     lval_copy(acc, r);
     lval_free(r);
     return !s;
+}
+
+int lbi_func_def(struct lenv* env, struct lval* acc, const struct lval* args) {
+    /* Retrieve arg 1. */
+    struct lval* symbols = lval_alloc();
+    lval_index(args, 0, symbols);
+    /* Check len. */
+    size_t lensyms = lval_len(symbols);
+    size_t lenargs = lval_len(args)-1;
+    if (lenargs != lensyms) {
+        if (lenargs < lensyms) {
+            lval_mut_err(acc, LERR_TOO_FEW_ARGS);
+        } else {
+            lval_mut_err(acc, LERR_TOO_MANY_ARGS);
+        }
+        lval_free(symbols);
+        return -1;
+    }
+    /* Define symbols. */
+    for (size_t c = 1; c < lenargs+1; c++) {
+        struct lval* sym = lval_alloc();
+        struct lval* value = lval_alloc();
+        lval_index(symbols, c-1, sym);
+        lval_index(args, c, value);
+        if (!lenv_put(env, sym, value)) {
+            lval_free(value);
+            lval_free(sym);
+            return -1;
+        }
+        lval_free(value);
+        lval_free(sym);
+    }
+    lval_dup(acc, symbols);
+    /* Cleanup. */
+    lval_free(symbols);
+    return 0;
 }

@@ -197,13 +197,13 @@ const struct lsym lbuiltin_len = {
 
 static const struct lguard guards_join[] = {
     {.condition= lbi_cond_qexpr, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_list,  .error= LERR_BAD_OPERAND},
 };
 const struct lsym lbuiltin_join = {
     .symbol       = "join",
     .accumulator  = true,
     .neutral      = &lemptyq,
-    .min_argc     =  1,
+    .init_neutral = true,
+    .min_argc     =  0,
     .max_argc     = -1,
     .guards       = &guards_join[0],
     .guardc       = LENGTH(guards_join),

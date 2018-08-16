@@ -34,7 +34,7 @@ const long fac20 = 2432902008176640000;
         assert(lval_are_equal(got, expected)); \
     });
 
-#define push_symbol(args, sym) \
+#define push_sym(args, sym) \
     do { \
         struct lval* x = lval_alloc(); \
         lval_mut_sym(x, sym); \
@@ -507,10 +507,9 @@ describe(builtin, {
         test_pass(&lbuiltin_eval, "happy path", {
             struct lval* sexpr = lval_alloc();
             lval_mut_sexpr(sexpr);
-            push_symbol(sexpr, "+");
+            push_sym(sexpr, "+");
             push_num(sexpr, 1);
             push_num(sexpr, 2);
-            lval_mut_sexpr(sexpr);
             lval_push(args, sexpr);
             lval_free(sexpr);
             lval_mut_num(expected, 3);

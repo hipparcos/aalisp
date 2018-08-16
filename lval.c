@@ -348,6 +348,7 @@ bool lval_copy(struct lval* dest, const struct lval* src) {
         return false;
     }
     lval_connect(dest, dest->data);
+    dest->ast = src->ast;
     return true;
 }
 

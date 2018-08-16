@@ -315,6 +315,7 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
     }
     dest->type = src->type;
     dest->len = src->len;
+    dest->refc = 1; // refc = 1 for newly created data.
     return true;
 }
 

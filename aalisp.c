@@ -8,6 +8,7 @@
 
 #include "version.h"
 #include "leval.h"
+#include "lenv.h"
 
 /* Configurable variables */
 static char* prompt = "> ";
@@ -31,6 +32,9 @@ int main(int argc, char** argv) {
     printf(PROGNAME" "VERSION"-"CODENAME" build %d\n", BUILD);
     puts("Press Ctrl+C to exit.\n");
 
+    struct lenv* env = lenv_alloc();
+    lenv_default(env);
+
     size_t prompt_len = strlen(prompt);
     /* REPL loop */
     while (true) {
@@ -44,9 +48,11 @@ int main(int argc, char** argv) {
             break;
         }
         add_history(input);
-        lisp_eval_from_string(input, prompt_len);
+        lisp_eval_from_string(env, input, prompt_len);
         free(input);
     }
+
+    lenv_free(env);
 
     return EXIT_SUCCESS;
 }

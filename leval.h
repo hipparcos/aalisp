@@ -4,12 +4,16 @@
 #include <stdbool.h>
 
 #include "lval.h"
+#include "lenv.h"
 
-bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len);
+/** lisp_eval evaluates input and put result into r. */
+bool lisp_eval(struct lenv* env,
+        const char* restrict input, struct lval* r, int prompt_len);
 /** lisp_eval_from_string evaluates input and prints result to stdout. */
-void lisp_eval_from_string(const char* restrict input, int prompt_len);
+void lisp_eval_from_string(struct lenv* env,
+        const char* restrict input, int prompt_len);
 
 /** leval evaluates v into r */
-bool leval(const struct lval* v, struct lval* r);
+bool leval(struct lenv* env, const struct lval* v, struct lval* r);
 
 #endif

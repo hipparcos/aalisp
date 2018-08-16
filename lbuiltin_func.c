@@ -3,27 +3,33 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-#include "lsym.h"
 #include "lval.h"
+#include "lenv.h"
 #include "leval.h"
 
-int lbi_cond_qexpr(const struct lval* x) {
-    return (lval_type(x) == LVAL_QEXPR) ? 0 : 1;
+#define UNUSED(x) (void)x
+
+int lbi_cond_qexpr(const struct lenv* env, const struct lval* arg) {
+    UNUSED(env);
+    return (lval_type(arg) == LVAL_QEXPR) ? 0 : 1;
 }
 
-int lbi_cond_qexpr_or_nil(const struct lval* x) {
-    return (lval_type(x) == LVAL_QEXPR || lval_is_nil(x)) ? 0 : 1;
+int lbi_cond_qexpr_or_nil(const struct lenv* env, const struct lval* arg) {
+    UNUSED(env);
+    return (lval_type(arg) == LVAL_QEXPR || lval_is_nil(arg)) ? 0 : 1;
 }
 
-int lbi_cond_list(const struct lval* x) {
-    return (lval_len(x) > 0) ? 0 : 1;
+int lbi_cond_list(const struct lenv* env, const struct lval* arg) {
+    UNUSED(env);
+    return (lval_len(arg) > 0) ? 0 : 1;
 }
 
-int lbi_cond_qexpr_all(const struct lval* x) {
-    size_t len = lval_len(x);
+int lbi_cond_qexpr_all(const struct lenv* env, const struct lval* args) {
+    UNUSED(env);
+    size_t len = lval_len(args);
     for (size_t c = 0; c < len; c++) {
         struct lval* child = lval_alloc();
-        lval_index(x, c, child);
+        lval_index(args, c, child);
         if (lval_type(child) != LVAL_QEXPR) {
             lval_free(child);
             return c + 1;
@@ -33,11 +39,12 @@ int lbi_cond_qexpr_all(const struct lval* x) {
     return 0;
 }
 
-int lbi_cond_list_all(const struct lval* x) {
-    size_t len = lval_len(x);
+int lbi_cond_list_all(const struct lenv* env, const struct lval* args) {
+    UNUSED(env);
+    size_t len = lval_len(args);
     for (size_t c = 0; c < len; c++) {
         struct lval* child = lval_alloc();
-        lval_index(x, c, child);
+        lval_index(args, c, child);
         if (!lval_is_list(child)) {
             lval_free(child);
             return c + 1;
@@ -47,20 +54,22 @@ int lbi_cond_list_all(const struct lval* x) {
     return 0;
 }
 
-int lbi_func_head(struct lval* acc, const struct lval* x) {
+int lbi_func_head(struct lenv* env, struct lval* acc, const struct lval* args) {
+    UNUSED(env);
     /* Retrieve arg 1. */
     struct lval* arg = lval_alloc();
-    lval_index(x, 0, arg);
+    lval_index(args, 0, arg);
     /* Head. */
     lval_index(arg, 0, acc);
     lval_free(arg);
     return 0;
 }
 
-int lbi_func_tail(struct lval* acc, const struct lval* x) {
+int lbi_func_tail(struct lenv* env, struct lval* acc, const struct lval* args) {
+    UNUSED(env);
     /* Retrieve arg 1. */
     struct lval* arg = lval_alloc();
-    lval_index(x, 0, arg);
+    lval_index(args, 0, arg);
     lval_copy(acc, arg);
     lval_free(arg);
     /* Tail. */
@@ -69,10 +78,11 @@ int lbi_func_tail(struct lval* acc, const struct lval* x) {
     return 0;
 }
 
-int lbi_func_init(struct lval* acc, const struct lval* x) {
+int lbi_func_init(struct lenv* env, struct lval* acc, const struct lval* args) {
+    UNUSED(env);
     /* Retrieve arg 1. */
     struct lval* arg = lval_alloc();
-    lval_index(x, 0, arg);
+    lval_index(args, 0, arg);
     lval_copy(acc, arg);
     lval_free(arg);
     /* Init. */
@@ -82,12 +92,13 @@ int lbi_func_init(struct lval* acc, const struct lval* x) {
     return 0;
 }
 
-int lbi_func_cons(struct lval* acc, const struct lval* x) {
+int lbi_func_cons(struct lenv* env, struct lval* acc, const struct lval* args) {
+    UNUSED(env);
     /* Retrieve arg 1. */
     struct lval* arg = lval_alloc();
-    lval_index(x, 0, arg);
+    lval_index(args, 0, arg);
     struct lval* list = lval_alloc();
-    lval_index(x, 1, list);
+    lval_index(args, 1, list);
     /* Cons. */
     lval_dup(acc, list);
     lval_cons(acc, arg);
@@ -96,10 +107,11 @@ int lbi_func_cons(struct lval* acc, const struct lval* x) {
     return 0;
 }
 
-int lbi_func_len(struct lval* acc, const struct lval* x) {
+int lbi_func_len(struct lenv* env, struct lval* acc, const struct lval* args) {
+    UNUSED(env);
     /* Retrieve arg 1. */
     struct lval* arg = lval_alloc();
-    lval_index(x, 0, arg);
+    lval_index(args, 0, arg);
     /* Len. */
     size_t len = lval_len(arg);
     lval_free(arg);
@@ -107,32 +119,35 @@ int lbi_func_len(struct lval* acc, const struct lval* x) {
     return 0;
 }
 
-int lbi_func_join(struct lval* acc, const struct lval* x) {
-    size_t len = lval_len(x);
+int lbi_func_join(struct lenv* env, struct lval* acc, const struct lval* args) {
+    UNUSED(env);
+    size_t len = lval_len(args);
     struct lval* child = lval_alloc();
     for (size_t c = 0; c < len; c++) {
-        lval_index(x, c, child);
+        lval_index(args, c, child);
         lval_push(acc, child);
     }
     lval_free(child);
     return 0;
 }
 
-int lbi_func_list(struct lval* acc, const struct lval* x) {
+int lbi_func_list(struct lenv* env, struct lval* acc, const struct lval* args) {
+    UNUSED(env);
     struct lval* tmp = lval_alloc();
-    lval_dup(tmp, x);
-    lval_push(acc, x);
+    lval_dup(tmp, args);
+    lval_push(acc, args);
     lval_free(tmp);
     return 0;
 }
 
-int lbi_func_eval(struct lval* acc, const struct lval* x) {
+int lbi_func_eval(struct lenv* env, struct lval* acc, const struct lval* args) {
+    UNUSED(env);
     /* Retrieve arg 1. */
     struct lval* arg = lval_alloc();
-    lval_index(x, 0, arg);
+    lval_index(args, 0, arg);
     /* Eval. */
     struct lval* r = lval_alloc();
-    bool s = leval(arg, r);
+    bool s = leval(env, arg, r);
     lval_free(arg);
     lval_copy(acc, r);
     lval_free(r);

@@ -6,6 +6,7 @@
 #include "vendor/mini-gmp/mini-gmp.h"
 
 #include "lval.h"
+#include "lenv.h"
 
 #include "vendor/snow/snow/snow.h"
 
@@ -16,7 +17,10 @@
         __VA_ARGS__ \
         struct lval *result = lval_alloc(); \
         defer(lval_free(result)); \
-        assert( lisp_eval(input, result, -1)); \
+        struct lenv* env = lenv_alloc(); \
+        defer(lenv_free(env)); \
+        lenv_default(env); \
+        assert( lisp_eval(env, input, result, -1)); \
         assert( lval_are_equal(result, expected)); \
     })
 
@@ -27,7 +31,10 @@
         lval_mut_err(expected, err); \
         struct lval *result = lval_alloc(); \
         defer(lval_free(result)); \
-        assert(!lisp_eval(input, result, -1)); \
+        struct lenv* env = lenv_alloc(); \
+        defer(lenv_free(env)); \
+        lenv_default(env); \
+        assert(!lisp_eval(env, input, result, -1)); \
         assert( lval_are_equal(result, expected)); \
     })
 

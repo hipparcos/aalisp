@@ -3,23 +3,26 @@
 
 #include <stdbool.h>
 
-#include "lsym.h"
+#include "lval.h"
+#include "lenv.h"
 
-extern const struct lsym lbuiltin_op_add;
-extern const struct lsym lbuiltin_op_sub;
-extern const struct lsym lbuiltin_op_mul;
-extern const struct lsym lbuiltin_op_div;
-extern const struct lsym lbuiltin_op_mod;
-extern const struct lsym lbuiltin_op_fac;
-extern const struct lsym lbuiltin_op_pow;
+/* Arithmetic operators. */
+int lbuiltin_op_add(struct lenv*, const struct lval*, struct lval*);
+int lbuiltin_op_sub(struct lenv*, const struct lval*, struct lval*);
+int lbuiltin_op_mul(struct lenv*, const struct lval*, struct lval*);
+int lbuiltin_op_div(struct lenv*, const struct lval*, struct lval*);
+int lbuiltin_op_mod(struct lenv*, const struct lval*, struct lval*);
+int lbuiltin_op_pow(struct lenv*, const struct lval*, struct lval*);
+int lbuiltin_op_fac(struct lenv*, const struct lval*, struct lval*);
 
-extern const struct lsym lbuiltin_head;
-extern const struct lsym lbuiltin_tail;
-extern const struct lsym lbuiltin_init;
-extern const struct lsym lbuiltin_cons;
-extern const struct lsym lbuiltin_len;
-extern const struct lsym lbuiltin_join;
-extern const struct lsym lbuiltin_list;
-extern const struct lsym lbuiltin_eval;
+/* List functions. */
+int lbuiltin_head(struct lenv*, const struct lval*, struct lval*);
+int lbuiltin_tail(struct lenv*, const struct lval*, struct lval*);
+int lbuiltin_init(struct lenv*, const struct lval*, struct lval*);
+int lbuiltin_cons(struct lenv*, const struct lval*, struct lval*);
+int lbuiltin_len(struct lenv*, const struct lval*, struct lval*);
+int lbuiltin_join(struct lenv*, const struct lval*, struct lval*);
+int lbuiltin_list(struct lenv*, const struct lval*, struct lval*);
+int lbuiltin_eval(struct lenv*, const struct lval*, struct lval*);
 
 #endif

@@ -8,63 +8,34 @@
 
 #include "lbuiltin.h"
 #include "lval.h"
-#include "lsym.h"
 #include "lenv.h"
 #include "llexer.h"
 #include "lparser.h"
 #include "lmut.h"
 
-struct lenv lbuiltins[] = {
-    /* Arithmetic operators. */
-    {"+", &lbuiltin_op_add},
-    {"-", &lbuiltin_op_sub},
-    {"*", &lbuiltin_op_mul},
-    {"/", &lbuiltin_op_div},
-    {"%", &lbuiltin_op_mod},
-    {"^", &lbuiltin_op_pow},
-    {"!", &lbuiltin_op_fac},
-    /* List functions. */
-    {"head", &lbuiltin_head},
-    {"tail", &lbuiltin_tail},
-    {"init", &lbuiltin_init},
-    {"cons", &lbuiltin_cons},
-    {"len",  &lbuiltin_len},
-    {"join", &lbuiltin_join},
-    {"list", &lbuiltin_list},
-    {"eval", &lbuiltin_eval},
-    /* ... */
-    {NULL, NULL},
-};
-
 /** level_exec returns
  **   0 if success
  **  -1 if error
  **   n if nth argument generate an error */
-static int leval_exec(const char* op, const struct lval* args, struct lval* acc) {
-    if (lval_type(acc) == LVAL_ERR) {
+static int leval_exec(const struct lval* func, struct lenv* env,
+        const struct lval* args, struct lval* acc) {
+    lbuiltin f = lval_as_func(func);
+    if (!f) {
         return -1;
     }
-    /* Symbol lookup. */
-    const struct lsym* descriptor = NULL;
-    if (NULL == (descriptor = lenv_lookup(lbuiltins, op))) {
-        lval_mut_err(acc, LERR_BAD_SYMBOL);
-        return -1;
-    }
-    /* Execute expr. */
-    return lsym_exec(descriptor, acc, args);
+    return f(env, args, acc);
 }
 
-static bool leval_expr(struct lval* expr, struct lval* r) {
+static bool leval_expr(struct lenv* env, struct lval* expr, struct lval* r) {
     /* First child is the symbol. */
-    struct lval* sym = lval_pop(expr, 0);
+    struct lval* func = lval_pop(expr, 0);
     struct lval* args = expr; // aliasing for clarity.
-    const char* op = lval_as_sym(sym);
     /* Execute expression. */
-    int err = leval_exec(op, args, r);
+    int err = leval_exec(func, env, args, r);
     /* Error handling. */
     if (err != 0) {
         if (err == -1) {
-            r->ast = sym->ast;
+            r->ast = func->ast;
         } else {
             /* Set r->ast to the node returning an error. */
             struct lval* child = lval_alloc();
@@ -73,11 +44,12 @@ static bool leval_expr(struct lval* expr, struct lval* r) {
             lval_free(child);
         }
     }
-    lval_free(sym);
+    lval_free(func);
     return lval_type(r) != LVAL_ERR;
 }
 
-static bool leval_sexpr(const struct lval* v, struct lval* r) {
+static bool leval_sexpr(struct lenv* env,
+        const struct lval* v, struct lval* r) {
     /* Empty sexpr. */
     size_t len = lval_len(v);
     if (len == 0) {
@@ -91,7 +63,7 @@ static bool leval_sexpr(const struct lval* v, struct lval* r) {
         struct lval* child = lval_alloc();
         lval_index(v, c, child);
         struct lval* x = lval_alloc();
-        if (!leval(child, x)) {
+        if (!leval(env, child, x)) {
             lval_dup(r, x);
             lval_free(x);
             lval_free(child);
@@ -110,10 +82,10 @@ static bool leval_sexpr(const struct lval* v, struct lval* r) {
     /* First child is a symbol, it's an expression. */
     struct lval* child = lval_alloc();
     lval_index(expr, 0, child);
-    if (lval_type(child) == LVAL_SYM) {
+    if (lval_type(child) == LVAL_FUNC) {
         lval_free(child);
         lval_mut_nil(r);
-        bool s = leval_expr(expr, r);
+        bool s = leval_expr(env, expr, r);
         lval_free(expr);
         return s;
     }
@@ -122,14 +94,20 @@ static bool leval_sexpr(const struct lval* v, struct lval* r) {
     return true;
 }
 
-bool leval(const struct lval* v, struct lval* r) {
+bool leval(struct lenv* env, const struct lval* v, struct lval* r) {
     if (!v) {
         lval_mut_err(r, LERR_EVAL);
         return false;
     }
     switch (lval_type(v)) {
+    case LVAL_SYM:
+        {
+        bool s = lenv_lookup(env, v, r);
+        r->ast = v->ast;
+        return s;
+        }
     case LVAL_SEXPR:
-        return leval_sexpr(v, r);
+        return leval_sexpr(env, v, r);
     case LVAL_ERR:
         lval_dup(r, v);
         return false;
@@ -154,7 +132,8 @@ void print_error_marker(FILE* out, int indent, int col) {
         if (program) lval_free(program); \
     } while(0);
 
-bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len) {
+bool lisp_eval(struct lenv* env,
+        const char* restrict input, struct lval* r, int prompt_len) {
     /* Lex input. */
     struct ltok *tokens = NULL, *lexer_error = NULL;
     tokens = lisp_lex_surround(input, &lexer_error);
@@ -196,7 +175,7 @@ bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len) {
         return false;
     }
     /* Evaluate program. */
-    if (program && !leval(program, r)) {
+    if (program && !leval(env, program, r)) {
         if (prompt_len >= 0) {
             int line = 0, col = 0;
             if (r->ast) {
@@ -218,9 +197,10 @@ bool lisp_eval(const char* restrict input, struct lval* r, int prompt_len) {
     return true;
 }
 
-void lisp_eval_from_string(const char* restrict input, int prompt_len) {
+void lisp_eval_from_string(struct lenv* env,
+        const char* restrict input, int prompt_len) {
     struct lval* r = lval_alloc();
-    if (lisp_eval(input, r, prompt_len)) {
+    if (lisp_eval(env, input, r, prompt_len)) {
         lval_println(r);
     } // Error already printed.
     lval_free(r);

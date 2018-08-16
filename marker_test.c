@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "leval.h"
+#include "lenv.h"
 
 #define PROMPT_STR ">>>>>>>> "
 #define EXPEC_STR  "expected "
@@ -15,7 +16,10 @@ void test_marker(const char* restrict input, size_t expected) {
     fprintf(stderr, "%s", EXPEC_STR);
     print_error_marker(stdout, 0, expected);
     fprintf(stderr, "%s", GOT_STR);
-    lisp_eval_from_string(input, 0);
+    struct lenv* env = lenv_alloc();
+    lenv_default(env);
+    lisp_eval_from_string(env, input, 0);
+    lenv_free(env);
 }
 
 int main(void) {

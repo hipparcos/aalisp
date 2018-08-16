@@ -1,16 +1,12 @@
-#include "lsym.h"
+#include "lbuiltin_exec.h"
 
 #include <string.h>
 
-#define EITHER_IS(type, a, b) (lval_type(a) == type || lval_type(b) == type)
-static enum ltype typeof_op(const struct lval* a, const struct lval *b) {
-    if (EITHER_IS(LVAL_DBL, a, b))    return LVAL_DBL;
-    if (EITHER_IS(LVAL_BIGNUM, a, b)) return LVAL_BIGNUM;
-    if (EITHER_IS(LVAL_NUM, a, b))    return LVAL_NUM;
-    return LVAL_NIL;
-}
+#include "lval.h"
+#include "lenv.h"
 
-static int lsym_exec_arg(const struct lsym* sym, struct lval* acc, const struct lval* args) {
+static int lbuiltin_exec_arg(const struct ldescriptor* sym, struct lenv* env,
+        const struct lval* args, struct lval* acc) {
     if (!sym->op_all) {
         lval_mut_err(acc, LERR_EVAL);
         return -1;
@@ -21,7 +17,7 @@ static int lsym_exec_arg(const struct lsym* sym, struct lval* acc, const struct 
         if (guard->argn) {
             struct lval* child = lval_alloc();
             lval_index(args, guard->argn-1, child);
-            if (0 != (guard->condition)(child)) {
+            if (0 != (guard->condition)(env, child)) {
                 lval_mut_err(acc, guard->error);
                 return guard->argn;
             }
@@ -29,36 +25,45 @@ static int lsym_exec_arg(const struct lsym* sym, struct lval* acc, const struct 
             continue;
         }
         int s = 0;
-        if (0 != (s = (guard->condition)(args))) {
+        if (0 != (s = (guard->condition)(env, args))) {
             lval_mut_err(acc, guard->error);
             return s;
         }
     }
     /* Execution */
-    return sym->op_all(acc, args);
+    return sym->op_all(env, acc, args);
 }
 
-static int lsym_exec_acc(const struct lsym* sym, struct lval* acc, const struct lval* x) {
+#define EITHER_IS(type, a, b) (lval_type(a) == type || lval_type(b) == type)
+static enum ltype typeof_op(const struct lval* a, const struct lval *b) {
+    if (EITHER_IS(LVAL_DBL, a, b))    return LVAL_DBL;
+    if (EITHER_IS(LVAL_BIGNUM, a, b)) return LVAL_BIGNUM;
+    if (EITHER_IS(LVAL_NUM, a, b))    return LVAL_NUM;
+    return LVAL_NIL;
+}
+
+static int lbuiltin_exec_acc(const struct ldescriptor* sym, struct lenv* env,
+        const struct lval* arg, struct lval* acc) {
     /* Guards */
     for (int i = 0; i < sym->guardc; i++) {
         const struct lguard* guard = &sym->guards[i];
-        if (0 != (guard->condition)(x)) {
+        if (0 != (guard->condition)(env, arg)) {
             lval_mut_err(acc, guard->error);
             return 1;
         }
     }
 
     if (sym->op_all) {
-        return sym->op_all(acc, x);
+        return sym->op_all(env, acc, arg);
     }
 
     /* Accumulator based evaluation. */
-    switch (typeof_op(acc, x)) {
+    switch (typeof_op(acc, arg)) {
     case LVAL_DBL:
         {
         double a, b;
         lval_as_dbl(acc, &a);
-        lval_as_dbl(x, &b);
+        lval_as_dbl(arg, &b);
         lval_mut_dbl(acc, sym->op_dbl(a, b));
         return 0;
         }
@@ -68,7 +73,7 @@ static int lsym_exec_acc(const struct lsym* sym, struct lval* acc, const struct 
         mpz_init(a);
         mpz_init(b);
         lval_as_bignum(acc, a);
-        lval_as_bignum(x, b);
+        lval_as_bignum(arg, b);
         mpz_t rbn;
         mpz_init(rbn);
         sym->op_bignum(rbn, a, b);
@@ -82,12 +87,12 @@ static int lsym_exec_acc(const struct lsym* sym, struct lval* acc, const struct 
         {
         long a, b;
         lval_as_num(acc, &a);
-        lval_as_num(x, &b);
+        lval_as_num(arg, &b);
         if (sym->cnd_overflow && sym->cnd_overflow(a, b)) {
             mpz_t bna;
             mpz_init_set_si(bna, a);
             lval_mut_bignum(acc, bna);
-            int s = lsym_exec_acc(sym, acc, x);
+            int s = lbuiltin_exec_acc(sym, env, arg, acc);
             mpz_clear(bna);
             return s;
         }
@@ -101,7 +106,8 @@ static int lsym_exec_acc(const struct lsym* sym, struct lval* acc, const struct 
     return -1;
 }
 
-int lsym_exec(const struct lsym* sym, struct lval* acc, const struct lval* args) {
+int lbuiltin_exec(const struct ldescriptor* sym, struct lenv* env,
+        const struct lval* args, struct lval* acc) {
     if (!sym) {
         lval_mut_err(acc, LERR_EVAL);
         return -1;
@@ -120,7 +126,7 @@ int lsym_exec(const struct lsym* sym, struct lval* acc, const struct lval* args)
     }
     /* Argument execution. */
     if (!sym->accumulator) {
-        return lsym_exec_arg(sym, acc, args);
+        return lbuiltin_exec_arg(sym, env, args, acc);
     }
     /* Accumulator execution. */
     int s = 0;
@@ -129,7 +135,7 @@ int lsym_exec(const struct lsym* sym, struct lval* acc, const struct lval* args)
         struct lval* lx = lval_alloc();
         lval_index(args, 0, lx);      // lx is the first argument.
         lval_copy(acc, sym->neutral); // acc is the neutral element.
-        int s = lsym_exec_acc(sym, acc, lx);
+        int s = lbuiltin_exec_acc(sym, env, lx, acc);
         lval_free(lx);
         return s;
     }
@@ -143,7 +149,7 @@ int lsym_exec(const struct lsym* sym, struct lval* acc, const struct lval* args)
     for (size_t c = (sym->init_neutral) ? 0 : 1; c < len; c++) {
         struct lval* child = lval_alloc();
         lval_index(args, c, child);
-        int err = lsym_exec_acc(sym, acc, child);
+        int err = lbuiltin_exec_acc(sym, env, child, acc);
         /* Break on error. */
         if (err != 0) {
             if (err == -1) {

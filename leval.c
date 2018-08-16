@@ -9,11 +9,12 @@
 #include "lbuiltin.h"
 #include "lval.h"
 #include "lsym.h"
+#include "lenv.h"
 #include "llexer.h"
 #include "lparser.h"
 #include "lmut.h"
 
-struct lsym_table lbuiltins[] = {
+struct lenv lbuiltins[] = {
     /* Arithmetic operators. */
     {"+", &lbuiltin_op_add},
     {"-", &lbuiltin_op_sub},
@@ -45,7 +46,7 @@ static int leval_exec(const char* op, const struct lval* args, struct lval* acc)
     }
     /* Symbol lookup. */
     const struct lsym* descriptor = NULL;
-    if (NULL == (descriptor = lsym_lookup(lbuiltins, op))) {
+    if (NULL == (descriptor = lenv_lookup(lbuiltins, op))) {
         lval_mut_err(acc, LERR_BAD_SYMBOL);
         return -1;
     }

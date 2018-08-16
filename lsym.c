@@ -2,20 +2,6 @@
 
 #include <string.h>
 
-const struct lsym* lsym_lookup(const struct lsym_table* symbols, const char* sym) {
-    if (!symbols) {
-        return NULL;
-    }
-    const struct lsym_table* table = &symbols[0];
-    do {
-        if (strcmp(sym, table->symbol) == 0) {
-            return table->descriptor;
-        }
-    } while ((++table)->symbol);
-    return NULL;
-}
-
-
 #define EITHER_IS(type, a, b) (lval_type(a) == type || lval_type(b) == type)
 static enum ltype typeof_op(const struct lval* a, const struct lval *b) {
     if (EITHER_IS(LVAL_DBL, a, b))    return LVAL_DBL;

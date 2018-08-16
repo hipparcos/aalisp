@@ -43,16 +43,6 @@ struct lsym {
     int    (*op_all)(struct lval* acc, const struct lval* x);
 };
 
-/** lsym_table associates a symbol descriptor with a string.
- ** A valid lsym_table ends with a {NULL, NULL} row. */
-struct lsym_table {
-    const char*        symbol;
-    const struct lsym* descriptor;
-};
-
-/** lsym_lookup returns the lsym associated to sym. */
-const struct lsym* lsym_lookup(const struct lsym_table* table, const char* sym);
-
 /** lsym_exec returns
  **   0 if success
  **  -1 if error

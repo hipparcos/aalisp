@@ -322,7 +322,7 @@ describe(builtin, {
             mut_bignum(expected, fac20);
         });
         test_pass(&lbuiltin_op_fac, "LVAL_NUM which overflows to LVAL_BIGNUM", {
-            push_bignum(args, 21);
+            push_num(args, 21);
             mut_bignum_mul(expected, fac20, 21);
         });
         test_fail(&lbuiltin_op_fac, "LVAL_NUM < 0", {

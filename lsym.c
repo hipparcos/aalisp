@@ -101,7 +101,7 @@ static int lsym_exec_acc(const struct lsym* sym, struct lval* acc, const struct 
             mpz_t bna;
             mpz_init_set_si(bna, a);
             lval_mut_bignum(acc, bna);
-            int s = lsym_exec(sym, acc, x);
+            int s = lsym_exec_acc(sym, acc, x);
             mpz_clear(bna);
             return s;
         }

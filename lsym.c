@@ -163,7 +163,7 @@ int lsym_exec(const struct lsym* sym, struct lval* acc, const struct lval* args)
             if (err == -1) {
                 s = err;
             } else {
-                s = c;
+                s = c + 1;
             }
             break;
         }

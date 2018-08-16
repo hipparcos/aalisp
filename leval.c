@@ -92,7 +92,6 @@ static bool leval_sexpr(const struct lval* v, struct lval* r) {
         struct lval* x = lval_alloc();
         if (!leval(child, x)) {
             lval_dup(r, x);
-            r->ast = child->ast;
             lval_free(x);
             lval_free(child);
             lval_free(expr);
@@ -135,12 +134,11 @@ bool leval(const struct lval* v, struct lval* r) {
         return false;
     default:
         lval_dup(r, v);
-        r->ast = v->ast;
         return true;
     }
 }
 
-static void print_error_marker(FILE* out, int indent, int col) {
+void print_error_marker(FILE* out, int indent, int col) {
     col--; // col starts at 0 in this function.
     for (int i = -indent; i < col; i++)
         fputc(' ', out);

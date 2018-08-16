@@ -198,6 +198,8 @@ static void lval_connect(struct lval* v, struct ldata* d) {
     v->data->refc++;
 }
 
+static void lval_kill(struct lval* v);
+
 /** lval_disconnect disconnects v from its ldata.
  ** v->data is reclaimed if refc = 0. */
 static struct ldata* lval_disconnect(struct lval* v, bool reuse) {
@@ -208,23 +210,38 @@ static struct ldata* lval_disconnect(struct lval* v, bool reuse) {
         v->data->refc--;
     }
     bool dead = v->data->refc == 0;
+    struct ldata* data = v->data;
     if (reuse) {
         if (dead) {
-            ldata_clear(v->data);
-            return v->data;
+            /* Reuse data. */
+            ldata_clear(data);
+        } else {
+            /* Can't reuse ldata. */
+            data = ldata_alloc();
         }
-        /* Can't reuse ldata. */
-        struct ldata* data = ldata_alloc();
-        return data;
-    }
-    if (dead) {
-        ldata_clear(v->data);
-        if (v->data->alive != IMMORTAL) {
-            free(v->data);
+    } else {
+        if (dead) {
+            ldata_clear(data);
+            if (data->alive != IMMORTAL) {
+                free(data);
+            }
         }
+        data = NULL;
     }
-    lval_connect(v, &ldata_init);
-    return NULL;
+    /* Kill handle. */
+    v->data = NULL;
+    lval_kill(v);
+    return data;
+}
+
+/** lval_kill set v to DEAD REF. */
+static void lval_kill(struct lval* v) {
+    if (v->data) {
+        lval_disconnect(v, false);
+    }
+    v->alive = DEAD;
+    v->data = NULL;
+    v->ast = NULL;
 }
 
 struct lval* lval_alloc(void) {
@@ -237,9 +254,7 @@ struct lval* lval_alloc(void) {
 
 static struct lval* lval_alloc_handle(void) {
     struct lval* v = calloc(1, sizeof(struct lval));
-    v->alive = DEAD;
-    v->data = NULL;
-    v->ast = NULL;
+    lval_kill(v);
     return v;
 }
 
@@ -315,7 +330,6 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
     }
     dest->type = src->type;
     dest->len = src->len;
-    dest->refc = 1; // refc = 1 for newly created data.
     return true;
 }
 
@@ -341,7 +355,7 @@ bool lval_mut_nil(struct lval* v) {
     if (!lval_is_mutable(v)) {
         return false;
     }
-    lval_clear(v); /* Default to nil. */
+    lval_clear(v); /* Default to nil, disconnect & connect. */
     return true;
 }
 

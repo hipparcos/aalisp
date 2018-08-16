@@ -728,7 +728,6 @@ describe(lval, {
             struct lval* got = lval_alloc();
             defer(lval_free(got));
             assert(lval_index(sexpr, 1, got));
-            defer(lval_free(got));
             size_t len = lval_printlen(got);
             char* s = calloc(len, sizeof(char));
             lval_as_str(got, s, len);
@@ -849,7 +848,6 @@ describe(lval, {
             struct lval* got = lval_alloc();
             defer(lval_free(got));
             assert(lval_index(qexpr, 1, got));
-            defer(lval_free(got));
             size_t len = lval_printlen(got);
             char* s = calloc(len, sizeof(char));
             lval_as_str(got, s, len);

@@ -122,7 +122,7 @@ int lbi_func_list(struct lval* acc, const struct lval* x) {
     struct lval* tmp = lval_alloc();
     lval_dup(tmp, x);
     lval_push(acc, x);
-    lval_free(tmp); // Must comment because of refc bug. TODO fix refc bug.
+    lval_free(tmp);
     return 0;
 }
 
@@ -134,7 +134,7 @@ int lbi_func_eval(struct lval* acc, const struct lval* x) {
     struct lval* r = lval_alloc();
     bool s = leval(arg, r);
     lval_free(arg);
-    lval_copy(acc, r); // Must copy because of refc bug. TODO fix refc bug.
+    lval_copy(acc, r);
     lval_free(r);
     return !s;
 }

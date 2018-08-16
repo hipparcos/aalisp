@@ -45,18 +45,40 @@ make test DO_MEMCHECK=false
 
 ## Features
 
-For now, it's only a [normal Polish notation](https://en.wikipedia.org/wiki/Polish_notation) interpreter.
+Arithmetic:
+```lisp
+> + 1 2 3 4
+10
+> / (! 21) (! 20)
+21
+> ^ 2 16
+65536
+> - 618.5 572.5 4
+42
+```
+List operations:
+```lisp
+> list 1 2 3 4
+{1 2 3 4}
+> join {1 2} {3 4}
+{1 2 3 4}
+> head (list 1 2 3)
+1
+> eval (head {(+ 1 1) (+ 2 2)})
+2
+```
 
 ## TODO
 
 - [x] Rewrite the parser myself (see llexer & lparser);
 - [x] Implement S-Expressions (chapter 9);
-- [ ] Implement Q-Expressions (chapter 10);
+- [x] Implement Q-Expressions (chapter 10);
 - [ ] Implement variables (chapter 11);
 - [ ] Implement functions (chapter 12);
 - [ ] Implement conditionals (chapter 13);
 - [ ] Implement strings (chapter 14);
 - [ ] Implement standard library (chapter 15);
+- [ ] Add comments support;
 - [ ] Implement user defined types;
 - [ ] Implement list literal;
 - [ ] Implement OS interaction;

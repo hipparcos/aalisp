@@ -488,11 +488,12 @@ bool lval_cons(struct lval* v, const struct lval* cell) {
     lval_connect(handle, cell->data);
     handle->ast = cell->ast;
     /* Add it to the list. */
-    v->data->len++;
     v->data->payload.cell = realloc(v->data->payload.cell,
-            sizeof(struct lval*) * v->data->len);
-    memmove(&v->data->payload.cell[1], &v->data->payload.cell[0], sizeof(struct lval*) * (v->data->len - 1));
+            sizeof(struct lval*) * (v->data->len+1));
+    memmove(&v->data->payload.cell[1], &v->data->payload.cell[0],
+            sizeof(struct lval*) * (v->data->len));
     v->data->payload.cell[0] = handle;
+    v->data->len++;
     return true;
 }
 
@@ -505,10 +506,10 @@ bool lval_push(struct lval* v, const struct lval* cell) {
     lval_connect(handle, cell->data);
     handle->ast = cell->ast;
     /* Add it to the list. */
-    v->data->len++;
     v->data->payload.cell = realloc(v->data->payload.cell,
-            sizeof(struct lval*) * v->data->len);
-    v->data->payload.cell[v->data->len-1] = handle;
+            sizeof(struct lval*) * (v->data->len+1));
+    v->data->payload.cell[v->data->len] = handle;
+    v->data->len++;
     return true;
 }
 
@@ -520,9 +521,11 @@ struct lval* lval_pop(struct lval* v, size_t c) {
         return NULL;
     }
     struct lval* val = v->data->payload.cell[c];
-    memmove(&v->data->payload.cell[c], &v->data->payload.cell[c+1], sizeof(struct lval*) * (v->data->len - c - 1));
+    memmove(&v->data->payload.cell[c], &v->data->payload.cell[c+1],
+            sizeof(struct lval*) * (v->data->len-1 - c));
+    v->data->payload.cell = realloc(v->data->payload.cell,
+            sizeof(struct lval*) * (v->data->len-1));
     v->data->len--;
-    v->data->payload.cell = realloc(v->data->payload.cell, sizeof(struct lval*) * v->data->len);
     return val;
 }
 

@@ -71,6 +71,7 @@ void lmut_fill_list(struct lval* list, const struct last* ast, struct last** err
             break;
         }
         lval_push(list, o);
+        lval_free(o);
         /* Stop on error. */
         if (*error != NULL) {
             break;
@@ -123,6 +124,7 @@ struct lval* lisp_mut(const struct last* ast, struct last** error) {
             *error = (struct last*)ast->children[c];
         }
         lval_push(p, s);
+        lval_free(s);
         if (*error != NULL) {
             break;
         }

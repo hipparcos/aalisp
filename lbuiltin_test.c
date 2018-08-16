@@ -497,6 +497,10 @@ describe(builtin, {
             push_num(expected, 3);
             push_num(expected, 4);
         });
+
+        test_pass(&lbuiltin_list, "no arguments given (returns {})", {
+            lval_mut_qexpr(expected);
+        });
     });
 
     subdesc(func_eval, {

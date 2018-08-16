@@ -7,16 +7,17 @@ static struct lval* lmut_num(const struct last* ast, struct last** error) {
     errno = 0;
     long n = strtol(ast->content, NULL, 10);
     struct lval* v = lval_alloc();
-    v->ast = ast;
     if (errno == ERANGE) {
         /* Switch to bignum. */
         mpz_t bignum;
         mpz_init_set_str(bignum, ast->content, 10);
         lval_mut_bignum(v, bignum);
+        v->ast = ast;
         mpz_clear(bignum);
         return v;
     }
     lval_mut_num(v, n);
+    v->ast = ast;
     return v;
 }
 
@@ -24,13 +25,14 @@ static struct lval* lmut_dbl(const struct last* ast, struct last** error) {
     errno = 0;
     double d = strtod(ast->content, NULL);
     struct lval* v = lval_alloc();
-    v->ast = ast;
     if (errno == ERANGE) {
         lval_mut_err(v, LERR_BAD_OPERAND);
+        v->ast = ast;
         *error = (struct last*)ast;
         return v;
     }
     lval_mut_dbl(v, d);
+    v->ast = ast;
     return v;
 }
 

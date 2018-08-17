@@ -1,4 +1,4 @@
-#include "lbuiltin_exec.h"
+#include "lfunc.h"
 
 #include <string.h>
 
@@ -6,7 +6,8 @@
 #include "lenv.h"
 #include "lbuiltin_condition.h"
 
-static int lbuitin_check_guards(const struct ldescriptor* sym,
+static int lfunc_check_guards(
+        const struct lfunc* fun,
         const struct lguard* guards, size_t guardc,
         const struct lenv* env, const struct lval* args, struct lval* acc) {
     int s = 0;
@@ -17,7 +18,7 @@ static int lbuitin_check_guards(const struct ldescriptor* sym,
         if (guard->argn > 0) {
             struct lval* child = lval_alloc();
             lval_index(args, guard->argn-1, child);
-            if (0 != (s = (guard->condition)(sym, env, child))) {
+            if (0 != (s = (guard->condition)(fun, env, child))) {
                 lval_free(child);
                 break;
             }
@@ -30,7 +31,7 @@ static int lbuitin_check_guards(const struct ldescriptor* sym,
             for (size_t a = 0; a < len; a++) {
                 struct lval* child = lval_alloc();
                 lval_index(args, a, child);
-                if (0 != (s = (guard->condition)(sym, env, child))) {
+                if (0 != (s = (guard->condition)(fun, env, child))) {
                     lval_free(child);
                     break;
                 }
@@ -43,7 +44,7 @@ static int lbuitin_check_guards(const struct ldescriptor* sym,
         }
         /* Guard applied on all args. */
         // guard->argn == -1;
-        if (0 != (s = (guard->condition)(sym, env, args))) {
+        if (0 != (s = (guard->condition)(fun, env, args))) {
             break;
         }
     }
@@ -62,10 +63,11 @@ static enum ltype typeof_op(const struct lval* a, const struct lval *b) {
     return LVAL_NIL;
 }
 
-static int lbuiltin_exec_acc(const struct ldescriptor* sym, struct lenv* env,
-        const struct lval* arg, struct lval* acc) {
-    if (sym->func) {
-        return sym->func(env, arg, acc);
+static int lfunc_exec_acc(
+        const struct lfunc* fun,
+        struct lenv* env, const struct lval* arg, struct lval* acc) {
+    if (fun->func) {
+        return fun->func(env, arg, acc);
     }
     /* Accumulator based evaluation. */
     switch (typeof_op(acc, arg)) {
@@ -74,7 +76,7 @@ static int lbuiltin_exec_acc(const struct ldescriptor* sym, struct lenv* env,
         double a, b;
         lval_as_dbl(acc, &a);
         lval_as_dbl(arg, &b);
-        lval_mut_dbl(acc, sym->op_dbl(a, b));
+        lval_mut_dbl(acc, fun->op_dbl(a, b));
         return 0;
         }
     case LVAL_BIGNUM:
@@ -86,7 +88,7 @@ static int lbuiltin_exec_acc(const struct ldescriptor* sym, struct lenv* env,
         lval_as_bignum(arg, b);
         mpz_t rbn;
         mpz_init(rbn);
-        sym->op_bignum(rbn, a, b);
+        fun->op_bignum(rbn, a, b);
         mpz_clear(a);
         mpz_clear(b);
         lval_mut_bignum(acc, rbn);
@@ -98,15 +100,15 @@ static int lbuiltin_exec_acc(const struct ldescriptor* sym, struct lenv* env,
         long a, b;
         lval_as_num(acc, &a);
         lval_as_num(arg, &b);
-        if (sym->cnd_overflow && sym->cnd_overflow(a, b)) {
+        if (fun->cnd_overflow && fun->cnd_overflow(a, b)) {
             mpz_t bna;
             mpz_init_set_si(bna, a);
             lval_mut_bignum(acc, bna);
-            int s = lbuiltin_exec_acc(sym, env, arg, acc);
+            int s = lfunc_exec_acc(fun, env, arg, acc);
             mpz_clear(bna);
             return s;
         }
-        lval_mut_num(acc, sym->op_num(a, b));
+        lval_mut_num(acc, fun->op_num(a, b));
         return 0;
         }
     default: break;
@@ -124,27 +126,27 @@ static struct lguard lbuitin_guards[] = {
     {.condition= lbi_cond_func_pointer, .argn= -1, .error= LERR_EVAL},
 };
 
-int lbuiltin_exec(const struct ldescriptor* sym, struct lenv* env,
+int lfunc_exec(const struct lfunc* fun, struct lenv* env,
         const struct lval* args, struct lval* acc) {
-    if (!sym) {
+    if (!fun) {
         lval_mut_err(acc, LERR_EVAL);
         return -1;
     }
     /* Guards */
     int s = 0;
-    if (0 != (s = lbuitin_check_guards(sym,
+    if (0 != (s = lfunc_check_guards(fun,
                     &lbuitin_guards[0], LENGTH(lbuitin_guards),
                     env, args, acc))) {
         return s;
     }
-    if (0 != (s = lbuitin_check_guards(sym,
-                    sym->guards, sym->guardc,
+    if (0 != (s = lfunc_check_guards(fun,
+                    fun->guards, fun->guardc,
                     env, args, acc))) {
         return s;
     }
     /* Argument execution. */
-    if (!sym->accumulator) {
-        return sym->func(env, args, acc);
+    if (!fun->accumulator) {
+        return fun->func(env, args, acc);
     }
     /* Accumulator execution. */
     size_t len = lval_len(args);
@@ -152,22 +154,22 @@ int lbuiltin_exec(const struct ldescriptor* sym, struct lenv* env,
         /* Special case for unary operations. */
         struct lval* lx = lval_alloc();
         lval_index(args, 0, lx);      // lx is the first argument.
-        lval_copy(acc, sym->neutral); // acc is the neutral element.
-        int s = lbuiltin_exec_acc(sym, env, lx, acc);
+        lval_copy(acc, fun->neutral); // acc is the neutral element.
+        int s = lfunc_exec_acc(fun, env, lx, acc);
         lval_free(lx);
         return s;
     }
-    if (sym->init_neutral) {
+    if (fun->init_neutral) {
         /* Init acc with neutral. */
-        lval_copy(acc, sym->neutral);
+        lval_copy(acc, fun->neutral);
     } else {
         /* Init acc with first argument. */
         lval_index(args, 0, acc);
     }
-    for (size_t c = (sym->init_neutral) ? 0 : 1; c < len; c++) {
+    for (size_t c = (fun->init_neutral) ? 0 : 1; c < len; c++) {
         struct lval* child = lval_alloc();
         lval_index(args, c, child);
-        int err = lbuiltin_exec_acc(sym, env, child, acc);
+        int err = lfunc_exec_acc(fun, env, child, acc);
         /* Break on error. */
         if (err != 0) {
             if (err == -1) {

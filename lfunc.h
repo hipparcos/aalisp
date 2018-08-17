@@ -1,16 +1,16 @@
-#ifndef _H_BUILTIN_EXEC_
-#define _H_BUILTIN_EXEC_
+#ifndef _H_LFUNC_
+#define _H_LFUNC_
 
 #include "lval.h"
 #include "lenv.h"
 
-struct ldescriptor;
+struct lfunc;
 
 /** lcondition evaluates a condition for the given operands.
  **   0 if success
  **  -1 if error
  **   n if nth argument generate an error */
-typedef int (*lcondition)(const struct ldescriptor*, const struct lenv*, const struct lval*);
+typedef int (*lcondition)(const struct lfunc*, const struct lenv*, const struct lval*);
 
 /** lguard is a condition associated with an error. */
 struct lguard {
@@ -25,8 +25,16 @@ struct lguard {
     enum lerr error;
 };
 
-/** descriptor describes a builtin function. */
-struct ldescriptor {
+/** lbuiltin is a pointer to a builtin function.
+ ** lbuiltin returns:
+ **   0 if success
+ **  -1 if error
+ **   n if nth argument generates an error */
+typedef int (*lbuiltin)(
+        struct lenv* env, const struct lval* args, struct lval* result);
+
+/** lfunc describes a builtin function. */
+struct lfunc {
     const char* symbol;
     /** lsym.max_argc is the maximum number of arguments. */
     int max_argc;
@@ -52,12 +60,12 @@ struct ldescriptor {
     lbuiltin func;
 };
 
-/** lbuiltin_exec is a lbuiltin.
- ** lbuiltin_exec returns:
+/** lfunc_exec is a lbuiltin.
+ ** lfunc_exec returns:
  **   0 if success
  **  -1 if error
  **   n if nth argument generate an error */
-int lbuiltin_exec(const struct ldescriptor* sym, struct lenv* env,
-        const struct lval* args, struct lval* acc);
+int lfunc_exec(
+        const struct lfunc* fun, struct lenv* env, const struct lval* args, struct lval* acc);
 
 #endif

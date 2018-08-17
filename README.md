@@ -86,10 +86,14 @@ Environment operations:
 - [x] Implement S-Expressions (chapter 9);
 - [x] Implement Q-Expressions (chapter 10);
 - [x] Implement variables (chapter 11);
+- [ ] Add tests for lenv;
+- [ ] Add tests for lambda builtin;
+- [ ] Implement partial function application;
 - [ ] Implement functions (chapter 12);
 - [ ] Improve error reporting;
 - [ ] Implement conditionals (chapter 13);
 - [ ] Implement strings (chapter 14);
+- [ ] Implemnt last, elem, take, map, filter, fold, reverse;
 - [ ] Implement standard library (chapter 15);
 - [ ] Add comments support;
 - [ ] Implement user defined types;

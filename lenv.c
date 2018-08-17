@@ -13,6 +13,7 @@ struct lenv {
     char**  syms;
     struct lval** vals;
     size_t len;
+    struct lenv* par;
 };
 
 struct lenv* lenv_alloc(void) {
@@ -20,17 +21,86 @@ struct lenv* lenv_alloc(void) {
     env->syms = NULL;
     env->vals = NULL;
     env->len = 0;
+    env->par = NULL;
     return env;
 }
 
-void lenv_free(struct lenv* env) {
+static void lenv_clear(struct lenv* env) {
     for (size_t e = 0; e < env->len ; e++) {
         free(env->syms[e]);
         lval_free(env->vals[e]);
     }
     free(env->syms);
+    env->syms = NULL;
     free(env->vals);
+    env->vals = NULL;
+    env->len = 0;
+}
+
+void lenv_free(struct lenv* env) {
+    if (!env) {
+        return;
+    }
+    lenv_clear(env);
     free(env);
+}
+
+bool lenv_copy(struct lenv* dest, const struct lenv* src) {
+    if (!dest || !src) {
+        return false;
+    }
+    lenv_clear(dest);
+    dest->syms = calloc(src->len, sizeof(char*));
+    dest->vals = calloc(src->len, sizeof(struct lval*));
+    for (size_t e = 0; e < src->len; e++) {
+        /* Symbols. */
+        size_t len = strlen(src->syms[e]);
+        dest->syms[e] = calloc(len + 1, 1);
+        strncpy(dest->syms[e], src->syms[e], len);
+        /* Values. */
+        dest->vals[e] = lval_alloc();
+        lval_dup(dest->vals[e], src->vals[e]);
+    }
+    dest->len = src->len;
+    dest->par = src->par;
+    return true;
+}
+
+#define CHECK(cond) if (!(cond)) return false;
+bool lenv_are_equal(const struct lenv* left, const struct lenv* right) {
+    if (left == right) {
+        return true;
+    }
+    CHECK(left && right);
+    /* Total length. */
+    struct lenv* par = NULL;
+    size_t lenl = left->len;
+    while ((par = left->par)) { lenl += par->len; }
+    size_t lenr = right->len;
+    while ((par = right->par)) { lenr += par->len; }
+    CHECK(lenl == lenr);
+    /* Check all symbols. */
+    const struct lenv* env = left;
+    struct lval* sym = lval_alloc();
+    do {
+        for (size_t e = 0; e < env->len; e++) {
+            lval_mut_sym(sym, env->syms[e]);
+            if (!lenv_lookup(right, sym, NULL)) {
+                lval_free(sym);
+                return false;
+            }
+        }
+    } while ((env = env->par));
+    lval_free(sym);
+    return true;
+}
+
+bool lenv_set_parent(struct lenv* env, struct lenv* par) {
+    if (!env || !par) {
+        return false;
+    }
+    env->par = par;
+    return true;
 }
 
 bool lenv_lookup(const struct lenv* env,
@@ -44,6 +114,9 @@ bool lenv_lookup(const struct lenv* env,
             lval_copy(result, env->vals[e]);
             return true;
         }
+    }
+    if (env->par) {
+        return lenv_lookup(env->par, sym, result);
     }
     lval_mut_err(result, LERR_BAD_SYMBOL);
     return false;
@@ -93,6 +166,12 @@ bool lenv_put_builtin(struct lenv* env,
     lval_free(fun);
     lval_free(sym);
     return s;
+}
+
+bool lenv_def(struct lenv* env,
+        const struct lval* sym, const struct lval* val) {
+    while (env && env->par) { env = env->par; }
+    return lenv_put(env, sym, val);
 }
 
 bool lenv_default(struct lenv* env) {

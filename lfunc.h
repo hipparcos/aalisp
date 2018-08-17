@@ -1,6 +1,8 @@
 #ifndef _H_LFUNC_
 #define _H_LFUNC_
 
+#include <stdbool.h>
+
 #include "lval.h"
 #include "lenv.h"
 
@@ -51,7 +53,23 @@ struct lfunc {
     const struct lval* neutral;
     /** lfunc.func is the associated builtin function. */
     lbuiltin func;
+    /* Functions defined as S-Expression (in lisp). */
+    struct lenv* scope;   // Local scope of the function.
+    struct lval* formals; // A Q-Expr: list of local symbols name.
+    struct lval* body;    // A S-Expr: list of S-Expression to execute.
 };
+
+/** lfunc_alloc creates a lfunc.
+ ** Caller is respnsible for calling lfunc_free. */
+struct lfunc* lfunc_alloc(void);
+/** lfunc_free frees fun.
+ ** fun must not be used afterwards. */
+void lfunc_free(struct lfunc* fun);
+/** lfunc_copy copies src into dest.
+ ** dest must have been allocated by the caller. */
+bool lfunc_copy(struct lfunc* dest, const struct lfunc* src);
+/** lfunc_are_equal tells if two func are equal. */
+bool lfunc_are_equal(const struct lfunc*, const struct lfunc*);
 
 /** lfunc_exec is a lbuiltin.
  ** lfunc_exec returns:

@@ -1,5 +1,7 @@
 #include "lfunc.h"
 
+#include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "lval.h"
@@ -7,6 +9,64 @@
 #include "lbuiltin_condition.h"
 
 #define LENGTH(arr) sizeof(arr)/sizeof(arr[0])
+
+struct lfunc* lfunc_alloc(void) {
+    struct lfunc* fun = calloc(1, sizeof(struct lfunc));
+    return fun;
+}
+
+static void lfunc_clear(struct lfunc* fun) {
+    lenv_free(fun->scope);
+    fun->scope = NULL;
+    lval_free(fun->formals);
+    fun->formals = NULL;
+    lval_free(fun->body);
+    fun->body = NULL;
+}
+
+void lfunc_free(struct lfunc* fun) {
+    if (!fun) {
+        return;
+    }
+    lfunc_clear(fun);
+    free(fun);
+}
+
+bool lfunc_copy(struct lfunc* dest, const struct lfunc* src) {
+    if (!dest || !src) {
+        return false;
+    }
+    lfunc_clear(dest);
+    memcpy(dest, src, sizeof(struct lfunc));
+    dest->scope = lenv_alloc();
+    lenv_copy(dest->scope, src->scope);
+    dest->formals = lval_alloc();
+    lval_copy(dest->formals, src->formals);
+    dest->body = lval_alloc();
+    lval_copy(dest->body, src->body);
+    return true;
+}
+
+#define CHECK(cond) if (!(cond)) return false;
+bool lfunc_are_equal(const struct lfunc* left, const struct lfunc* right) {
+    if (left == right) {
+        return true;
+    }
+    CHECK(left && right);
+    CHECK(strcmp(left->symbol, right->symbol) == 0);
+    CHECK(left->min_argc == right->min_argc);
+    CHECK(left->max_argc == right->max_argc);
+    CHECK(left->accumulator == right->accumulator);
+    CHECK(left->guards == right->guards);
+    CHECK(left->guardc == right->guardc);
+    CHECK(left->init_neutral == right->init_neutral);
+    CHECK(lval_are_equal(left->neutral, right->neutral));
+    CHECK(left->func == right->func);
+    CHECK(lenv_are_equal(left->scope, right->scope));
+    CHECK(lval_are_equal(left->formals, right->formals));
+    CHECK(lval_are_equal(left->body, right->body));
+    return true;
+}
 
 static int lfunc_check_guards(
         const struct lfunc* fun,

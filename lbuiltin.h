@@ -3,29 +3,28 @@
 
 #include <stdbool.h>
 
-#include "lval.h"
-#include "lenv.h"
+#include "lfunc.h"
 
 /* Arithmetic operators. */
-int lbuiltin_op_add(struct lenv*, const struct lval*, struct lval*);
-int lbuiltin_op_sub(struct lenv*, const struct lval*, struct lval*);
-int lbuiltin_op_mul(struct lenv*, const struct lval*, struct lval*);
-int lbuiltin_op_div(struct lenv*, const struct lval*, struct lval*);
-int lbuiltin_op_mod(struct lenv*, const struct lval*, struct lval*);
-int lbuiltin_op_pow(struct lenv*, const struct lval*, struct lval*);
-int lbuiltin_op_fac(struct lenv*, const struct lval*, struct lval*);
+extern const struct lfunc lbuiltin_op_add;
+extern const struct lfunc lbuiltin_op_sub;
+extern const struct lfunc lbuiltin_op_mul;
+extern const struct lfunc lbuiltin_op_div;
+extern const struct lfunc lbuiltin_op_mod;
+extern const struct lfunc lbuiltin_op_pow;
+extern const struct lfunc lbuiltin_op_fac;
 
 /* List manipulation functions. */
-int lbuiltin_head(struct lenv*, const struct lval*, struct lval*);
-int lbuiltin_tail(struct lenv*, const struct lval*, struct lval*);
-int lbuiltin_init(struct lenv*, const struct lval*, struct lval*);
-int lbuiltin_cons(struct lenv*, const struct lval*, struct lval*);
-int lbuiltin_len(struct lenv*, const struct lval*, struct lval*);
-int lbuiltin_join(struct lenv*, const struct lval*, struct lval*);
-int lbuiltin_list(struct lenv*, const struct lval*, struct lval*);
-int lbuiltin_eval(struct lenv*, const struct lval*, struct lval*);
+extern const struct lfunc lbuiltin_head;
+extern const struct lfunc lbuiltin_tail;
+extern const struct lfunc lbuiltin_init;
+extern const struct lfunc lbuiltin_cons;
+extern const struct lfunc lbuiltin_len;
+extern const struct lfunc lbuiltin_join;
+extern const struct lfunc lbuiltin_list;
+extern const struct lfunc lbuiltin_eval;
 
 /* Environment manipulation functions. */
-int lbuiltin_def(struct lenv*, const struct lval*, struct lval*);
+extern const struct lfunc lbuiltin_def;
 
 #endif

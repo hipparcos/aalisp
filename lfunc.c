@@ -13,7 +13,7 @@ static int lfunc_check_guards(
     int s = 0;
     const struct lguard* guard = NULL;
     for (size_t g = 0; g < guardc; g++) {
-        guard = guards+g;
+        guard = &guards[g];
         /* Guard applied on a specific argument. */
         if (guard->argn > 0) {
             struct lval* child = lval_alloc();

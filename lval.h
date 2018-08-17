@@ -35,6 +35,9 @@ enum lerr {
 };
 extern const char* const lerr_string[9];
 
+/* Forward declaration of lfunc, see lfunc.h */
+struct lfunc;
+
 /** lval is the public handle to a ldata.
  ** This level of indirection is used to prepare the work on a GC. */
 struct lval {
@@ -46,16 +49,6 @@ struct lval {
      ** Must not be used after the corresponding ast had been cleaned. */
     const struct last* ast;
 };
-
-struct lenv;
-
-/** lbuiltin is a pointer to a builtin function.
- ** lbuiltin returns:
- **   0 if success
- **  -1 if error
- **   n if nth argument generates an error */
-typedef int (*lbuiltin)(struct lenv* env,
-        const struct lval* args, struct lval* result);
 
 /* Special lvals used in builtins. */
 extern const struct lval lnil;    /** = nil */
@@ -98,7 +91,7 @@ bool lval_mut_str(struct lval* v, const char* str);
 /** lval_mut_sym mutates v to LVAL_SYM type. sym is copied */
 bool lval_mut_sym(struct lval* v, const char* const sym);
 /** lval_mut_func mutates v to LVAL_FUNC type. */
-bool lval_mut_func(struct lval* v, const lbuiltin func);
+bool lval_mut_func(struct lval* v, const struct lfunc* func);
 /** lval_mut_sexpr mutates v to LVAL_SEXPR type. */
 bool lval_mut_sexpr(struct lval* v);
 /** lval_mut_qexpr mutates v to LVAL_QEXPR type. */
@@ -137,10 +130,12 @@ bool lval_as_dbl(const struct lval* v, double* r);
 bool lval_as_str(const struct lval* v, char* r, size_t len);
 /** lval_as_sym returns v as a string. Its type must be LVAL_SYM.
  ** The pointed value is NOT a copy of the symbol.
- ** The pointer is valid while v is alive. */
+ ** The pointer stays valid while v is alive. */
 const char* lval_as_sym(const struct lval* v);
-/** lval_as_func returns v as a lbuiltin pointer. */
-lbuiltin lval_as_func(const struct lval* v);
+/** lval_as_func returns v as a lbuiltin pointer.
+ ** The pointed value is NOT a copy of the symbol.
+ ** The pointer stays valid while v is alive. */
+const struct lfunc* lval_as_func(const struct lval* v);
 
 /* Inquiries */
 /** lval_is_nil returns true if v is nil. */

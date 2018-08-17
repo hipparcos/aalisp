@@ -6,32 +6,20 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "lbuiltin.h"
-#include "lval.h"
-#include "lenv.h"
 #include "llexer.h"
 #include "lparser.h"
 #include "lmut.h"
-
-/** level_exec returns
- **   0 if success
- **  -1 if error
- **   n if nth argument generate an error */
-static int leval_exec(const struct lval* func, struct lenv* env,
-        const struct lval* args, struct lval* acc) {
-    lbuiltin f = lval_as_func(func);
-    if (!f) {
-        return -1;
-    }
-    return f(env, args, acc);
-}
+#include "lval.h"
+#include "lenv.h"
+#include "lfunc.h"
+#include "lbuiltin.h"
 
 static bool leval_expr(struct lenv* env, struct lval* expr, struct lval* r) {
     /* First child is the symbol. */
     struct lval* func = lval_pop(expr, 0);
     struct lval* args = expr; // aliasing for clarity.
     /* Execute expression. */
-    int err = leval_exec(func, env, args, r);
+    int err = lfunc_exec(lval_as_func(func), env, args, r);
     /* Error handling. */
     if (err != 0) {
         if (err == -1) {

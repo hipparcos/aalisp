@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "lval.h"
+#include "lfunc.h"
 #include "lbuiltin.h"
 
 /** lenv associates a symbol descriptor with a string. */
@@ -80,7 +81,7 @@ bool lenv_put(struct lenv* env,
 }
 
 bool lenv_put_builtin(struct lenv* env,
-        const char* symbol, const lbuiltin func) {
+        const char* symbol, const struct lfunc* func) {
     if (!symbol || !func) {
         return false;
     }
@@ -99,23 +100,23 @@ bool lenv_default(struct lenv* env) {
         return false;
     }
     /* Arithmetic operators. */
-    lenv_put_builtin(env, "+", lbuiltin_op_add);
-    lenv_put_builtin(env, "-", lbuiltin_op_sub);
-    lenv_put_builtin(env, "*", lbuiltin_op_mul);
-    lenv_put_builtin(env, "/", lbuiltin_op_div);
-    lenv_put_builtin(env, "%", lbuiltin_op_mod);
-    lenv_put_builtin(env, "^", lbuiltin_op_pow);
-    lenv_put_builtin(env, "!", lbuiltin_op_fac);
+    lenv_put_builtin(env, "+", &lbuiltin_op_add);
+    lenv_put_builtin(env, "-", &lbuiltin_op_sub);
+    lenv_put_builtin(env, "*", &lbuiltin_op_mul);
+    lenv_put_builtin(env, "/", &lbuiltin_op_div);
+    lenv_put_builtin(env, "%", &lbuiltin_op_mod);
+    lenv_put_builtin(env, "^", &lbuiltin_op_pow);
+    lenv_put_builtin(env, "!", &lbuiltin_op_fac);
     /* List manipulation functions. */
-    lenv_put_builtin(env, "head", lbuiltin_head);
-    lenv_put_builtin(env, "tail", lbuiltin_tail);
-    lenv_put_builtin(env, "init", lbuiltin_init);
-    lenv_put_builtin(env, "cons", lbuiltin_cons);
-    lenv_put_builtin(env, "len",  lbuiltin_len);
-    lenv_put_builtin(env, "join", lbuiltin_join);
-    lenv_put_builtin(env, "list", lbuiltin_list);
-    lenv_put_builtin(env, "eval", lbuiltin_eval);
+    lenv_put_builtin(env, "head", &lbuiltin_head);
+    lenv_put_builtin(env, "tail", &lbuiltin_tail);
+    lenv_put_builtin(env, "init", &lbuiltin_init);
+    lenv_put_builtin(env, "cons", &lbuiltin_cons);
+    lenv_put_builtin(env, "len",  &lbuiltin_len);
+    lenv_put_builtin(env, "join", &lbuiltin_join);
+    lenv_put_builtin(env, "list", &lbuiltin_list);
+    lenv_put_builtin(env, "eval", &lbuiltin_eval);
     /* Environment manipulation functions. */
-    lenv_put_builtin(env, "def", lbuiltin_def);
+    lenv_put_builtin(env, "def", &lbuiltin_def);
     return true;
 }

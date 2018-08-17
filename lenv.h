@@ -6,6 +6,9 @@
 /** lenv associates a lval with a name. */
 struct lenv;
 
+/* Forward declaration of lfunc, see lfunc.h */
+struct lfunc;
+
 /** lenv_alloc creates a new lenv.
  ** Caller is responsible for calling lenv_free. */
 struct lenv* lenv_alloc(void);
@@ -20,7 +23,7 @@ bool lenv_put(struct lenv* env,
         const struct lval* sym, const struct lval* val);
 /** lenv_put_builtin binds val to sym in env (helper function). */
 bool lenv_put_builtin(struct lenv* env,
-        const char* symbol, const lbuiltin func);
+        const char* symbol, const struct lfunc* func);
 
 /** lenv_default fills env with default builtin functions. */
 bool lenv_default(struct lenv* env);

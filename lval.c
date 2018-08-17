@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "lfunc.h"
+
 #ifdef OPTIM
 #define INLINE inline
 #else
@@ -59,7 +61,7 @@ struct ldata {
         enum lerr     err;    // error code.
         char*         str;    // string or symbol.
         struct lval** cell;   // list of lval (can detect data mutation).
-        lbuiltin      func;   // pointer to a builtin function.
+        struct lfunc* func;   // pointer to a function descriptor.
     } payload;
 };
 
@@ -161,6 +163,12 @@ static bool ldata_clear(struct ldata* d) {
         }
         free(d->payload.cell);
         d->payload.cell = NULL;
+        break;
+    case LVAL_FUNC:
+        if (d->payload.func) {
+            free(d->payload.func);
+            d->payload.func = NULL;
+        }
         break;
     default: break;
     }
@@ -330,7 +338,8 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
         }
         break;
     case LVAL_FUNC:
-        dest->payload.func = src->payload.func;
+        dest->payload.func = calloc(1, sizeof(struct lfunc));
+        memcpy(dest->payload.func, src->payload.func, sizeof(struct lfunc));
         break;
     }
     dest->type = src->type;
@@ -457,8 +466,8 @@ bool lval_mut_sym(struct lval* v, const char* const sym) {
     return true;
 }
 
-bool lval_mut_func(struct lval* v, const lbuiltin func) {
-    if (!lval_is_mutable(v)) {
+bool lval_mut_func(struct lval* v, const struct lfunc* func) {
+    if (!lval_is_mutable(v) || !func) {
         return false;
     }
     struct ldata* data = NULL;
@@ -466,7 +475,8 @@ bool lval_mut_func(struct lval* v, const lbuiltin func) {
         return false;
     }
     data->type = LVAL_FUNC;
-    data->payload.func = func;
+    data->payload.func = calloc(1, sizeof(struct lfunc));
+    memcpy(data->payload.func, func, sizeof(struct lfunc));
     data->len = 1;
     lval_connect(v, data);
     return true;
@@ -708,7 +718,7 @@ const char* lval_as_sym(const struct lval* v) {
     return v->data->payload.str;
 }
 
-lbuiltin lval_as_func(const struct lval* v) {
+const struct lfunc* lval_as_func(const struct lval* v) {
     if (!lval_is_alive(v) || lval_type(v) != LVAL_FUNC) {
         return NULL;
     }
@@ -781,7 +791,8 @@ bool lval_are_equal(const struct lval* x, const struct lval* y) {
             }
         }
         return true;
-    case LVAL_FUNC:   return x->data->payload.func == y->data->payload.func;
+    case LVAL_FUNC:
+        return memcmp(x->data->payload.func, y->data->payload.func, sizeof(struct lfunc));
     default: return false;
     }
 }

@@ -6,6 +6,7 @@
 #include "lval.h"
 #include "lenv.h"
 #include "leval.h"
+#include "lfunc.h"
 
 #define UNUSED(x) (void)x
 
@@ -172,4 +173,38 @@ int lbi_func_put(struct lenv* env, const struct lval* args, struct lval* acc) {
     lval_free(symbols);
     lval_free(values);
     return s;
+}
+
+static int lbuiltin_call(struct lenv* env, const struct lval* args, struct lval* acc) {
+    return leval(env, args, acc);
+}
+
+int lbi_func_lambda(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1: list of formals. */
+    struct lval* formals = lval_alloc();
+    lval_index(args, 0, formals);
+    /* Retrieve arg 1: list of sexpr. */
+    struct lval* body = lval_alloc();
+    lval_index(args, 1, body);
+    /* Create function. */
+    size_t argc = lval_len(formals);
+    struct lfunc func = {0};
+    func.symbol = "lisp defined function";
+    func.min_argc = argc;
+    func.max_argc = argc;
+    func.lisp_func = true;
+    func.func = lbuiltin_call;
+    func.scope = lenv_alloc();
+    func.formals = lval_alloc();
+    lval_dup(func.formals, formals);
+    func.body = lval_alloc();
+    lval_copy(func.body, body);
+    lval_mut_sexpr(func.body); // Works because it's a brand new copy.
+    /* Put lambda in acc. */
+    lval_mut_func(acc, &func);
+    /* Cleanup. */
+    lval_free(formals);
+    lval_free(body);
+    return 0;
 }

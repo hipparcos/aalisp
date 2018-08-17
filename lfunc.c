@@ -38,12 +38,18 @@ bool lfunc_copy(struct lfunc* dest, const struct lfunc* src) {
     }
     lfunc_clear(dest);
     memcpy(dest, src, sizeof(struct lfunc));
-    dest->scope = lenv_alloc();
-    lenv_copy(dest->scope, src->scope);
-    dest->formals = lval_alloc();
-    lval_copy(dest->formals, src->formals);
-    dest->body = lval_alloc();
-    lval_copy(dest->body, src->body);
+    if (src->scope) {
+        dest->scope = lenv_alloc();
+        lenv_copy(dest->scope, src->scope);
+    }
+    if (src->formals) {
+        dest->formals = lval_alloc();
+        lval_copy(dest->formals, src->formals);
+    }
+    if (src->body) {
+        dest->body = lval_alloc();
+        lval_copy(dest->body, src->body);
+    }
     return true;
 }
 
@@ -117,6 +123,27 @@ static int lfunc_check_guards(
     return 0;
 }
 
+static struct lenv* lfunc_prepare_env(
+        const struct lfunc* fun, struct lenv* par, const struct lval* args) {
+    if (fun->lisp_func) {
+        struct lenv* env = fun->scope;
+        lenv_set_parent(env, par);
+        /* Define local variable. */
+        size_t len = lval_len(fun->formals);
+        for (size_t a = 0; a < len; a++) {
+            struct lval* sym = lval_alloc();
+            struct lval* arg = lval_alloc();
+            lval_index(fun->formals, a, sym);
+            lval_index(args, a, arg);
+            lenv_put(env, sym, arg);
+            lval_free(sym);
+            lval_free(arg);
+        }
+        return env;
+    }
+    return par;
+}
+
 static struct lguard lbuitin_guards[] = {
     {.condition= lbi_cond_max_argc,     .argn= -1, .error= LERR_TOO_MANY_ARGS},
     {.condition= lbi_cond_min_argc,     .argn= -1, .error= LERR_TOO_FEW_ARGS},
@@ -141,11 +168,16 @@ int lfunc_exec(const struct lfunc* fun, struct lenv* env,
                     env, args, acc))) {
         return s;
     }
-    /* Argument execution. */
+    /* Prepare environnement. */
+    env = lfunc_prepare_env(fun, env, args);
+    if (fun->lisp_func) {
+        args = fun->body;
+    }
+    /* Builtin argument execution. */
     if (!fun->accumulator) {
         return fun->func(env, args, acc);
     }
-    /* Accumulator execution. */
+    /* Builtin accumulator execution. */
     size_t len = lval_len(args);
     if (len == 1) {
         /* Special case for unary operations. */

@@ -67,10 +67,17 @@ List operations:
 > eval (head {(+ 1 1) (+ 2 2)})
 2
 ```
+Functions definition:
+```lisp
+> (\ {x} {(* x x)}) 9
+81
+```
 Environment operations:
 ```lisp
 > (def {x y} 1 2)(+ x y)
 3
+> (def {sq} (\ {x} {(* x x)})) (sq 9)
+81
 ```
 
 ## TODO
@@ -79,8 +86,8 @@ Environment operations:
 - [x] Implement S-Expressions (chapter 9);
 - [x] Implement Q-Expressions (chapter 10);
 - [x] Implement variables (chapter 11);
-- [ ] Improve error reporting;
 - [ ] Implement functions (chapter 12);
+- [ ] Improve error reporting;
 - [ ] Implement conditionals (chapter 13);
 - [ ] Implement strings (chapter 14);
 - [ ] Implement standard library (chapter 15);

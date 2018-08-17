@@ -54,6 +54,7 @@ struct lfunc {
     /** lfunc.func is the associated builtin function. */
     lbuiltin func;
     /* Functions defined as S-Expression (in lisp). */
+    bool lisp_func;
     struct lenv* scope;   // Local scope of the function.
     struct lval* formals; // A Q-Expr: list of local symbols name.
     struct lval* body;    // A S-Expr: list of S-Expression to execute.

@@ -486,6 +486,10 @@ bool lval_mut_sexpr(struct lval* v) {
     if (!lval_is_mutable(v)) {
         return false;
     }
+    if (lval_type(v) == LVAL_QEXPR && v->data->refc == 1) {
+        v->data->type = LVAL_SEXPR;
+        return true;
+    }
     struct ldata* data = NULL;
     if (!(data = lval_disconnect(v, true))) {
         return false;

@@ -202,5 +202,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "def", &lbuiltin_def);
     lenv_put_builtin(env, "put", &lbuiltin_put);
     lenv_put_builtin(env, "=",   &lbuiltin_put);
+    lenv_put_builtin(env, "lambda", &lbuiltin_lambda);
+    lenv_put_builtin(env, "\\",     &lbuiltin_lambda);
     return true;
 }

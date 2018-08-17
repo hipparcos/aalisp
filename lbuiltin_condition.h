@@ -30,6 +30,8 @@ int lbi_cond_qexpr(
         const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
 int lbi_cond_list_of_sym(
         const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
+int lbi_cond_list_of_sexpr(
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
 int lbi_cond_qexpr_or_nil(
         const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
 int lbi_cond_list(

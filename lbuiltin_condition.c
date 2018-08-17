@@ -93,9 +93,7 @@ int lbi_cond_list(
     return (lval_len(arg) > 0) ? 0 : 1;
 }
 
-int lbi_cond_list_of_sym(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
-    UNUSED(fun); UNUSED(env);
+static int _is_list_of_type(enum ltype type, const struct lval* arg) {
     if (!lval_is_list(arg)) {
         return 1;
     }
@@ -103,10 +101,20 @@ int lbi_cond_list_of_sym(
     for (size_t c = 0; c < len; c++) {
         struct lval* child = lval_alloc();
         lval_index(arg, c, child);
-        if (lval_type(child) != LVAL_SYM) {
+        if (lval_type(child) != type) {
             return 1;
         }
         lval_free(child);
     }
     return 0;
+}
+int lbi_cond_list_of_sym(
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
+    UNUSED(fun); UNUSED(env);
+    return _is_list_of_type(LVAL_SYM, arg);
+}
+int lbi_cond_list_of_sexpr(
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
+    UNUSED(fun); UNUSED(env);
+    return _is_list_of_type(LVAL_SEXPR, arg);
 }

@@ -106,6 +106,13 @@ describe(lisp_eval, {
     test_pass("(= {x} 3)(+ x)", "3", {
             lval_mut_num(expected, 3);
         });
+    /* Lamdba definition. */
+    test_pass("(\\ {x} {(* 2 x)}) 4", "8", {
+            lval_mut_num(expected, 8);
+        });
+    test_pass("(def {double} (lambda {x} {(* 2 x)}))(double 4)", "8", {
+            lval_mut_num(expected, 8);
+        });
 
     /* Errors. */
     test_fail("/ 10 0", LERR_DIV_ZERO);

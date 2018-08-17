@@ -136,6 +136,7 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
     struct ltok* curr = first;
     struct last* expr = NULL;
     struct last* sexpr = NULL;
+    /* An expression start with a symbol or a S-Expression. */
     switch (curr->type) {
     case LTOK_OPAR: // Start of SEXPR.
         sexpr = lparse_sexpr(curr, &curr);
@@ -151,36 +152,36 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
         /* Symbol. */
         last_attach(lparse_symbol(curr), expr);
         curr = curr->next;
-        /* Operands. */
-        while (curr->type != LTOK_CPAR && curr->type != LTOK_EOF) {
-            struct last* operand = NULL;
-            if (!(operand = lparse_atom(curr, &curr))) {
-                switch (curr->type) {
-                case LTOK_OPAR:
-                    operand = lparse_sexpr(curr, &curr);
-                    break;
-                case LTOK_OBRC:
-                    operand = lparse_qexpr(curr, &curr);
-                    break;
-                default:
-                    operand = last_error(LPARSER_ERR_BAD_OPERAND, curr);
-                    break;
-                }
-            }
-            // Error = break.
-            if (operand->tag == LTAG_ERR) {
-                last_attach(expr, operand);
-                expr = operand;
-                break;
-            }
-            last_attach(operand, expr);
-        }
-        break;
-    case LTOK_EOF:
         break;
     default:
         expr = last_error(LPARSER_ERR_BAD_EXPR, curr);
-        break;
+    case LTOK_EOF:
+        *last = curr;
+        return expr;
+    }
+    /* Operands. */
+    while (curr->type != LTOK_CPAR && curr->type != LTOK_EOF) {
+        struct last* operand = NULL;
+        if (!(operand = lparse_atom(curr, &curr))) {
+            switch (curr->type) {
+            case LTOK_OPAR:
+                operand = lparse_sexpr(curr, &curr);
+                break;
+            case LTOK_OBRC:
+                operand = lparse_qexpr(curr, &curr);
+                break;
+            default:
+                operand = last_error(LPARSER_ERR_BAD_OPERAND, curr);
+                break;
+            }
+        }
+        // Error = break.
+        if (operand->tag == LTAG_ERR) {
+            last_attach(expr, operand);
+            expr = operand;
+            break;
+        }
+        last_attach(operand, expr);
     }
     *last = curr;
     return expr;

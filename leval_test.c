@@ -103,6 +103,9 @@ describe(lisp_eval, {
     test_pass("(def {x y} 1 2)(+ x y)", "3", {
             lval_mut_num(expected, 3);
         });
+    test_pass("(= {x} 3)(+ x)", "3", {
+            lval_mut_num(expected, 3);
+        });
 
     /* Errors. */
     test_fail("/ 10 0", LERR_DIV_ZERO);

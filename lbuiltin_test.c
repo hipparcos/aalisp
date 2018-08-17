@@ -562,6 +562,20 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_put, {
+        test_pass(&lbuiltin_put, "happy path", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_sym(qexpr, "x");
+            push_sym(qexpr, "y");
+            lval_push(args, qexpr);
+            push_num(args, 100);
+            push_num(args, 200);
+            lval_dup(expected, qexpr);
+            lval_free(qexpr);
+        });
+    });
+
 });
 
 snow_main();

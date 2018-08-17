@@ -227,3 +227,11 @@ const struct lfunc lbuiltin_def = {
     .guardc       = LENGTH(guards_def),
     .func         = lbi_func_def,
 };
+const struct lfunc lbuiltin_put = {
+    .symbol       = "put",
+    .min_argc     =  2,
+    .max_argc     =  -1,
+    .guards       = &guards_def[0],
+    .guardc       = LENGTH(guards_def),
+    .func         = lbi_func_put,
+};

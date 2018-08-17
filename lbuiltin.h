@@ -26,5 +26,6 @@ extern const struct lfunc lbuiltin_eval;
 
 /* Environment manipulation functions. */
 extern const struct lfunc lbuiltin_def;
+extern const struct lfunc lbuiltin_put;
 
 #endif

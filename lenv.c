@@ -170,7 +170,10 @@ bool lenv_put_builtin(struct lenv* env,
 
 bool lenv_def(struct lenv* env,
         const struct lval* sym, const struct lval* val) {
-    while (env && env->par) { env = env->par; }
+    if (!env) {
+        return false;
+    }
+    while (env->par) { env = env->par; }
     return lenv_put(env, sym, val);
 }
 
@@ -197,5 +200,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "eval", &lbuiltin_eval);
     /* Environment manipulation functions. */
     lenv_put_builtin(env, "def", &lbuiltin_def);
+    lenv_put_builtin(env, "put", &lbuiltin_put);
+    lenv_put_builtin(env, "=",   &lbuiltin_put);
     return true;
 }

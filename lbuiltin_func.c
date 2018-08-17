@@ -109,29 +109,28 @@ int lbi_func_eval(struct lenv* env, const struct lval* args, struct lval* acc) {
     return !s;
 }
 
-int lbi_func_def(struct lenv* env, const struct lval* args, struct lval* acc) {
-    /* Retrieve arg 1. */
-    struct lval* symbols = lval_alloc();
-    lval_index(args, 0, symbols);
+static int lbuiltin_def(struct lenv* env,
+        bool (*def)(struct lenv*, const struct lval*, const struct lval*),
+        const struct lval* symbols, const struct lval* values,
+        struct lval* result) {
     /* Check len. */
     size_t lensyms = lval_len(symbols);
-    size_t lenargs = lval_len(args)-1;
-    if (lenargs != lensyms) {
-        if (lenargs < lensyms) {
-            lval_mut_err(acc, LERR_TOO_FEW_ARGS);
+    size_t lenvals = lval_len(values);
+    if (lenvals != lensyms) {
+        if (lenvals < lensyms) {
+            lval_mut_err(result, LERR_TOO_FEW_ARGS);
         } else {
-            lval_mut_err(acc, LERR_TOO_MANY_ARGS);
+            lval_mut_err(result, LERR_TOO_MANY_ARGS);
         }
-        lval_free(symbols);
         return -1;
     }
     /* Define symbols. */
-    for (size_t c = 1; c < lenargs+1; c++) {
+    for (size_t c = 0; c < lensyms; c++) {
         struct lval* sym = lval_alloc();
         struct lval* value = lval_alloc();
-        lval_index(symbols, c-1, sym);
-        lval_index(args, c, value);
-        if (!lenv_put(env, sym, value)) {
+        lval_index(symbols, c, sym);
+        lval_index(values, c, value);
+        if (!def(env, sym, value)) {
             lval_free(value);
             lval_free(sym);
             return -1;
@@ -139,8 +138,38 @@ int lbi_func_def(struct lenv* env, const struct lval* args, struct lval* acc) {
         lval_free(value);
         lval_free(sym);
     }
-    lval_dup(acc, symbols);
+    lval_dup(result, symbols);
+    return 0;
+}
+
+int lbi_func_def(struct lenv* env, const struct lval* args, struct lval* acc) {
+    /* Retrieve arg 1: list of symbols. */
+    struct lval* symbols = lval_alloc();
+    lval_index(args, 0, symbols);
+    /* Retrieve arg 2...n: list of values. */
+    struct lval* values = lval_alloc();
+    lval_copy(values, args);
+    lval_drop(values, 0); // Drops list of symbols.
+    /* Def. */
+    int s = lbuiltin_def(env, lenv_def, symbols, values, acc);
     /* Cleanup. */
     lval_free(symbols);
-    return 0;
+    lval_free(values);
+    return s;
+}
+
+int lbi_func_put(struct lenv* env, const struct lval* args, struct lval* acc) {
+    /* Retrieve arg 1: list of symbols. */
+    struct lval* symbols = lval_alloc();
+    lval_index(args, 0, symbols);
+    /* Retrieve arg 2...n: list of values. */
+    struct lval* values = lval_alloc();
+    lval_copy(values, args);
+    lval_drop(values, 0); // Drops list of symbols.
+    /* Def. */
+    int s = lbuiltin_def(env, lenv_put, symbols, values, acc);
+    /* Cleanup. */
+    lval_free(symbols);
+    lval_free(values);
+    return s;
 }

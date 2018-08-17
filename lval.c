@@ -560,6 +560,11 @@ struct lval* lval_pop(struct lval* v, size_t c) {
     return val;
 }
 
+void lval_drop(struct lval* v, size_t c) {
+    struct lval* discarded = lval_pop(v, c);
+    lval_free(discarded);
+}
+
 bool lval_index(const struct lval* v, size_t c, struct lval* dest) {
     if (!lval_is_list(v)) {
         return false;

@@ -53,12 +53,6 @@ static int lbuitin_check_guards(const struct ldescriptor* sym,
     return 0;
 }
 
-static int lbuiltin_exec_arg(const struct ldescriptor* sym, struct lenv* env,
-        const struct lval* args, struct lval* acc) {
-    /* Execution */
-    return sym->op_all(env, acc, args);
-}
-
 #define EITHER_IS(type, a, b) (lval_type(a) == type || lval_type(b) == type)
 static enum ltype typeof_op(const struct lval* a, const struct lval *b) {
     if (EITHER_IS(LVAL_DBL, a, b))    return LVAL_DBL;
@@ -69,8 +63,8 @@ static enum ltype typeof_op(const struct lval* a, const struct lval *b) {
 
 static int lbuiltin_exec_acc(const struct ldescriptor* sym, struct lenv* env,
         const struct lval* arg, struct lval* acc) {
-    if (sym->op_all) {
-        return sym->op_all(env, acc, arg);
+    if (sym->func) {
+        return sym->func(env, arg, acc);
     }
     /* Accumulator based evaluation. */
     switch (typeof_op(acc, arg)) {
@@ -149,7 +143,7 @@ static int lcond_min_argc(const struct ldescriptor* sym,
 static int lcond_func_pointer(const struct ldescriptor* sym,
         const struct lenv* env, const struct lval* args) {
     UNUSED(env); UNUSED(args);
-    if (!sym->accumulator && !sym->op_all) {
+    if (!sym->accumulator && !sym->func) {
         return -1;
     }
     return 0;
@@ -181,7 +175,7 @@ int lbuiltin_exec(const struct ldescriptor* sym, struct lenv* env,
     }
     /* Argument execution. */
     if (!sym->accumulator) {
-        return lbuiltin_exec_arg(sym, env, args, acc);
+        return sym->func(env, args, acc);
     }
     /* Accumulator execution. */
     size_t len = lval_len(args);

@@ -44,8 +44,9 @@ struct ldescriptor {
     long   (*op_num)(const long, const long);
     void   (*op_bignum)(mpz_t r, const mpz_t x, const mpz_t y);
     double (*op_dbl)(const double, const double);
-    /** op_all operates of lval. If op_all is not null, only op_all is executed. */
-    int    (*op_all)(struct lenv* env, struct lval* acc, const struct lval* args);
+    /** func operates on lval.
+     ** If func is not null, only func is executed. */
+    lbuiltin func;
 };
 
 /** lbuiltin_exec is a lbuiltin.

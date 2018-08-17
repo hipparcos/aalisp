@@ -163,7 +163,7 @@ const struct ldescriptor lbi_descriptor_head = {
     .max_argc     =  1,
     .guards       = &guards_head[0],
     .guardc       = LENGTH(guards_head),
-    .op_all       = lbi_func_head,
+    .func         = lbi_func_head,
 };
 int lbuiltin_head(struct lenv* env, const struct lval* args, struct lval* acc) {
     return lbuiltin_exec(&lbi_descriptor_head, env, args, acc);
@@ -179,7 +179,7 @@ const struct ldescriptor lbi_descriptor_tail = {
     .max_argc     =  1,
     .guards       = &guards_tail[0],
     .guardc       = LENGTH(guards_tail),
-    .op_all       = lbi_func_tail,
+    .func         = lbi_func_tail,
 };
 int lbuiltin_tail(struct lenv* env, const struct lval* args, struct lval* acc) {
     return lbuiltin_exec(&lbi_descriptor_tail, env, args, acc);
@@ -195,7 +195,7 @@ const struct ldescriptor lbi_descriptor_init = {
     .max_argc     =  1,
     .guards       = &guards_init[0],
     .guardc       = LENGTH(guards_init),
-    .op_all       = lbi_func_init,
+    .func         = lbi_func_init,
 };
 int lbuiltin_init(struct lenv* env, const struct lval* args, struct lval* acc) {
     return lbuiltin_exec(&lbi_descriptor_init, env, args, acc);
@@ -210,7 +210,7 @@ const struct ldescriptor lbi_descriptor_cons = {
     .max_argc     =  2,
     .guards       = &guards_cons[0],
     .guardc       = LENGTH(guards_cons),
-    .op_all       = lbi_func_cons,
+    .func         = lbi_func_cons,
 };
 int lbuiltin_cons(struct lenv* env, const struct lval* args, struct lval* acc) {
     return lbuiltin_exec(&lbi_descriptor_cons, env, args, acc);
@@ -225,7 +225,7 @@ const struct ldescriptor lbi_descriptor_len = {
     .max_argc     =  1,
     .guards       = &guards_len[0],
     .guardc       = LENGTH(guards_len),
-    .op_all       = lbi_func_len,
+    .func         = lbi_func_len,
 };
 int lbuiltin_len(struct lenv* env, const struct lval* args, struct lval* acc) {
     return lbuiltin_exec(&lbi_descriptor_len, env, args, acc);
@@ -243,7 +243,7 @@ const struct ldescriptor lbi_descriptor_join = {
     .max_argc     = -1,
     .guards       = &guards_join[0],
     .guardc       = LENGTH(guards_join),
-    .op_all       = lbi_func_join,
+    .func         = lbi_func_join,
 };
 int lbuiltin_join(struct lenv* env, const struct lval* args, struct lval* acc) {
     return lbuiltin_exec(&lbi_descriptor_join, env, args, acc);
@@ -260,7 +260,7 @@ const struct ldescriptor lbi_descriptor_list = {
     .max_argc     = -1,
     .guards       = &guards_list[0],
     .guardc       = LENGTH(guards_list),
-    .op_all       = lbi_func_list,
+    .func         = lbi_func_list,
 };
 int lbuiltin_list(struct lenv* env, const struct lval* args, struct lval* acc) {
     return lbuiltin_exec(&lbi_descriptor_list, env, args, acc);
@@ -274,7 +274,7 @@ const struct ldescriptor lbi_descriptor_eval = {
     .max_argc     =  1,
     .guards       = &guards_eval[0],
     .guardc       = LENGTH(guards_eval),
-    .op_all       = lbi_func_eval,
+    .func         = lbi_func_eval,
 };
 int lbuiltin_eval(struct lenv* env, const struct lval* args, struct lval* acc) {
     return lbuiltin_exec(&lbi_descriptor_eval, env, args, acc);
@@ -290,7 +290,7 @@ const struct ldescriptor lbi_descriptor_def = {
     .max_argc     =  -1,
     .guards       = &guards_def[0],
     .guardc       = LENGTH(guards_def),
-    .op_all       = lbi_func_def,
+    .func         = lbi_func_def,
 };
 int lbuiltin_def(struct lenv* env, const struct lval* args, struct lval* acc) {
     return lbuiltin_exec(&lbi_descriptor_def, env, args, acc);

@@ -14,10 +14,8 @@
 #include "lfunc.h"
 #include "lbuiltin.h"
 
-static bool leval_expr(struct lenv* env, struct lval* expr, struct lval* r) {
-    /* First child is the symbol. */
-    struct lval* func = lval_pop(expr, 0);
-    struct lval* args = expr; // aliasing for clarity.
+static bool leval_expr(
+        struct lenv* env, const struct lval* func, const struct lval* args, struct lval* r) {
     /* Execute expression. */
     int err = lfunc_exec(lval_as_func(func), env, args, r);
     /* Error handling. */
@@ -32,7 +30,6 @@ static bool leval_expr(struct lenv* env, struct lval* expr, struct lval* r) {
             lval_free(child);
         }
     }
-    lval_free(func);
     return lval_type(r) != LVAL_ERR;
 }
 
@@ -68,16 +65,26 @@ static bool leval_sexpr(struct lenv* env,
         lval_free(child);
     }
     /* First child is a symbol, it's an expression. */
-    struct lval* child = lval_alloc();
-    lval_index(expr, 0, child);
-    if (lval_type(child) == LVAL_FUNC) {
+    struct lval* child = lval_pop(expr, 0);
+    struct lval* args = expr; // aliasing for clarity.
+    struct lval* func = lval_alloc();
+    /* Re-eval first arg; allow ((head {+ -}) 1 2). */
+    if (!leval(env, child, func)) {
+        lval_dup(r, func);
         lval_free(child);
+        lval_free(func);
+        lval_free(expr);
+        return false;
+    }
+    lval_free(child);
+    if (lval_type(func) == LVAL_FUNC) {
         lval_mut_nil(r);
-        bool s = leval_expr(env, expr, r);
+        bool s = leval_expr(env, func, args, r);
+        lval_free(func);
         lval_free(expr);
         return s;
     }
-    lval_free(child);
+    lval_free(func);
     lval_free(expr);
     return true;
 }

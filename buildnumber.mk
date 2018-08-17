@@ -1,2 +1,2 @@
 # Automatically incremented.
-BUILDNUMBER=680
+BUILDNUMBER=686

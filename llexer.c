@@ -255,6 +255,9 @@ static struct ltok** llex_append(struct ltok** last, struct ltok* curr) {
 }
 
 static struct ltok* llex(const char* input, struct ltok** error, bool surround) {
+    if (!input || strlen(input) == 0) {
+        return llex_emitEOF();
+    }
     struct lscanner scanner = {0};
     scanner.input = input;
     scanner.line = 1;
@@ -274,7 +277,8 @@ static struct ltok* llex(const char* input, struct ltok** error, bool surround) 
         llex_append(last, llex_emitEOF());
     } else {
         /* Optional: ensure that it's a sexpr. */
-        if (surround && head && head->type != LTOK_OPAR) {
+        if (surround && ((head && head->type != LTOK_OPAR)
+                      || (curr && curr->type != LTOK_CPAR))) {
             struct ltok* opar = llex_emitOPAR();
             struct ltok* cpar = llex_emitCPAR();
             cpar->line = curr->line;

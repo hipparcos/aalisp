@@ -5,18 +5,20 @@
 #include "lval.h"
 #include "lenv.h"
 
-static int lbuitin_check_guards(const struct ldescriptor* sym, const struct lenv* env,
-        const struct lval* args, struct lval* acc) {
-    for (int i = 0; i < sym->guardc; i++) {
-        const struct lguard* guard = &sym->guards[i];
+static int lbuitin_check_guards(const struct ldescriptor* sym,
+        const struct lguard* guards, size_t guardc,
+        const struct lenv* env, const struct lval* args, struct lval* acc) {
+    int s = 0;
+    const struct lguard* guard = NULL;
+    for (size_t g = 0; g < guardc; g++) {
+        guard = guards+g;
         /* Guard applied on a specific argument. */
         if (guard->argn > 0) {
             struct lval* child = lval_alloc();
             lval_index(args, guard->argn-1, child);
-            if (0 != (guard->condition)(env, child)) {
-                lval_mut_err(acc, guard->error);
+            if (0 != (s = (guard->condition)(sym, env, child))) {
                 lval_free(child);
-                return guard->argn;
+                break;
             }
             lval_free(child);
             continue;
@@ -27,32 +29,32 @@ static int lbuitin_check_guards(const struct ldescriptor* sym, const struct lenv
             for (size_t a = 0; a < len; a++) {
                 struct lval* child = lval_alloc();
                 lval_index(args, a, child);
-                if (0 != (guard->condition)(env, child)) {
-                    lval_mut_err(acc, guard->error);
+                if (0 != (s = (guard->condition)(sym, env, child))) {
                     lval_free(child);
-                    return a + 1;
+                    break;
                 }
                 lval_free(child);
+            }
+            if (s != 0) {
+                break;
             }
             continue;
         }
         /* Guard applied on all args. */
         // guard->argn == -1;
-        int s = 0;
-        if (0 != (s = (guard->condition)(env, args))) {
-            lval_mut_err(acc, guard->error);
-            return s;
+        if (0 != (s = (guard->condition)(sym, env, args))) {
+            break;
         }
+    }
+    if (s != 0 && guard) {
+        lval_mut_err(acc, guard->error);
+        return s;
     }
     return 0;
 }
 
 static int lbuiltin_exec_arg(const struct ldescriptor* sym, struct lenv* env,
         const struct lval* args, struct lval* acc) {
-    if (!sym->op_all) {
-        lval_mut_err(acc, LERR_EVAL);
-        return -1;
-    }
     /* Execution */
     return sym->op_all(env, acc, args);
 }
@@ -119,27 +121,62 @@ static int lbuiltin_exec_acc(const struct ldescriptor* sym, struct lenv* env,
     return -1;
 }
 
+#define UNUSED(x) (void)x
+#define LENGTH(arr) sizeof(arr)/sizeof(arr[0])
+
+static int lcond_max_argc(const struct ldescriptor* sym,
+        const struct lenv* env, const struct lval* args) {
+    UNUSED(sym); UNUSED(env);
+    size_t len = lval_len(args);
+    int max = sym->max_argc;
+    if (max != -1 && (int)len > max) {
+        return -1;
+    }
+    return 0;
+}
+
+static int lcond_min_argc(const struct ldescriptor* sym,
+        const struct lenv* env, const struct lval* args) {
+    UNUSED(sym); UNUSED(env);
+    size_t len = lval_len(args);
+    int min = sym->min_argc;
+    if (min != -1 && (int)len < min) {
+        return -1;
+    }
+    return 0;
+}
+
+static int lcond_func_pointer(const struct ldescriptor* sym,
+        const struct lenv* env, const struct lval* args) {
+    UNUSED(env); UNUSED(args);
+    if (!sym->accumulator && !sym->op_all) {
+        return -1;
+    }
+    return 0;
+}
+
+static struct lguard lbuitin_guards[] = {
+    {.condition= lcond_max_argc, .argn= -1, .error= LERR_TOO_MANY_ARGS},
+    {.condition= lcond_min_argc, .argn= -1, .error= LERR_TOO_FEW_ARGS},
+    {.condition= lcond_func_pointer, .argn= -1, .error= LERR_EVAL},
+};
+
 int lbuiltin_exec(const struct ldescriptor* sym, struct lenv* env,
         const struct lval* args, struct lval* acc) {
     if (!sym) {
         lval_mut_err(acc, LERR_EVAL);
         return -1;
     }
-    /* Check number of arguments. */
-    size_t len = lval_len(args);
-    int max = sym->max_argc;
-    if (max != -1 && (int)len > max) {
-        lval_mut_err(acc, LERR_TOO_MANY_ARGS);
-        return -1;
-    }
-    int min = sym->min_argc;
-    if (min != -1 && (int)len < min) {
-        lval_mut_err(acc, LERR_TOO_FEW_ARGS);
-        return -1;
-    }
     /* Guards */
     int s = 0;
-    if (0 != (s = lbuitin_check_guards(sym, env, args, acc))) {
+    if (0 != (s = lbuitin_check_guards(sym,
+                    &lbuitin_guards[0], LENGTH(lbuitin_guards),
+                    env, args, acc))) {
+        return s;
+    }
+    if (0 != (s = lbuitin_check_guards(sym,
+                    sym->guards, sym->guardc,
+                    env, args, acc))) {
         return s;
     }
     /* Argument execution. */
@@ -147,6 +184,7 @@ int lbuiltin_exec(const struct ldescriptor* sym, struct lenv* env,
         return lbuiltin_exec_arg(sym, env, args, acc);
     }
     /* Accumulator execution. */
+    size_t len = lval_len(args);
     if (len == 1) {
         /* Special case for unary operations. */
         struct lval* lx = lval_alloc();

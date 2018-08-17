@@ -4,8 +4,10 @@
 #include "lval.h"
 #include "lenv.h"
 
+struct ldescriptor;
+
 /* Condition: eval a condition for the given operands. */
-typedef int (*lcondition)(const struct lenv*, const struct lval*);
+typedef int (*lcondition)(const struct ldescriptor*, const struct lenv*, const struct lval*);
 
 /* Guard: a condition associated with an error. */
 struct lguard {

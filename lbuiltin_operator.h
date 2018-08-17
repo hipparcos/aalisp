@@ -7,12 +7,18 @@
 
 #include "lval.h"
 #include "lenv.h"
+#include "lbuiltin_exec.h"
 
-int lbi_cond_is_not_zero(const struct lenv* env, const struct lval* arg);
-int lbi_cond_is_positive(const struct lenv* env, const struct lval* arg);
-int lbi_cond_is_integral(const struct lenv* env, const struct lval* arg);
-int lbi_cond_is_numeric(const struct lenv* env, const struct lval* arg);
-int lbi_cond_x_is_ul(const struct lenv* env, const struct lval* arg);
+int lbi_cond_is_not_zero(
+        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg);
+int lbi_cond_is_positive(
+        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg);
+int lbi_cond_is_integral(
+        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg);
+int lbi_cond_is_numeric(
+        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg);
+int lbi_cond_x_is_ul(
+        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg);
 
 bool lbi_cond_num_add_overflow(const long a, const long b);
 bool lbi_cond_num_sub_overflow(const long a, const long b);

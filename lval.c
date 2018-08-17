@@ -166,7 +166,7 @@ static bool ldata_clear(struct ldata* d) {
         break;
     case LVAL_FUNC:
         if (d->payload.func) {
-            free(d->payload.func);
+            lfunc_free(d->payload.func);
             d->payload.func = NULL;
         }
         break;
@@ -338,8 +338,8 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
         }
         break;
     case LVAL_FUNC:
-        dest->payload.func = calloc(1, sizeof(struct lfunc));
-        memcpy(dest->payload.func, src->payload.func, sizeof(struct lfunc));
+        dest->payload.func = lfunc_alloc();
+        lfunc_copy(dest->payload.func, src->payload.func);
         break;
     }
     dest->type = src->type;
@@ -475,8 +475,8 @@ bool lval_mut_func(struct lval* v, const struct lfunc* func) {
         return false;
     }
     data->type = LVAL_FUNC;
-    data->payload.func = calloc(1, sizeof(struct lfunc));
-    memcpy(data->payload.func, func, sizeof(struct lfunc));
+    data->payload.func = lfunc_alloc();
+    lfunc_copy(data->payload.func, func);
     data->len = 1;
     lval_connect(v, data);
     return true;
@@ -792,7 +792,7 @@ bool lval_are_equal(const struct lval* x, const struct lval* y) {
         }
         return true;
     case LVAL_FUNC:
-        return memcmp(x->data->payload.func, y->data->payload.func, sizeof(struct lfunc));
+        return lfunc_are_equal(x->data->payload.func, y->data->payload.func);
     default: return false;
     }
 }

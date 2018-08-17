@@ -9,42 +9,6 @@
 
 #define UNUSED(x) (void)x
 
-int lbi_cond_qexpr(
-        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg) {
-    UNUSED(sym); UNUSED(env);
-    return (lval_type(arg) == LVAL_QEXPR) ? 0 : 1;
-}
-
-int lbi_cond_qexpr_or_nil(
-        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg) {
-    UNUSED(sym); UNUSED(env);
-    return (lval_type(arg) == LVAL_QEXPR || lval_is_nil(arg)) ? 0 : 1;
-}
-
-int lbi_cond_list(
-        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg) {
-    UNUSED(sym); UNUSED(env);
-    return (lval_len(arg) > 0) ? 0 : 1;
-}
-
-int lbi_cond_list_of_sym(
-        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg) {
-    UNUSED(sym); UNUSED(env);
-    if (!lval_is_list(arg)) {
-        return 1;
-    }
-    size_t len = lval_len(arg);
-    for (size_t c = 0; c < len; c++) {
-        struct lval* child = lval_alloc();
-        lval_index(arg, c, child);
-        if (lval_type(child) != LVAL_SYM) {
-            return 1;
-        }
-        lval_free(child);
-    }
-    return 0;
-}
-
 int lbi_func_head(struct lenv* env, const struct lval* args, struct lval* acc) {
     UNUSED(env);
     /* Retrieve arg 1. */

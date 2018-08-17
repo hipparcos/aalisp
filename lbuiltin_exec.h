@@ -6,10 +6,13 @@
 
 struct ldescriptor;
 
-/* Condition: eval a condition for the given operands. */
+/** lcondition evaluates a condition for the given operands.
+ **   0 if success
+ **  -1 if error
+ **   n if nth argument generate an error */
 typedef int (*lcondition)(const struct ldescriptor*, const struct lenv*, const struct lval*);
 
-/* Guard: a condition associated with an error. */
+/** lguard is a condition associated with an error. */
 struct lguard {
     /** lguard.condition is the condition to be verified. */
     lcondition condition;

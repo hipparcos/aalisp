@@ -6,53 +6,8 @@
 
 #include "vendor/mini-gmp/mini-gmp.h"
 
-#include "lval.h"
-#include "lenv.h"
-
 /* Macros */
 #define UNUSED(x) (void)(x)
-
-/* Conditions */
-int lbi_cond_is_not_zero(
-        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg) {
-    UNUSED(sym); UNUSED(env);
-    return (!lval_is_zero(arg)) ? 0 : 1;
-}
-
-int lbi_cond_is_positive(
-        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg) {
-    UNUSED(sym); UNUSED(env);
-    return (lval_sign(arg) > 0) ? 0 : 1;
-}
-
-int lbi_cond_is_integral(
-        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg) {
-    UNUSED(sym); UNUSED(env);
-    return ((lval_type(arg) == LVAL_NUM || lval_type(arg) == LVAL_BIGNUM)) ? 0 : 1;
-}
-
-int lbi_cond_is_numeric(
-        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg) {
-    UNUSED(sym); UNUSED(env);
-    return (lval_is_numeric(arg)) ? 0 : 1;
-}
-
-static bool _too_big_for_ul(const struct lval* arg) {
-    if (lval_type(arg) != LVAL_BIGNUM) {
-        return false;
-    }
-    mpz_t r;
-    mpz_init(r);
-    lval_as_bignum(arg, r);
-    bool result = mpz_cmp_ui(r, ULONG_MAX) > 0;
-    mpz_clear(r);
-    return result;
-}
-int lbi_cond_x_is_ul(
-        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg) {
-    UNUSED(sym); UNUSED(env);
-    return (!_too_big_for_ul(arg)) ? 0 : 1;
-}
 
 /* Conditions: overflow conditions for long. */
 bool lbi_cond_num_add_overflow(const long a, const long b) {

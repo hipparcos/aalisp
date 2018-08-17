@@ -3,16 +3,6 @@
 
 #include "lval.h"
 #include "lenv.h"
-#include "lbuiltin_exec.h"
-
-int lbi_cond_qexpr(
-        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg);
-int lbi_cond_list_of_sym(
-        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg);
-int lbi_cond_qexpr_or_nil(
-        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg);
-int lbi_cond_list(
-        const struct ldescriptor* sym, const struct lenv* env, const struct lval* arg);
 
 /** lbi_func_head returns the first element of a Q-Expression. */
 int lbi_func_head(struct lenv* env, const struct lval* args, struct lval* acc);

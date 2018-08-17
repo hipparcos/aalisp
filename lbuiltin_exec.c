@@ -4,6 +4,7 @@
 
 #include "lval.h"
 #include "lenv.h"
+#include "lbuiltin_condition.h"
 
 static int lbuitin_check_guards(const struct ldescriptor* sym,
         const struct lguard* guards, size_t guardc,
@@ -115,44 +116,12 @@ static int lbuiltin_exec_acc(const struct ldescriptor* sym, struct lenv* env,
     return -1;
 }
 
-#define UNUSED(x) (void)x
 #define LENGTH(arr) sizeof(arr)/sizeof(arr[0])
 
-static int lcond_max_argc(const struct ldescriptor* sym,
-        const struct lenv* env, const struct lval* args) {
-    UNUSED(sym); UNUSED(env);
-    size_t len = lval_len(args);
-    int max = sym->max_argc;
-    if (max != -1 && (int)len > max) {
-        return -1;
-    }
-    return 0;
-}
-
-static int lcond_min_argc(const struct ldescriptor* sym,
-        const struct lenv* env, const struct lval* args) {
-    UNUSED(sym); UNUSED(env);
-    size_t len = lval_len(args);
-    int min = sym->min_argc;
-    if (min != -1 && (int)len < min) {
-        return -1;
-    }
-    return 0;
-}
-
-static int lcond_func_pointer(const struct ldescriptor* sym,
-        const struct lenv* env, const struct lval* args) {
-    UNUSED(env); UNUSED(args);
-    if (!sym->accumulator && !sym->func) {
-        return -1;
-    }
-    return 0;
-}
-
 static struct lguard lbuitin_guards[] = {
-    {.condition= lcond_max_argc, .argn= -1, .error= LERR_TOO_MANY_ARGS},
-    {.condition= lcond_min_argc, .argn= -1, .error= LERR_TOO_FEW_ARGS},
-    {.condition= lcond_func_pointer, .argn= -1, .error= LERR_EVAL},
+    {.condition= lbi_cond_max_argc,     .argn= -1, .error= LERR_TOO_MANY_ARGS},
+    {.condition= lbi_cond_min_argc,     .argn= -1, .error= LERR_TOO_FEW_ARGS},
+    {.condition= lbi_cond_func_pointer, .argn= -1, .error= LERR_EVAL},
 };
 
 int lbuiltin_exec(const struct ldescriptor* sym, struct lenv* env,

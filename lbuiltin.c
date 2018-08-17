@@ -1,6 +1,7 @@
 #include "lbuiltin.h"
 
 #include "lbuiltin_exec.h"
+#include "lbuiltin_condition.h"
 #include "lbuiltin_func.h"
 #include "lbuiltin_operator.h"
 

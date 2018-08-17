@@ -20,10 +20,7 @@ const struct lfunc lbuiltin_op_add = {
     .max_argc     = -1,
     .guards       = &guards_op_add[0],
     .guardc       = LENGTH(guards_op_add),
-    .op_num       = lbi_op_num_add,
-    .cnd_overflow = lbi_cond_num_add_overflow,
-    .op_bignum    = mpz_add,
-    .op_dbl       = lbi_op_dbl_add
+    .func         = lbi_op_add,
 };
 
 static const struct lguard guards_op_sub[] = {
@@ -37,10 +34,7 @@ const struct lfunc lbuiltin_op_sub = {
     .max_argc     = -1,
     .guards       = &guards_op_sub[0],
     .guardc       = LENGTH(guards_op_sub),
-    .op_num       = lbi_op_num_sub,
-    .cnd_overflow = lbi_cond_num_sub_overflow,
-    .op_bignum    = mpz_sub,
-    .op_dbl       = lbi_op_dbl_sub
+    .func         = lbi_op_sub,
 };
 
 static const struct lguard guards_op_mul[] = {
@@ -54,10 +48,7 @@ const struct lfunc lbuiltin_op_mul = {
     .max_argc     = -1,
     .guards       = &guards_op_mul[0],
     .guardc       = LENGTH(guards_op_mul),
-    .op_num       = lbi_op_num_mul,
-    .cnd_overflow = lbi_cond_num_mul_overflow,
-    .op_bignum    = mpz_mul,
-    .op_dbl       = lbi_op_dbl_mul
+    .func         = lbi_op_mul,
 };
 
 static const struct lguard guards_op_div[] = {
@@ -72,10 +63,7 @@ const struct lfunc lbuiltin_op_div = {
     .max_argc     = -1,
     .guards       = &guards_op_div[0],
     .guardc       = LENGTH(guards_op_div),
-    .op_num       = lbi_op_num_div,
-    .cnd_overflow = NULL,
-    .op_bignum    = mpz_fdiv_q,
-    .op_dbl       = lbi_op_dbl_div,
+    .func         = lbi_op_div,
 };
 
 static const struct lguard guards_op_mod[] = {
@@ -90,10 +78,7 @@ const struct lfunc lbuiltin_op_mod = {
     .max_argc     = -1,
     .guards       = &guards_op_mod[0],
     .guardc       = LENGTH(guards_op_mod),
-    .op_num       = lbi_op_num_mod,
-    .cnd_overflow = NULL,
-    .op_bignum    = mpz_mod,
-    .op_dbl       = lbi_op_dbl_nop
+    .func         = lbi_op_mod,
 };
 
 static const struct lguard guards_op_fac[] = {
@@ -109,10 +94,7 @@ const struct lfunc lbuiltin_op_fac = {
     .max_argc     =  1,
     .guards       = &guards_op_fac[0],
     .guardc       = LENGTH(guards_op_fac),
-    .op_num       = lbi_op_num_fac,
-    .cnd_overflow = lbi_cond_num_fac_overflow,
-    .op_bignum    = lbi_op_bignum_fac,
-    .op_dbl       = lbi_op_dbl_nop
+    .func         = lbi_op_fac,
 };
 
 static const struct lguard guards_op_pow[] = {
@@ -127,10 +109,7 @@ const struct lfunc lbuiltin_op_pow = {
     .max_argc     = -1,
     .guards       = &guards_op_pow[0],
     .guardc       = LENGTH(guards_op_pow),
-    .op_num       = lbi_op_num_pow,
-    .cnd_overflow = lbi_cond_num_pow_overflow,
-    .op_bignum    = lbi_op_bignum_pow,
-    .op_dbl       = lbi_op_dbl_pow
+    .func         = lbi_op_pow,
 };
 
 static const struct lguard guards_head[] = {

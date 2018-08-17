@@ -1,35 +1,22 @@
 #ifndef _H_BUILTIN_OPERATOR_
 #define _H_BUILTIN_OPERATOR_
 
-#include <stdbool.h>
+#include "lval.h"
+#include "lenv.h"
 
-#include "vendor/mini-gmp/mini-gmp.h"
-
-bool lbi_cond_num_add_overflow(const long a, const long b);
-bool lbi_cond_num_sub_overflow(const long a, const long b);
-bool lbi_cond_num_mul_overflow(const long a, const long b);
-bool lbi_cond_num_pow_overflow(const long a, const long b);
-bool lbi_cond_num_fac_overflow(const long a, const long b);
-
-long lbi_op_num_add(const long a, const long b);
-long lbi_op_num_sub(const long a, const long b);
-long lbi_op_num_sub_unary(const long a, const long b);
-long lbi_op_num_mul(const long a, const long b);
-long lbi_op_num_div(const long a, const long b);
-long lbi_op_num_mod(const long a, const long b);
-long lbi_op_num_pow(const long a, const long b);
-long lbi_op_num_fac(const long a, const long b);
-
-double lbi_op_dbl_nop(const double a, const double b);
-double lbi_op_dbl_add(const double a, const double b);
-double lbi_op_dbl_sub(const double a, const double b);
-double lbi_op_dbl_sub_unary(const double a, const double b);
-double lbi_op_dbl_mul(const double a, const double b);
-double lbi_op_dbl_div(const double a, const double b);
-double lbi_op_dbl_pow(const double a, const double b);
-
-void lbi_op_bignum_sub_unary(mpz_t r, const mpz_t a, const mpz_t b);
-void lbi_op_bignum_fac(mpz_t r, const mpz_t a, const mpz_t b);
-void lbi_op_bignum_pow(mpz_t r, const mpz_t a, const mpz_t b);
+/** lbi_op_add is the + oerator. */
+int lbi_op_add(struct lenv* env, const struct lval* arg, struct lval* acc);
+/** lbi_op_sub is the - oerator. */
+int lbi_op_sub(struct lenv* env, const struct lval* arg, struct lval* acc);
+/** lbi_op_mul is the * oerator. */
+int lbi_op_mul(struct lenv* env, const struct lval* arg, struct lval* acc);
+/** lbi_op_div is the / oerator. */
+int lbi_op_div(struct lenv* env, const struct lval* arg, struct lval* acc);
+/** lbi_op_mod is the % oerator. */
+int lbi_op_mod(struct lenv* env, const struct lval* arg, struct lval* acc);
+/** lbi_op_fac is the ! oerator. */
+int lbi_op_fac(struct lenv* env, const struct lval* arg, struct lval* acc);
+/** lbi_op_pow is the ^ oerator. */
+int lbi_op_pow(struct lenv* env, const struct lval* arg, struct lval* acc);
 
 #endif

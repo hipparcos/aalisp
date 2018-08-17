@@ -6,6 +6,8 @@
 #include "lenv.h"
 #include "lbuiltin_condition.h"
 
+#define LENGTH(arr) sizeof(arr)/sizeof(arr[0])
+
 static int lfunc_check_guards(
         const struct lfunc* fun,
         const struct lguard* guards, size_t guardc,
@@ -55,71 +57,6 @@ static int lfunc_check_guards(
     return 0;
 }
 
-#define EITHER_IS(type, a, b) (lval_type(a) == type || lval_type(b) == type)
-static enum ltype typeof_op(const struct lval* a, const struct lval *b) {
-    if (EITHER_IS(LVAL_DBL, a, b))    return LVAL_DBL;
-    if (EITHER_IS(LVAL_BIGNUM, a, b)) return LVAL_BIGNUM;
-    if (EITHER_IS(LVAL_NUM, a, b))    return LVAL_NUM;
-    return LVAL_NIL;
-}
-
-static int lfunc_exec_acc(
-        const struct lfunc* fun,
-        struct lenv* env, const struct lval* arg, struct lval* acc) {
-    if (fun->func) {
-        return fun->func(env, arg, acc);
-    }
-    /* Accumulator based evaluation. */
-    switch (typeof_op(acc, arg)) {
-    case LVAL_DBL:
-        {
-        double a, b;
-        lval_as_dbl(acc, &a);
-        lval_as_dbl(arg, &b);
-        lval_mut_dbl(acc, fun->op_dbl(a, b));
-        return 0;
-        }
-    case LVAL_BIGNUM:
-        {
-        mpz_t a, b;
-        mpz_init(a);
-        mpz_init(b);
-        lval_as_bignum(acc, a);
-        lval_as_bignum(arg, b);
-        mpz_t rbn;
-        mpz_init(rbn);
-        fun->op_bignum(rbn, a, b);
-        mpz_clear(a);
-        mpz_clear(b);
-        lval_mut_bignum(acc, rbn);
-        mpz_clear(rbn);
-        return 0;
-        }
-    case LVAL_NUM:
-        {
-        long a, b;
-        lval_as_num(acc, &a);
-        lval_as_num(arg, &b);
-        if (fun->cnd_overflow && fun->cnd_overflow(a, b)) {
-            mpz_t bna;
-            mpz_init_set_si(bna, a);
-            lval_mut_bignum(acc, bna);
-            int s = lfunc_exec_acc(fun, env, arg, acc);
-            mpz_clear(bna);
-            return s;
-        }
-        lval_mut_num(acc, fun->op_num(a, b));
-        return 0;
-        }
-    default: break;
-    }
-
-    lval_mut_err(acc, LERR_EVAL);
-    return -1;
-}
-
-#define LENGTH(arr) sizeof(arr)/sizeof(arr[0])
-
 static struct lguard lbuitin_guards[] = {
     {.condition= lbi_cond_max_argc,     .argn= -1, .error= LERR_TOO_MANY_ARGS},
     {.condition= lbi_cond_min_argc,     .argn= -1, .error= LERR_TOO_FEW_ARGS},
@@ -155,7 +92,7 @@ int lfunc_exec(const struct lfunc* fun, struct lenv* env,
         struct lval* lx = lval_alloc();
         lval_index(args, 0, lx);      // lx is the first argument.
         lval_copy(acc, fun->neutral); // acc is the neutral element.
-        int s = lfunc_exec_acc(fun, env, lx, acc);
+        int s = fun->func(env, lx, acc);
         lval_free(lx);
         return s;
     }
@@ -169,7 +106,7 @@ int lfunc_exec(const struct lfunc* fun, struct lenv* env,
     for (size_t c = (fun->init_neutral) ? 0 : 1; c < len; c++) {
         struct lval* child = lval_alloc();
         lval_index(args, c, child);
-        int err = lfunc_exec_acc(fun, env, child, acc);
+        int err = fun->func(env, child, acc);
         /* Break on error. */
         if (err != 0) {
             if (err == -1) {

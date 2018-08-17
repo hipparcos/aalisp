@@ -36,27 +36,20 @@ typedef int (*lbuiltin)(
 /** lfunc describes a builtin function. */
 struct lfunc {
     const char* symbol;
-    /** lsym.max_argc is the maximum number of arguments. */
+    /** lfunc.max_argc is the maximum number of arguments. */
     int max_argc;
-    /** lsym.min_argc is the minimum number of arguments. */
+    /** lfunc.min_argc is the minimum number of arguments. */
     int min_argc;
-    /** lsym.accumulator tells if the function is of accumulator type. */
+    /** lfunc.accumulator tells if the function is of accumulator type. */
     bool accumulator;
-    /** lsym.guards are functions that prevent execution of the symbol. */
+    /** lfunc.guards are functions that prevent execution of the function. */
     const struct lguard* guards;
     int guardc; /* Number of guards. */
-    /** lsym.init_neutral tells if the initial value of acc must be the neutral elem. */
+    /** lfunc.init_neutral tells if the initial value of acc must be the neutral elem. */
     bool init_neutral;
-    /** lsym.neutral is the neutral element. */
+    /** lfunc.neutral is the neutral element. */
     const struct lval* neutral;
-    /** cnd_overflow tells if an operation on nums must be casted to bignum. */
-    bool   (*cnd_overflow)(const long, const long);
-    /** op_* operates on basic types: dbl > bignum > num. */
-    long   (*op_num)(const long, const long);
-    void   (*op_bignum)(mpz_t r, const mpz_t x, const mpz_t y);
-    double (*op_dbl)(const double, const double);
-    /** func operates on lval.
-     ** If func is not null, only func is executed. */
+    /** lfunc.func is the associated builtin function. */
     lbuiltin func;
 };
 

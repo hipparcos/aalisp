@@ -41,36 +41,6 @@ int lbi_cond_list_of_sym(const struct lenv* env, const struct lval* arg) {
     return 0;
 }
 
-int lbi_cond_qexpr_all(const struct lenv* env, const struct lval* args) {
-    UNUSED(env);
-    size_t len = lval_len(args);
-    for (size_t c = 0; c < len; c++) {
-        struct lval* child = lval_alloc();
-        lval_index(args, c, child);
-        if (lval_type(child) != LVAL_QEXPR) {
-            lval_free(child);
-            return c + 1;
-        }
-        lval_free(child);
-    }
-    return 0;
-}
-
-int lbi_cond_list_all(const struct lenv* env, const struct lval* args) {
-    UNUSED(env);
-    size_t len = lval_len(args);
-    for (size_t c = 0; c < len; c++) {
-        struct lval* child = lval_alloc();
-        lval_index(args, c, child);
-        if (!lval_is_list(child)) {
-            lval_free(child);
-            return c + 1;
-        }
-        lval_free(child);
-    }
-    return 0;
-}
-
 int lbi_func_head(struct lenv* env, struct lval* acc, const struct lval* args) {
     UNUSED(env);
     /* Retrieve arg 1. */

@@ -8,8 +8,6 @@ int lbi_cond_qexpr(const struct lenv* env, const struct lval* arg);
 int lbi_cond_list_of_sym(const struct lenv* env, const struct lval* arg);
 int lbi_cond_qexpr_or_nil(const struct lenv* env, const struct lval* arg);
 int lbi_cond_list(const struct lenv* env, const struct lval* arg);
-int lbi_cond_qexpr_all(const struct lenv* env, const struct lval* args);
-int lbi_cond_list_all(const struct lenv* env, const struct lval* args);
 
 /** lbi_func_head returns the first element of a Q-Expression. */
 int lbi_func_head(struct lenv* env, struct lval* acc, const struct lval* args);

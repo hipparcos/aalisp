@@ -11,7 +11,10 @@ typedef int (*lcondition)(const struct lenv*, const struct lval*);
 struct lguard {
     /** lguard.condition is the condition to be verified. */
     lcondition condition;
-    /** lguard.argn is the number of the argument concerned, -1 for all. */
+    /** lguard.argn is the number of the argument concerned
+     **   >0 applied on nth args;
+     **    0 applied on each args;
+     **   -1 applied on all args. */
     int argn;
     /** lguard.error is the error returned. */
     enum lerr error;

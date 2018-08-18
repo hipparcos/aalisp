@@ -1,6 +1,7 @@
 #include "lbuiltin_func.h"
 
 #include <stdbool.h>
+#include <stdlib.h>
 #include <stdio.h>
 
 #include "lval.h"
@@ -256,4 +257,21 @@ int lbi_func_fun(struct lenv* env, const struct lval* args, struct lval* acc) {
     lval_free(formals);
     lval_free(body);
     return s;
+}
+
+int lbi_func_print(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    size_t len = lval_len(args);
+    struct lval* arg = lval_alloc();
+    for (size_t a = 0; a < len; a++) {
+        if (a) {
+            fputc(' ', stdout);
+        }
+        lval_index(args, a, arg);
+        lval_print_to(arg, stdout);
+    }
+    fputc('\n', stdout);
+    lval_free(arg);
+    lval_mut_nil(acc);
+    return 0;
 }

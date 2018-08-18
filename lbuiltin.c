@@ -264,3 +264,12 @@ const struct lfunc lbuiltin_lambda = {
     .guardc       = LENGTH(guards_lambda),
     .func         = lbi_func_lambda,
 };
+
+const struct lfunc lbuiltin_print = {
+    .symbol       = "print",
+    .min_argc     =  -1,
+    .max_argc     =  -1,
+    .guards       = NULL,
+    .guardc       = 0,
+    .func         = lbi_func_print,
+};

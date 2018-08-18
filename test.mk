@@ -1,6 +1,7 @@
 # Config: files & dirs.
-tests:=lval_test.c lbuiltin_test.c leval_test.c llexer_test.c lparser_test.c lmut_test.c \
-	marker_test.c
+tests:=llexer_test.c lparser_test.c lmut_test.c \
+	lval_test.c lbuiltin_operator_test.c lbuiltin_func_test.c \
+	leval_test.c marker_test.c
 test_build_dir:=$(build_dir)
 
 # Config: options.

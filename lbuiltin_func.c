@@ -7,6 +7,7 @@
 #include "lenv.h"
 #include "leval.h"
 #include "lfunc.h"
+#include "lbuiltin.h"
 
 #define UNUSED(x) (void)x
 
@@ -120,7 +121,7 @@ int lbi_func_eval(struct lenv* env, const struct lval* args, struct lval* acc) {
     return !s;
 }
 
-static int lbuiltin_def(struct lenv* env,
+static int lbi_def(struct lenv* env,
         bool (*def)(struct lenv*, const struct lval*, const struct lval*),
         const struct lval* symbols, const struct lval* values,
         struct lval* result) {
@@ -162,7 +163,7 @@ int lbi_func_def(struct lenv* env, const struct lval* args, struct lval* acc) {
     lval_copy(values, args);
     lval_drop(values, 0); // Drops list of symbols.
     /* Def. */
-    int s = lbuiltin_def(env, lenv_def, symbols, values, acc);
+    int s = lbi_def(env, lenv_def, symbols, values, acc);
     /* Cleanup. */
     lval_free(symbols);
     lval_free(values);
@@ -178,14 +179,14 @@ int lbi_func_put(struct lenv* env, const struct lval* args, struct lval* acc) {
     lval_copy(values, args);
     lval_drop(values, 0); // Drops list of symbols.
     /* Def. */
-    int s = lbuiltin_def(env, lenv_put, symbols, values, acc);
+    int s = lbi_def(env, lenv_put, symbols, values, acc);
     /* Cleanup. */
     lval_free(symbols);
     lval_free(values);
     return s;
 }
 
-static int lbuiltin_call(struct lenv* env, const struct lval* args, struct lval* acc) {
+static int lbi_func_call(struct lenv* env, const struct lval* args, struct lval* acc) {
     return leval(env, args, acc);
 }
 
@@ -204,7 +205,7 @@ int lbi_func_lambda(struct lenv* env, const struct lval* args, struct lval* acc)
     func.min_argc = argc;
     func.max_argc = argc;
     func.lisp_func = true;
-    func.func = lbuiltin_call;
+    func.func = lbi_func_call;
     func.scope = lenv_alloc();
     func.formals = lval_alloc();
     lval_dup(func.formals, formals);
@@ -235,20 +236,20 @@ int lbi_func_fun(struct lenv* env, const struct lval* args, struct lval* acc) {
     lval_mut_qexpr(lambda);
     lval_push(lambda, formals);
     lval_push(lambda, body);
-    s = lbi_func_lambda(env, lambda, acc);
+    s = lfunc_exec(&lbuiltin_lambda, env, lambda, acc);
     lval_free(lambda);
     if (s != 0) {
         lval_free(name);
         lval_free(formals);
         lval_free(body);
-        return s;
+        return s + 1; // step over first arg.
     }
     /* Environment registration. */
     struct lval* def = lval_alloc();
     lval_mut_qexpr(def);
     lval_push(def, name);
     lval_push(def, acc);
-    s = lbi_func_def(env, def, acc);
+    s = lfunc_exec(&lbuiltin_def, env, def, acc);
     lval_free(def);
     /* Cleanup. */
     lval_free(name);

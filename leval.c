@@ -200,3 +200,31 @@ void lisp_eval_from_string(struct lenv* env,
     } // Error already printed.
     lval_free(r);
 }
+
+/** read_file reads all content of filename at once.
+ ** Caller is responsible for calling free on returned string. */
+static char* read_file(FILE* input) {
+    if (!input) {
+        return NULL;
+    }
+    char* buffer = 0;
+    long length;
+    fseek(input, 0, SEEK_END);
+    length = ftell (input);
+    fseek(input, 0, SEEK_SET);
+    buffer = malloc(length);
+    if (buffer) {
+        fread(buffer, 1, length, input);
+    }
+    return buffer;
+}
+
+void lisp_eval_from_file(struct lenv* env, FILE* input) {
+    char* content = read_file(input);
+    struct lval* r = lval_alloc();
+    if (lisp_eval(env, content, r, 0)) {
+        lval_println(r);
+    } // Error already printed.
+    lval_free(r);
+    free(content);
+}

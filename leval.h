@@ -12,6 +12,8 @@ bool lisp_eval(struct lenv* env,
 /** lisp_eval_from_string evaluates input and prints result to stdout. */
 void lisp_eval_from_string(struct lenv* env,
         const char* restrict input, int prompt_len);
+/** lisp_eval_from_file evaluates the content of input and prints result to stdout. */
+void lisp_eval_from_file(struct lenv* env, FILE* input);
 
 /** leval evaluates v into r */
 bool leval(struct lenv* env, const struct lval* v, struct lval* r);

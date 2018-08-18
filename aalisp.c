@@ -12,6 +12,7 @@
 
 /* Configurable variables */
 static char* prompt = "> ";
+static char* filenm = NULL;
 
 /**
  * Alisp is a small lisp interpreter.
@@ -20,20 +21,37 @@ static char* prompt = "> ";
 int main(int argc, char** argv) {
     /* Command line arguments */
     int c;
-    while ((c = getopt(argc, argv, "p:")) != -1) {
+    while ((c = getopt(argc, argv, "p:f:")) != -1) {
         switch (c) {
         case 'p':
             prompt = optarg;
             break;
+        case 'f':
+            filenm = optarg;
+            break;
+        }
+    }
+
+    struct lenv* env = lenv_alloc();
+    lenv_default(env);
+
+    /* A file is provided, execute it then exit. */
+    if (filenm) {
+        FILE* file = fopen(filenm, "r");
+        if (file) {
+            lisp_eval_from_file(env, file);
+            lenv_free(env);
+            fclose(file);
+            return EXIT_SUCCESS;
+        } else {
+            perror("lisp file opening error");
+            return EXIT_FAILURE;
         }
     }
 
     /* Print infos */
     printf(PROGNAME" "VERSION"-"CODENAME" build %d\n", BUILD);
     puts("Press Ctrl+C to exit.\n");
-
-    struct lenv* env = lenv_alloc();
-    lenv_default(env);
 
     size_t prompt_len = strlen(prompt);
     /* REPL loop */
@@ -53,6 +71,5 @@ int main(int argc, char** argv) {
     }
 
     lenv_free(env);
-
     return EXIT_SUCCESS;
 }

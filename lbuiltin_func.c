@@ -29,8 +29,7 @@ int lbi_func_tail(struct lenv* env, const struct lval* args, struct lval* acc) {
     lval_copy(acc, arg);
     lval_free(arg);
     /* Tail. */
-    struct lval* child = lval_pop(acc, 0);
-    lval_free(child);
+    lval_drop(acc, 0);
     return 0;
 }
 
@@ -43,8 +42,7 @@ int lbi_func_init(struct lenv* env, const struct lval* args, struct lval* acc) {
     lval_free(arg);
     /* Init. */
     size_t len = lval_len(acc);
-    struct lval* child = lval_pop(acc, len-1);
-    lval_free(child);
+    lval_drop(acc, len-1);
     return 0;
 }
 

@@ -10,6 +10,8 @@ int lbi_func_head(struct lenv* env, const struct lval* args, struct lval* acc);
 int lbi_func_tail(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_init returns a Q-Expression without its last element. */
 int lbi_func_init(struct lenv* env, const struct lval* args, struct lval* acc);
+/** lbi_func_last returns the last element of a Q-Expression. */
+int lbi_func_last(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_cons adds an element x at the beginning of acc. */
 int lbi_func_cons(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_len returns the len of a Q-Expression. */

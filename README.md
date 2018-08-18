@@ -93,7 +93,7 @@ Environment operations:
 - [ ] Improve error reporting;
 - [ ] Implement conditionals (chapter 13);
 - [ ] Implement strings (chapter 14);
-- [ ] Implemnt last, elem, take, map, filter, fold, reverse;
+- [ ] Implemnt elem, take, map, filter, fold, reverse;
 - [ ] Implement standard library (chapter 15);
 - [ ] Add comments support;
 - [ ] Implement user defined types;

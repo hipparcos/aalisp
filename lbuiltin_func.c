@@ -48,6 +48,18 @@ int lbi_func_init(struct lenv* env, const struct lval* args, struct lval* acc) {
     return 0;
 }
 
+int lbi_func_last(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1. */
+    struct lval* list = lval_alloc();
+    lval_index(args, 0, list);
+    /* Last. */
+    size_t len = lval_len(list);
+    lval_index(list, len-1, acc);
+    lval_free(list);
+    return 0;
+}
+
 int lbi_func_cons(struct lenv* env, const struct lval* args, struct lval* acc) {
     UNUSED(env);
     /* Retrieve arg 1. */

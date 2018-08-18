@@ -112,7 +112,7 @@ const struct lfunc lbuiltin_op_pow = {
     .func         = lbi_op_pow,
 };
 
-static const struct lguard guards_head[] = {
+static const struct lguard guards_list_op[] = {
     {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND},
     {.condition= lbi_cond_list,  .argn= 1, .error= LERR_BAD_OPERAND},
 };
@@ -120,35 +120,33 @@ const struct lfunc lbuiltin_head = {
     .symbol       = "head",
     .min_argc     =  1,
     .max_argc     =  1,
-    .guards       = &guards_head[0],
-    .guardc       = LENGTH(guards_head),
+    .guards       = &guards_list_op[0],
+    .guardc       = LENGTH(guards_list_op),
     .func         = lbi_func_head,
-};
-
-static const struct lguard guards_tail[] = {
-    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_list,  .argn= 1, .error= LERR_BAD_OPERAND},
 };
 const struct lfunc lbuiltin_tail = {
     .symbol       = "tail",
     .min_argc     =  1,
     .max_argc     =  1,
-    .guards       = &guards_tail[0],
-    .guardc       = LENGTH(guards_tail),
+    .guards       = &guards_list_op[0],
+    .guardc       = LENGTH(guards_list_op),
     .func         = lbi_func_tail,
-};
-
-static const struct lguard guards_init[] = {
-    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_list,  .argn= 1, .error= LERR_BAD_OPERAND},
 };
 const struct lfunc lbuiltin_init = {
     .symbol       = "init",
     .min_argc     =  1,
     .max_argc     =  1,
-    .guards       = &guards_init[0],
-    .guardc       = LENGTH(guards_init),
+    .guards       = &guards_list_op[0],
+    .guardc       = LENGTH(guards_list_op),
     .func         = lbi_func_init,
+};
+const struct lfunc lbuiltin_last = {
+    .symbol       = "last",
+    .min_argc     =  1,
+    .max_argc     =  1,
+    .guards       = &guards_list_op[0],
+    .guardc       = LENGTH(guards_list_op),
+    .func         = lbi_func_last,
 };
 
 static const struct lguard guards_cons[] = {

@@ -18,6 +18,7 @@ extern const struct lfunc lbuiltin_op_fac;
 extern const struct lfunc lbuiltin_head;
 extern const struct lfunc lbuiltin_tail;
 extern const struct lfunc lbuiltin_init;
+extern const struct lfunc lbuiltin_last;
 extern const struct lfunc lbuiltin_cons;
 extern const struct lfunc lbuiltin_len;
 extern const struct lfunc lbuiltin_join;

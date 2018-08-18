@@ -218,3 +218,41 @@ int lbi_func_lambda(struct lenv* env, const struct lval* args, struct lval* acc)
     lval_free(body);
     return 0;
 }
+
+int lbi_func_fun(struct lenv* env, const struct lval* args, struct lval* acc) {
+    int s = 0;
+    /* Retrieve arg 1: list of 1 name. */
+    struct lval* name = lval_alloc();
+    lval_index(args, 0, name);
+    /* Retrieve arg 2: list of formals. */
+    struct lval* formals = lval_alloc();
+    lval_index(args, 1, formals);
+    /* Retrieve arg 3: list of sexpr. */
+    struct lval* body = lval_alloc();
+    lval_index(args, 2, body);
+    /* Lambda definition. */
+    struct lval* lambda = lval_alloc();
+    lval_mut_qexpr(lambda);
+    lval_push(lambda, formals);
+    lval_push(lambda, body);
+    s = lbi_func_lambda(env, lambda, acc);
+    lval_free(lambda);
+    if (s != 0) {
+        lval_free(name);
+        lval_free(formals);
+        lval_free(body);
+        return s;
+    }
+    /* Environment registration. */
+    struct lval* def = lval_alloc();
+    lval_mut_qexpr(def);
+    lval_push(def, name);
+    lval_push(def, acc);
+    s = lbi_func_def(env, def, acc);
+    lval_free(def);
+    /* Cleanup. */
+    lval_free(name);
+    lval_free(formals);
+    lval_free(body);
+    return s;
+}

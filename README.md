@@ -78,6 +78,8 @@ Environment operations:
 3
 > (def {sq} (\ {x} {(* x x)})) (sq 9)
 81
+> (fun {sq} {x} {(* x x)}) (sq 9)
+81
 ```
 
 ## TODO

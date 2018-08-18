@@ -234,6 +234,22 @@ const struct lfunc lbuiltin_put = {
     .func         = lbi_func_put,
 };
 
+static const struct lguard guards_fun[] = {
+    {.condition= lbi_cond_qexpr,         .argn= 0, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_list_of_sym,   .argn= 1, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_len1,          .argn= 1, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_list_of_sym,   .argn= 2, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_list_of_sexpr, .argn= 3, .error= LERR_BAD_OPERAND},
+};
+const struct lfunc lbuiltin_fun = {
+    .symbol       = "fun",
+    .min_argc     =  3,
+    .max_argc     =  3,
+    .guards       = &guards_fun[0],
+    .guardc       = LENGTH(guards_fun),
+    .func         = lbi_func_fun,
+};
+
 static const struct lguard guards_lambda[] = {
     {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND},
     {.condition= lbi_cond_qexpr, .argn= 2, .error= LERR_BAD_OPERAND},

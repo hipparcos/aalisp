@@ -26,6 +26,8 @@ int lbi_cond_x_is_ul(
         const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
 
 /* List conditions. */
+int lbi_cond_len1(
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
 int lbi_cond_qexpr(
         const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
 int lbi_cond_list_of_sym(

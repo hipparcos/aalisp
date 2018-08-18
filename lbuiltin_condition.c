@@ -75,6 +75,12 @@ int lbi_cond_x_is_ul(
     return (!_too_big_for_ul(arg)) ? 0 : 1;
 }
 
+int lbi_cond_len1(
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
+    UNUSED(fun); UNUSED(env);
+    return (lval_len(arg) == 1) ? 0 : 1;
+}
+
 int lbi_cond_qexpr(
         const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
     UNUSED(fun); UNUSED(env);

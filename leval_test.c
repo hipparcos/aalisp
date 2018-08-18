@@ -113,6 +113,9 @@ describe(lisp_eval, {
     test_pass("(def {double} (lambda {x} {(* 2 x)}))(double 4)", "8", {
             lval_mut_num(expected, 8);
         });
+    test_pass("(fun {double} {x} {(* 2 x)})(double 4)", "8", {
+            lval_mut_num(expected, 8);
+        });
 
     /* Errors. */
     test_fail("/ 10 0", LERR_DIV_ZERO);

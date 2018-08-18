@@ -21,6 +21,8 @@ void lenv_free(struct lenv* env);
 bool lenv_copy(struct lenv* dest, const struct lenv* src);
 /** lenv_are_equal tells if two env contains the same symbols. */
 bool lenv_are_equal(const struct lenv*, const struct lenv*);
+/** lenv_len returns the number of symbols contained into env and its parents. */
+size_t lenv_len(const struct lenv* env);
 
 /** lenv_set_parent set env parent to par. */
 bool lenv_set_parent(struct lenv* env, struct lenv* par);

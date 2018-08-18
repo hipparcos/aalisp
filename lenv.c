@@ -73,11 +73,8 @@ bool lenv_are_equal(const struct lenv* left, const struct lenv* right) {
     }
     CHECK(left && right);
     /* Total length. */
-    struct lenv* par = NULL;
-    size_t lenl = left->len;
-    while ((par = left->par)) { lenl += par->len; }
-    size_t lenr = right->len;
-    while ((par = right->par)) { lenr += par->len; }
+    size_t lenl = lenv_len(left);
+    size_t lenr = lenv_len(right);
     CHECK(lenl == lenr);
     /* Check all symbols. */
     const struct lenv* env = left;
@@ -93,6 +90,15 @@ bool lenv_are_equal(const struct lenv* left, const struct lenv* right) {
     } while ((env = env->par));
     lval_free(sym);
     return true;
+}
+
+size_t lenv_len(const struct lenv* env) {
+    if (!env) {
+        return 0;
+    }
+    size_t len = env->len;
+    while ((env = env->par)) { len += env->len; }
+    return len;
 }
 
 bool lenv_set_parent(struct lenv* env, struct lenv* par) {

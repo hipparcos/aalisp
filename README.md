@@ -88,7 +88,7 @@ Environment operations:
 - [x] Implement S-Expressions (chapter 9);
 - [x] Implement Q-Expressions (chapter 10);
 - [x] Implement variables (chapter 11);
-- [ ] Add tests for lenv;
+- [x] Add tests for lenv;
 - [ ] Add tests for lambda builtin;
 - [ ] Implement partial function application;
 - [ ] Implement functions (chapter 12);

@@ -2,39 +2,235 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "lval.h"
 #include "lfunc.h"
 #include "lbuiltin.h"
 
+/** AVL Tree. */
+struct avl_node;
+struct avl_node {
+    char* key;
+    struct lval* val;
+    struct avl_node* left;
+    struct avl_node* right;
+};
+
+/** avl_nil is the empty node. */
+static struct avl_node avl_nil = {0};
+
+static struct avl_node* avl_alloc(const char* key, const struct lval* val) {
+    if (!key) {
+        return &avl_nil;
+    }
+    struct avl_node* node = calloc(1, sizeof(struct avl_node));
+    size_t len = strlen(key);
+    node->key = calloc(len + 1, 1);
+    strncpy(node->key, key, len);
+    node->val = lval_alloc();
+    lval_copy(node->val, val);
+    node->left = &avl_nil;
+    node->right = &avl_nil;
+    return node;
+};
+
+static bool avl_is_nil(const struct avl_node* tree) {
+    return tree == NULL || tree == &avl_nil;
+}
+
+static void avl_free(struct avl_node* tree) {
+    if (avl_is_nil(tree)) {
+        return;
+    }
+    avl_free(tree->left);
+    avl_free(tree->right);
+    if (tree->key) {
+        free(tree->key);
+    }
+    if (tree->val) {
+        lval_free(tree->val);
+    }
+    free(tree);
+}
+
+static struct avl_node* avl_duplicate(const struct avl_node* src) {
+    if (avl_is_nil(src)) {
+        return &avl_nil;
+    }
+    struct avl_node* dest = avl_alloc(src->key, src->val);
+    dest->left = avl_duplicate(src->left);
+    dest->right = avl_duplicate(src->right);
+    return dest;
+}
+
+static struct avl_node* avl_rotate_left(struct avl_node* tree) {
+    if (avl_is_nil(tree)) {
+        return &avl_nil;
+    }
+    struct avl_node* new_left = tree;
+    struct avl_node* new_left_right = tree->right->left;
+    tree = tree->right;
+    tree->left = new_left;
+    new_left->right = new_left_right;
+    return tree;
+}
+
+static struct avl_node* avl_rotate_right(struct avl_node* tree) {
+    if (avl_is_nil(tree)) {
+        return &avl_nil;
+    }
+    struct avl_node* new_right = tree;
+    struct avl_node* new_right_left = tree->left->right;
+    tree = tree->left;
+    tree->right = new_right;
+    new_right->left = new_right_left;
+    return tree;
+}
+
+#define max(a,b) ((a > b) ? a : b)
+static int avl_height(struct avl_node* tree) {
+    if (avl_is_nil(tree)) {
+        return 0;
+    }
+    return 1 + max(avl_height(tree->left), avl_height(tree->right));
+}
+
+static int avl_balance_factor(struct avl_node* tree) {
+    if (avl_is_nil(tree)) {
+        return 0;
+    }
+    return avl_height(tree->right) - avl_height(tree->left);
+}
+
+/** avl_balance balances tree and returns the new root. */
+static struct avl_node* avl_balance(struct avl_node* tree) {
+    if (avl_is_nil(tree)) {
+        return &avl_nil;
+    }
+    int balance_factor = avl_balance_factor(tree);
+    if (balance_factor >  1) {
+        if (avl_balance_factor(tree->right) < -1) {
+            tree->right = avl_rotate_right(tree->right);
+        }
+        tree = avl_rotate_left(tree);
+    }
+    if (balance_factor < -1) {
+        if (avl_balance_factor(tree->right) >  1) {
+            tree->left = avl_rotate_left(tree->left);
+        }
+        tree = avl_rotate_right(tree);
+    }
+    return tree;
+}
+
+/** avl_insert inserts node in tree then returns the new root of the tree. */
+static struct avl_node* avl_insert(struct avl_node* tree, struct avl_node* node,
+        bool* overridden) {
+    if (avl_is_nil(node)) {
+        return tree;
+    }
+    if (avl_is_nil(tree)) {
+        return node;
+    }
+    int s = strcmp(node->key, tree->key);
+    /* Find  the right place. */
+    if (s < 0) {
+        tree->left = avl_insert(tree->left, node, overridden);
+    }
+    if (s > 0) {
+        tree->right = avl_insert(tree->right, node, overridden);
+    }
+    /* Override. */
+    if (s == 0) {
+        node->left = tree->left;
+        node->right = tree->right;
+        tree->left = NULL;
+        tree->right = NULL;
+        avl_free(tree);
+        tree = node;
+        *overridden = true;
+    }
+    /* Balance. */
+    tree = avl_balance(tree);
+    return tree;
+}
+
+/** avl_lookup returns the node identified by key or NULL. */
+static const struct avl_node* avl_lookup(struct avl_node* tree, const char* key) {
+    if (avl_is_nil(tree)) {
+        return NULL;
+    }
+    int s = strcmp(key, tree->key);
+    if (s < 0) {
+        return avl_lookup(tree->left, key);
+
+    }
+    if (s > 0) {
+        return avl_lookup(tree->right, key);
+    }
+    if (s == 0) {
+        return tree;
+    }
+    return NULL;
+}
+
+/** avl_size returns the number of node in tree. */
+static size_t avl_size(const struct avl_node* tree) {
+    if (avl_is_nil(tree)) {
+        return 0;
+    }
+    return 1 + avl_size(tree->left) + avl_size(tree->right);
+}
+
+/** avl_keys_recurse fills list by doing a depth first traversal of tree. */
+static const char** avl_keys_recurse(const struct avl_node* tree, const char** list) {
+    if (avl_is_nil(tree)) {
+        return list;
+    }
+    list = avl_keys_recurse(tree->left, list);
+    *(list++) = tree->key;
+    list = avl_keys_recurse(tree->right, list);
+    return list;
+}
+
+/** avl_keys returns a list of all keys contained in AVL. */
+static const char** avl_keys(const struct avl_node* tree, size_t* len) {
+    if (avl_is_nil(tree)) {
+        return NULL;
+    }
+    *len = avl_size(tree);
+    if (*len == 0) {
+        return NULL;
+    }
+    const char** list = calloc(*len, sizeof(char*));
+    avl_keys_recurse(tree, list);
+    return list;
+}
+
 /** lenv associates a symbol descriptor with a string. */
 struct lenv {
-    char**  syms;
-    struct lval** vals;
-    size_t len;
+    /** lenv.par is the parent environment. */
     struct lenv* par;
+    /** lenv.len is the number of symbol in this env (not its parent). */
+    size_t len;
+    /** lenv.tree is the AVL tree containing defined symbols. */
+    struct avl_node* tree;
 };
 
 struct lenv* lenv_alloc(void) {
     struct lenv* env = calloc(1, sizeof(struct lenv));
-    env->syms = NULL;
-    env->vals = NULL;
-    env->len = 0;
     env->par = NULL;
+    env->len = 0;
+    env->tree = NULL;
     return env;
 }
 
 static void lenv_clear(struct lenv* env) {
-    for (size_t e = 0; e < env->len ; e++) {
-        free(env->syms[e]);
-        lval_free(env->vals[e]);
-    }
-    free(env->syms);
-    env->syms = NULL;
-    free(env->vals);
-    env->vals = NULL;
     env->len = 0;
+    avl_free(env->tree);
+    env->tree = NULL;
 }
 
 void lenv_free(struct lenv* env) {
@@ -50,19 +246,9 @@ bool lenv_copy(struct lenv* dest, const struct lenv* src) {
         return false;
     }
     lenv_clear(dest);
-    dest->syms = calloc(src->len, sizeof(char*));
-    dest->vals = calloc(src->len, sizeof(struct lval*));
-    for (size_t e = 0; e < src->len; e++) {
-        /* Symbols. */
-        size_t len = strlen(src->syms[e]);
-        dest->syms[e] = calloc(len + 1, 1);
-        strncpy(dest->syms[e], src->syms[e], len);
-        /* Values. */
-        dest->vals[e] = lval_alloc();
-        lval_dup(dest->vals[e], src->vals[e]);
-    }
-    dest->len = src->len;
     dest->par = src->par;
+    dest->len = src->len;
+    dest->tree = avl_duplicate(src->tree);
     return true;
 }
 
@@ -80,13 +266,16 @@ bool lenv_are_equal(const struct lenv* left, const struct lenv* right) {
     const struct lenv* env = left;
     struct lval* sym = lval_alloc();
     do {
-        for (size_t e = 0; e < env->len; e++) {
-            lval_mut_sym(sym, env->syms[e]);
+        size_t len = 0;
+        const char** syms = avl_keys(env->tree, &len);
+        for (size_t k = 0; k < len; k++) {
+            lval_mut_sym(sym, syms[k]);
             if (!lenv_lookup(right, sym, NULL)) {
                 lval_free(sym);
                 return false;
             }
         }
+        free(syms);
     } while ((env = env->par));
     lval_free(sym);
     return true;
@@ -99,6 +288,31 @@ size_t lenv_len(const struct lenv* env) {
     size_t len = env->len;
     while ((env = env->par)) { len += env->len; }
     return len;
+}
+
+void lenv_print_to(const struct lenv* env, FILE* out) {
+    int indent = 0;
+    while (env) {
+        size_t len = 0;
+        const char** syms = avl_keys(env->tree, &len);
+        int spaces = indent * 2;
+        while (spaces--) {
+            fputc(' ', out);
+        }
+        fprintf(out, "lenv(%ld){", len);
+        if (syms) {
+            for (size_t k = 0; k < len; k++) {
+                if (k) {
+                    fputc(',', out);
+                }
+                fputs(syms[k], out);
+            }
+            free(syms);
+        }
+        fputs("}\n", out);
+        env = env->par;
+        indent++;
+    }
 }
 
 bool lenv_set_parent(struct lenv* env, struct lenv* par) {
@@ -115,15 +329,23 @@ bool lenv_lookup(const struct lenv* env,
         return false;
     }
     const char* symbol = lval_as_sym(sym);
-    for (size_t e = 0; e < env->len; e++) {
-        if (strcmp(symbol, env->syms[e]) == 0) {
-            lval_copy(result, env->vals[e]);
-            return true;
-        }
+    if (!symbol) {
+        lval_mut_err(result, LERR_BAD_SYMBOL);
+        return false;
     }
+    const struct avl_node* node = avl_lookup(env->tree, symbol);
+    /* Symbol found. */
+    if (node) {
+        lval_copy(result, node->val);
+        /* Don't return lval_copy return value because result can be NULL,
+         * thus lval_copy fails. */
+        return true;
+    }
+    /* Lookup into parent env. */
     if (env->par) {
         return lenv_lookup(env->par, sym, result);
     }
+    /* Fail. */
     lval_mut_err(result, LERR_BAD_SYMBOL);
     return false;
 }
@@ -137,26 +359,14 @@ bool lenv_put(struct lenv* env,
     if (!symbol) {
         return false;
     }
-    /* Existing symbol? Override. */
-    for (size_t e = 0; e < env->len; e++) {
-        if (strcmp(symbol, env->syms[e]) == 0) {
-            lval_clear(env->vals[e]);
-            lval_copy(env->vals[e], val);
-            return true;
-        }
+    /* Insert into AVL. */
+    bool overridden = false;
+    struct avl_node* node = avl_alloc(symbol, val);
+    env->tree = avl_insert(env->tree, node, &overridden);
+    if (!overridden) {
+        env->len++;
     }
-    /* Not existing? Add symbol. */
-    size_t len = ++env->len;
-    env->syms = realloc(env->syms, sizeof(char*) * len);
-    env->vals = realloc(env->vals, sizeof(struct lval*) * len);
-    /* Copy symbol. */
-    size_t slen = strlen(symbol);
-    env->syms[len-1] = calloc(1, slen);
-    strncpy(env->syms[len-1], symbol, slen);
-    /* Copy value. */
-    env->vals[len-1] = lval_alloc();
-    lval_copy(env->vals[len-1], val);
-    return true;
+    return !avl_is_nil(env->tree);
 }
 
 bool lenv_put_builtin(struct lenv* env,

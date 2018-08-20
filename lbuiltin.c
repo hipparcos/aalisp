@@ -239,12 +239,11 @@ static const struct lguard guards_fun[] = {
     {.condition= lbi_cond_qexpr,         .argn= 0, .error= LERR_BAD_OPERAND},
     {.condition= lbi_cond_list_of_sym,   .argn= 1, .error= LERR_BAD_OPERAND},
     {.condition= lbi_cond_min_len,       .argn= 1, .error= LERR_BAD_OPERAND, .arg= &one},
-    {.condition= lbi_cond_list_of_sym,   .argn= 2, .error= LERR_BAD_OPERAND},
 };
 const struct lfunc lbuiltin_fun = {
     .symbol       = "fun",
-    .min_argc     =  3,
-    .max_argc     =  3,
+    .min_argc     =  2,
+    .max_argc     =  2,
     .guards       = &guards_fun[0],
     .guardc       = LENGTH(guards_fun),
     .func         = lbi_func_fun,

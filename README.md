@@ -83,7 +83,7 @@ Environment operations:
 3
 > (def {sq} (\ {x} {* x x})) (sq 9)
 81
-> (fun {sq} {x} {* x x}) (sq 9)
+> (fun {sq x} {* x x}) (sq 9)
 81
 > (* 4 21)(/ . 2) ; `.` is equal to the last computed value.
 42

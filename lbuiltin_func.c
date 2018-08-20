@@ -233,15 +233,16 @@ int lbi_func_lambda(struct lenv* env, const struct lval* args, struct lval* acc)
 
 int lbi_func_fun(struct lenv* env, const struct lval* args, struct lval* acc) {
     int s = 0;
-    /* Retrieve arg 1: list of 1 name. */
-    struct lval* name = lval_alloc();
-    lval_index(args, 0, name);
-    /* Retrieve arg 2: list of formals. */
-    struct lval* formals = lval_alloc();
-    lval_index(args, 1, formals);
-    /* Retrieve arg 3: list of sexpr. */
+    /* Retrieve arg 1: list of symbols. */
+    struct lval* symbols = lval_alloc();
+    lval_index(args, 0, symbols);
+    /* Retrieve arg 1 first symbol: function name. */
+    struct lval* name = lval_pop(symbols, 0);
+    /* Retrieve arg 1: formals. */
+    struct lval* formals = symbols; // For clarity.
+    /* Retrieve arg 2: body. */
     struct lval* body = lval_alloc();
-    lval_index(args, 2, body);
+    lval_index(args, 1, body);
     /* Lambda definition. */
     struct lval* lambda = lval_alloc();
     lval_mut_qexpr(lambda);
@@ -258,9 +259,13 @@ int lbi_func_fun(struct lenv* env, const struct lval* args, struct lval* acc) {
     /* Environment registration. */
     struct lval* def = lval_alloc();
     lval_mut_qexpr(def);
-    lval_push(def, name);
+    struct lval* def_list = lval_alloc();
+    lval_mut_qexpr(def_list);
+    lval_push(def_list, name);
+    lval_push(def, def_list);
     lval_push(def, acc);
     s = lfunc_exec(&lbuiltin_def, env, def, acc);
+    lval_free(def_list);
     lval_free(def);
     /* Cleanup. */
     lval_free(name);

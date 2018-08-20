@@ -285,5 +285,12 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "\\",     &lbuiltin_lambda);
     /* IO functions. */
     lenv_put_builtin(env, "print", &lbuiltin_print);
+    /* Environment variable. */
+    struct lval* dots = lval_alloc();
+    struct lval* dotv = lval_alloc();
+    lval_mut_sym(dots, ".");
+    lenv_put(env, dots, dotv);
+    lval_free(dots);
+    lval_free(dotv);
     return true;
 }

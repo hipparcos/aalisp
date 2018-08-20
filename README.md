@@ -85,6 +85,8 @@ Environment operations:
 81
 > (fun {sq} {x} {(* x x)}) (sq 9)
 81
+> (* 4 21)(/ . 2) ; `.` is equal to the last computed value.
+42
 ```
 
 ## TODO

@@ -106,6 +106,9 @@ describe(lisp_eval, {
     test_pass("(= {x} 3)(+ x)", "3", {
             lval_mut_num(expected, 3);
         });
+    test_pass("(^ 2 8)(+ . .)", "512", {
+            lval_mut_num(expected, 512);
+        });
     /* Lamdba definition. */
     test_pass("(\\ {x} {(* 2 x)}) 4", "8", {
             lval_mut_num(expected, 8);

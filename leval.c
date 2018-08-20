@@ -33,6 +33,14 @@ static bool leval_expr(
     return lval_type(r) != LVAL_ERR;
 }
 
+/** leval_set_dot sets the special dot variable (last computed value). */
+static void leval_set_dot(struct lenv* env, const struct lval* r) {
+    struct lval* dot = lval_alloc();
+    lval_mut_sym(dot, ".");
+    lenv_def(env, dot, r);
+    lval_free(dot);
+}
+
 static bool leval_sexpr(struct lenv* env,
         const struct lval* v, struct lval* r) {
     /* Empty sexpr. */
@@ -56,10 +64,12 @@ static bool leval_sexpr(struct lenv* env,
             return false;
         }
         lval_push(expr, x);
+        /* Result of last S-Expression. */
         if (c == len-1) {
             /* r = last argument value */
             lval_mut_nil(r);
             lval_dup(r, x);
+            leval_set_dot(env, r);
         }
         lval_free(x);
         lval_free(child);
@@ -82,6 +92,7 @@ static bool leval_sexpr(struct lenv* env,
         bool s = leval_expr(env, func, args, r);
         lval_free(func);
         lval_free(expr);
+        leval_set_dot(env, r);
         return s;
     }
     lval_free(func);

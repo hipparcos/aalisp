@@ -2,6 +2,7 @@
 #define H_AVL_GENERIC_
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 /** avl_node is an AVL tree. */
@@ -16,6 +17,8 @@ typedef void* (*avl_pl_duplicator)(const void*);
 typedef int (*avl_pl_comparator)(const void*, const void*);
 /** avl_pl_serializer returns a string which describes a payload. */
 typedef const char* (*avl_pl_serializer)(const void*);
+/** avl_printer prints payload to the out file. */
+typedef size_t (*avl_pl_printer)(FILE* out, const void*);
 
 /** avl_alloc returns a new AVL containing payload. */
 struct avl_node* avl_alloc(void* payload);
@@ -34,8 +37,13 @@ const void* avl_lookup(struct avl_node* tree,
         avl_pl_comparator comparator, const void* key);
 /** avl_size returns the number of node in tree. */
 size_t avl_size(const struct avl_node* tree);
+/** avl_is_balanced tells if banlance factor is in {-1,0,1}. */
+bool avl_is_balanced(const struct avl_node* tree);
 /** avl_keys returns a list of all keys contained in AVL. */
 const char** avl_keys(const struct avl_node* tree,
         avl_pl_serializer serializer, size_t* len);
+/** avl_print_to prints avl to the file out. */
+void avl_print_to(const struct avl_node* tree, FILE* out,
+        avl_pl_printer printer);
 
 #endif

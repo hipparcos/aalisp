@@ -1,6 +1,7 @@
 #include "avl.h"
 
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 struct avl_node {
@@ -21,7 +22,7 @@ struct avl_node* avl_alloc(void* payload) {
 };
 
 bool avl_is_nil(const struct avl_node* tree) {
-    return tree == NULL || tree == &avl_nil;
+    return tree == NULL || tree->payload == NULL || tree == &avl_nil;
 }
 
 void avl_free(struct avl_node* tree, avl_pl_destructor destructor) {
@@ -77,7 +78,7 @@ static int avl_height(struct avl_node* tree) {
     return 1 + max(avl_height(tree->left), avl_height(tree->right));
 }
 
-static int avl_balance_factor(struct avl_node* tree) {
+static int avl_balance_factor(const struct avl_node* tree) {
     if (avl_is_nil(tree)) {
         return 0;
     }
@@ -160,12 +161,18 @@ const void* avl_lookup(struct avl_node* tree,
     return NULL;
 }
 
-/** avl_size returns the number of node in tree. */
 size_t avl_size(const struct avl_node* tree) {
     if (avl_is_nil(tree)) {
         return 0;
     }
     return 1 + avl_size(tree->left) + avl_size(tree->right);
+}
+
+#define abs(x) ((x < 0) ? -x : x)
+bool avl_is_balanced(const struct avl_node* tree) {
+    return abs(avl_balance_factor(tree)) < 2 &&
+           abs(avl_balance_factor(tree->left)) < 2 &&
+           abs(avl_balance_factor(tree->right)) < 2;
 }
 
 /** avl_keys_recurse fills list by doing a depth first traversal of tree. */
@@ -180,7 +187,6 @@ static const char** avl_keys_recurse(const struct avl_node* tree,
     return list;
 }
 
-/** avl_keys returns a list of all keys contained in AVL. */
 const char** avl_keys(const struct avl_node* tree,
         avl_pl_serializer serializer, size_t* len) {
     if (avl_is_nil(tree)) {
@@ -193,4 +199,29 @@ const char** avl_keys(const struct avl_node* tree,
     const char** list = calloc(*len, sizeof(char*));
     avl_keys_recurse(tree, serializer, list);
     return list;
+}
+
+static void avl_print_to_indent(const struct avl_node* tree, FILE* out,
+        avl_pl_printer printer, size_t indent) {
+    if (!tree->payload) {
+        fputs(" > nil", out);
+        return;
+    }
+    fputs(" > ", out);
+    indent += 3;
+    indent += printer(out, tree->payload);
+    avl_print_to_indent(tree->left, out, printer, indent);
+    fputc('\n', out);
+    /* Indent. */
+    size_t spaces = indent;
+    while (spaces--) {
+        fputc(' ', out);
+    }
+    avl_print_to_indent(tree->right, out, printer, indent);
+}
+
+void avl_print_to(const struct avl_node* tree, FILE* out,
+        avl_pl_printer printer) {
+    avl_print_to_indent(tree, out, printer, 0);
+    fputc('\n', out);
 }

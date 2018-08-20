@@ -59,7 +59,7 @@ static inline bool llex_is_letter(char c) {
 static bool llex_is_letter(char c);
 
 static inline bool llex_is_sign(char c) {
-    return c != '\0' && strchr("+-*/%^?!&|:;,._#~<>=$§£¤µ\\", c); // strchr matches '\0'.
+    return c != '\0' && strchr("+-*/%^?!&|:,._#~<>=$§£¤µ\\", c); // strchr matches '\0'.
 }
 static bool llex_is_sign(char c);
 
@@ -92,6 +92,14 @@ static void llex_reset(struct lscanner* scanner) {
 
 static void llex_skip_whitespaces(struct lscanner* scanner) {
     while (llex_is_whitespace(scanner->input[scanner->pos])) {
+        llex_skip(scanner);
+    }
+    llex_reset(scanner);
+}
+
+static void llex_skip_to_EOL(struct lscanner* scanner) {
+    char c;
+    while ((c = scanner->input[scanner->pos]) && c != '\n' && c != '\0') {
         llex_skip(scanner);
     }
     llex_reset(scanner);
@@ -161,6 +169,9 @@ static bool llex_next(struct lscanner* scanner) {
     char c = scanner->input[scanner->pos];
     /* Match special characters. */
     switch (c) {
+    case ';': // Comment.
+        llex_skip_to_EOL(scanner);
+        return llex_next(scanner);
     case '(':
         scanner->tok = LTOK_OPAR;
         llex_retain(scanner);
@@ -277,8 +288,8 @@ static struct ltok* llex(const char* input, struct ltok** error, bool surround) 
         llex_append(last, llex_emitEOF());
     } else {
         /* Optional: ensure that it's a sexpr. */
-        if (surround && ((head && head->type != LTOK_OPAR)
-                      || (curr && curr->type != LTOK_CPAR))) {
+        if (head && surround && ((head && head->type != LTOK_OPAR)
+                              || (curr && curr->type != LTOK_CPAR))) {
             struct ltok* opar = llex_emitOPAR();
             struct ltok* cpar = llex_emitCPAR();
             cpar->line = curr->line;

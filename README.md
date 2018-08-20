@@ -45,6 +45,11 @@ make test DO_MEMCHECK=false
 
 ## Features
 
+Comments:
+```lisp
+> ; I'm a comment up to the end of line.
+nil
+```
 Arithmetic:
 ```lisp
 > + 1 2 3 4
@@ -97,7 +102,7 @@ Environment operations:
 - [ ] Implement strings (chapter 14);
 - [ ] Implemnt elem, take, map, filter, fold, reverse;
 - [ ] Implement standard library (chapter 15);
-- [ ] Add comments support;
+- [x] Add comments support;
 - [ ] Implement user defined types;
 - [ ] Implement list literal;
 - [ ] Implement OS interaction;

@@ -85,6 +85,14 @@ describe(llex, {
             })[0]
         );
 
+    test_pass("comment",
+            "; I'm a comment.",
+            &((struct token_list[]){
+                {LTOK_EOF, ""},
+                {0, NULL}
+            })[0]
+        );
+
     test_pass("parenthesis",
             "(()",
             &((struct token_list[]){
@@ -162,6 +170,20 @@ describe(llex, {
 
     test_pass("simple expression",
             "+ 1 (! 21)",
+            &((struct token_list[]){
+                {LTOK_SYM, "+"},
+                {LTOK_NUM, "1"},
+                {LTOK_OPAR, "("},
+                {LTOK_SYM, "!"},
+                {LTOK_NUM, "21"},
+                {LTOK_CPAR, ")"},
+                {LTOK_EOF, ""},
+                {0, NULL}
+            })[0]
+        );
+
+    test_pass_raw("multiline expression with comment",
+            "+ 1 (! ; I'm a comment.\n21)",
             &((struct token_list[]){
                 {LTOK_SYM, "+"},
                 {LTOK_NUM, "1"},

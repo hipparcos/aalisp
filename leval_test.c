@@ -122,6 +122,10 @@ describe(lisp_eval, {
     test_pass("(fun {double} {x} {(* 2 x)})(double 4)", "8", {
             lval_mut_num(expected, 8);
         });
+    /* Partial function application. */
+    test_pass("(fun {mul} {x y} {(* x y)})(def {mul2} (mul 2))(mul2 256)", "512", {
+            lval_mut_num(expected, 512);
+        });
 
     /* Errors. */
     test_fail("/ 10 0", LERR_DIV_ZERO);

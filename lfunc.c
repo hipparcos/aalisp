@@ -22,6 +22,8 @@ static void lfunc_clear(struct lfunc* fun) {
     fun->formals = NULL;
     lval_free(fun->body);
     fun->body = NULL;
+    lval_free(fun->args);
+    fun->args = NULL;
 }
 
 void lfunc_free(struct lfunc* fun) {
@@ -50,6 +52,10 @@ bool lfunc_copy(struct lfunc* dest, const struct lfunc* src) {
         dest->body = lval_alloc();
         lval_copy(dest->body, src->body);
     }
+    if (src->args) {
+        dest->args = lval_alloc();
+        lval_copy(dest->args, src->args);
+    }
     return true;
 }
 
@@ -71,6 +77,7 @@ bool lfunc_are_equal(const struct lfunc* left, const struct lfunc* right) {
     CHECK(lenv_are_equal(left->scope, right->scope));
     CHECK(lval_are_equal(left->formals, right->formals));
     CHECK(lval_are_equal(left->body, right->body));
+    CHECK(lval_are_equal(left->args, right->args));
     return true;
 }
 
@@ -144,6 +151,20 @@ static struct lenv* lfunc_prepare_env(
     return par;
 }
 
+#define min(a,b) ((a < b) ? a : b)
+void lfunc_push_args(const struct lfunc* fun, const struct lval* args) {
+    if (fun->args == 0) {
+        return;
+    }
+    size_t len = lval_len(args);
+    for (size_t a = 0; a < len; a++) {
+        struct lval* arg = lval_alloc();
+        lval_index(args, a, arg);
+        lval_push(fun->args, arg);
+        lval_free(arg);
+    }
+}
+
 static struct lguard lbuitin_guards[] = {
     {.condition= lbi_cond_max_argc,     .argn= -1, .error= LERR_TOO_MANY_ARGS},
     {.condition= lbi_cond_min_argc,     .argn= -1, .error= LERR_TOO_FEW_ARGS},
@@ -155,6 +176,16 @@ int lfunc_exec(const struct lfunc* fun, struct lenv* env,
     if (!fun) {
         lval_mut_err(acc, LERR_EVAL);
         return -1;
+    }
+    /* Partial application. */
+    if (fun->args) {
+        lfunc_push_args(fun, args);
+        int argc = lval_len(fun->args);
+        if (argc < fun->min_argc) {
+            lval_mut_func(acc, fun);
+            return 0;
+        }
+        args = fun->args;
     }
     /* Guards */
     int s = 0;

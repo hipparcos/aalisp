@@ -221,6 +221,8 @@ int lbi_func_lambda(struct lenv* env, const struct lval* args, struct lval* acc)
     func.body = lval_alloc();
     lval_copy(func.body, body);
     lval_mut_sexpr(func.body); // Works because it's a brand new copy.
+    func.args = lval_alloc();
+    lval_mut_sexpr(func.args);
     /* Put lambda in acc. */
     lval_mut_func(acc, &func);
     /* Cleanup. */

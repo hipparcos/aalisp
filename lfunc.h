@@ -58,6 +58,7 @@ struct lfunc {
     struct lenv* scope;   // Local scope of the function.
     struct lval* formals; // A Q-Expr: list of local symbols name.
     struct lval* body;    // A S-Expr: list of S-Expression to execute.
+    struct lval* args;    // A Q-Expr: list of associated argument (partial function application).
 };
 
 /** lfunc_alloc creates a lfunc.

@@ -351,39 +351,13 @@ bool llex_are_all_equal(struct ltok* left, struct ltok* right) {
     return lcurr && lcurr->type == LTOK_EOF && rcurr && rcurr->type == LTOK_EOF;
 }
 
-static const char llex_to_string_format[] = "tok:{type: %s, %d:%d, content: \"%s\"}";
-void llex_to_string(struct ltok* token, char* out) {
-    if (!token) {
-        return;
-    }
-    sprintf(out, llex_to_string_format,
-            ltok_type_string[token->type], token->line, token->col, token->content);
-}
-
-size_t llex_printlen(struct ltok* token) {
-    if (!token) {
-        return 0;
-    }
-    size_t len = 0;
-    len += sizeof(llex_to_string_format);
-    len += 10; // + ltok->type.
-    len += 10; // + ltok->line.
-    len += 10; // + ltok->col.
-    if (token->content) {
-        len += strlen(token->content);
-    }
-    return len;
-}
-
 void llex_print_to(struct ltok* token, FILE* out) {
     if (!token) {
         return;
     }
-    size_t len = llex_printlen(token);
-    char* buffer = calloc(sizeof(char), len + 1);
-    llex_to_string(token, buffer);
-    fputs(buffer, out);
-    free(buffer);
+    fprintf(out, "tok:{type: %s, %d:%d, content: \"%s\"}",
+            ltok_type_string[token->type], token->line, token->col, token->content);
+    fputc('\n', out);
 }
 
 void llex_print_all_to(struct ltok* tokens, FILE* out) {
@@ -394,6 +368,5 @@ void llex_print_all_to(struct ltok* tokens, FILE* out) {
     while ((curr = next) && curr->type != LTOK_EOF) {
         next = curr->next;
         llex_print_to(curr, out);
-        fputc('\n', out);
     }
 }

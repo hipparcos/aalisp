@@ -47,18 +47,10 @@ bool llex_are_equal(struct ltok* left, struct ltok* right);
 /** llex_are_all_equal tells if two list of tokens are equal. */
 bool llex_are_all_equal(struct ltok* left, struct ltok* right);
 
-/** llex_print prints a token.
- ** Caller is responsible for allocating the out string (see llex_printlen). */
-void llex_to_string(struct ltok* token, char* out);
-/** llex_printlen returns the len of the string that would be generated for
- ** token by llex_to_string. */
-size_t llex_printlen(struct ltok* token);
 /** llex_print_to prints token to the out file. */
 void llex_print_to(struct ltok* token, FILE* out);
 /** llex_print prints token to stdout. */
-#define llex_print(token) llex_print_to(token, stdout);
-/** llex_println prints token to stdout. A newline is added. */
-#define llex_println(token) llex_print_to(token, stdout); putchar('\n');
+#define llex_print(token) llex_print_to(token, stdout)
 /** llex_print_all_to prints the list of tokens to the out file. */
 void llex_print_all_to(struct ltok* tokens, FILE* out);
 /** llex_print_all prints the list of tokens to stdout. */

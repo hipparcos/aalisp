@@ -113,17 +113,17 @@ describe(lisp_eval, {
             lval_mut_num(expected, 512);
         });
     /* Lamdba definition. */
-    test_pass("(\\ {x} {(* 2 x)}) 4", "8", {
+    test_pass("(\\ {x} {* 2 x}) 4", "8", {
             lval_mut_num(expected, 8);
         });
-    test_pass("(def {double} (lambda {x} {(* 2 x)}))(double 4)", "8", {
+    test_pass("(def {double} (lambda {x} {* 2 x}))(double 4)", "8", {
             lval_mut_num(expected, 8);
         });
-    test_pass("(fun {double} {x} {(* 2 x)})(double 4)", "8", {
+    test_pass("(fun {double} {x} {* 2 x})(double 4)", "8", {
             lval_mut_num(expected, 8);
         });
     /* Partial function application. */
-    test_pass("(fun {mul} {x y} {(* x y)})(def {mul2} (mul 2))(mul2 256)", "512", {
+    test_pass("(fun {mul} {x y} {* x y})(def {mul2} (mul 2))(mul2 256)", "512", {
             lval_mut_num(expected, 512);
         });
 

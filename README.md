@@ -74,16 +74,16 @@ List operations:
 ```
 Functions definition:
 ```lisp
-> (\ {x} {(* x x)}) 9
+> (\ {x} {* x x}) 9
 81
 ```
 Environment operations:
 ```lisp
 > (def {x y} 1 2)(+ x y)
 3
-> (def {sq} (\ {x} {(* x x)})) (sq 9)
+> (def {sq} (\ {x} {* x x})) (sq 9)
 81
-> (fun {sq} {x} {(* x x)}) (sq 9)
+> (fun {sq} {x} {* x x}) (sq 9)
 81
 > (* 4 21)(/ . 2) ; `.` is equal to the last computed value.
 42

@@ -8,207 +8,49 @@
 #include "lval.h"
 #include "lfunc.h"
 #include "lbuiltin.h"
+#include "generic/avl.h"
 
-/** AVL Tree. */
-struct avl_node;
-struct avl_node {
+struct env_payload {
     char* key;
     struct lval* val;
-    struct avl_node* left;
-    struct avl_node* right;
 };
 
-/** avl_nil is the empty node. */
-static struct avl_node avl_nil = {0};
-
-static struct avl_node* avl_alloc(const char* key, const struct lval* val) {
-    if (!key) {
-        return &avl_nil;
-    }
-    struct avl_node* node = calloc(1, sizeof(struct avl_node));
+static struct env_payload* env_payload_alloc(const char* key, const struct lval* val) {
+    struct env_payload* pl = calloc(1, sizeof(struct env_payload));
     size_t len = strlen(key);
-    node->key = calloc(len + 1, 1);
-    strncpy(node->key, key, len);
-    node->val = lval_alloc();
-    lval_copy(node->val, val);
-    node->left = &avl_nil;
-    node->right = &avl_nil;
-    return node;
-};
-
-static bool avl_is_nil(const struct avl_node* tree) {
-    return tree == NULL || tree == &avl_nil;
+    pl->key = calloc(len + 1, 1);
+    strncpy(pl->key, key, len);
+    pl->val = lval_alloc();
+    lval_copy(pl->val, val);
+    return pl;
 }
 
-static void avl_free(struct avl_node* tree) {
-    if (avl_is_nil(tree)) {
-        return;
-    }
-    avl_free(tree->left);
-    avl_free(tree->right);
-    if (tree->key) {
-        free(tree->key);
-    }
-    if (tree->val) {
-        lval_free(tree->val);
-    }
-    free(tree);
+static void* env_payload_copy(const void* srcv) {
+    struct env_payload* src = (struct env_payload*)srcv;
+    struct env_payload* dest = env_payload_alloc(src->key, src->val);
+    return (void*)dest;
 }
 
-static struct avl_node* avl_duplicate(const struct avl_node* src) {
-    if (avl_is_nil(src)) {
-        return &avl_nil;
+static void env_payload_free(void* datav) {
+    struct env_payload* data = (struct env_payload*)datav;
+    if (data->key) {
+        free(data->key);
     }
-    struct avl_node* dest = avl_alloc(src->key, src->val);
-    dest->left = avl_duplicate(src->left);
-    dest->right = avl_duplicate(src->right);
-    return dest;
+    if (data->val) {
+        lval_free(data->val);
+    }
+    free(data);
 }
 
-static struct avl_node* avl_rotate_left(struct avl_node* tree) {
-    if (avl_is_nil(tree)) {
-        return &avl_nil;
-    }
-    struct avl_node* new_left = tree;
-    struct avl_node* new_left_right = tree->right->left;
-    tree = tree->right;
-    tree->left = new_left;
-    new_left->right = new_left_right;
-    return tree;
+static int env_payload_cmp(const void* leftv, const void* rightv) {
+    struct env_payload* left = (struct env_payload*)leftv;
+    struct env_payload* right = (struct env_payload*)rightv;
+    return strcmp(left->key, right->key);
 }
 
-static struct avl_node* avl_rotate_right(struct avl_node* tree) {
-    if (avl_is_nil(tree)) {
-        return &avl_nil;
-    }
-    struct avl_node* new_right = tree;
-    struct avl_node* new_right_left = tree->left->right;
-    tree = tree->left;
-    tree->right = new_right;
-    new_right->left = new_right_left;
-    return tree;
-}
-
-#define max(a,b) ((a > b) ? a : b)
-static int avl_height(struct avl_node* tree) {
-    if (avl_is_nil(tree)) {
-        return 0;
-    }
-    return 1 + max(avl_height(tree->left), avl_height(tree->right));
-}
-
-static int avl_balance_factor(struct avl_node* tree) {
-    if (avl_is_nil(tree)) {
-        return 0;
-    }
-    return avl_height(tree->right) - avl_height(tree->left);
-}
-
-/** avl_balance balances tree and returns the new root. */
-static struct avl_node* avl_balance(struct avl_node* tree) {
-    if (avl_is_nil(tree)) {
-        return &avl_nil;
-    }
-    int balance_factor = avl_balance_factor(tree);
-    if (balance_factor >  1) {
-        if (avl_balance_factor(tree->right) < -1) {
-            tree->right = avl_rotate_right(tree->right);
-        }
-        tree = avl_rotate_left(tree);
-    }
-    if (balance_factor < -1) {
-        if (avl_balance_factor(tree->right) >  1) {
-            tree->left = avl_rotate_left(tree->left);
-        }
-        tree = avl_rotate_right(tree);
-    }
-    return tree;
-}
-
-/** avl_insert inserts node in tree then returns the new root of the tree. */
-static struct avl_node* avl_insert(struct avl_node* tree, struct avl_node* node,
-        bool* insertion) {
-    if (avl_is_nil(node)) {
-        return tree;
-    }
-    if (avl_is_nil(tree)) {
-        *insertion = true;
-        return node;
-    }
-    *insertion = false;
-    int s = strcmp(node->key, tree->key);
-    /* Override. */
-    if (s == 0) {
-        node->left = tree->left;
-        node->right = tree->right;
-        tree->left = NULL;
-        tree->right = NULL;
-        avl_free(tree);
-        return node;
-    }
-    /* Find  the right place. */
-    if (s < 0) {
-        tree->left = avl_insert(tree->left, node, insertion);
-    }
-    if (s > 0) {
-        tree->right = avl_insert(tree->right, node, insertion);
-    }
-    /* Balance. */
-    if (*insertion) {
-        tree = avl_balance(tree);
-    }
-    return tree;
-}
-
-/** avl_lookup returns the node identified by key or NULL. */
-static const struct avl_node* avl_lookup(struct avl_node* tree, const char* key) {
-    if (avl_is_nil(tree)) {
-        return NULL;
-    }
-    int s = strcmp(key, tree->key);
-    if (s < 0) {
-        return avl_lookup(tree->left, key);
-    }
-    if (s > 0) {
-        return avl_lookup(tree->right, key);
-    }
-    if (s == 0) {
-        return tree;
-    }
-    return NULL;
-}
-
-/** avl_size returns the number of node in tree. */
-static size_t avl_size(const struct avl_node* tree) {
-    if (avl_is_nil(tree)) {
-        return 0;
-    }
-    return 1 + avl_size(tree->left) + avl_size(tree->right);
-}
-
-/** avl_keys_recurse fills list by doing a depth first traversal of tree. */
-static const char** avl_keys_recurse(const struct avl_node* tree, const char** list) {
-    if (avl_is_nil(tree)) {
-        return list;
-    }
-    list = avl_keys_recurse(tree->left, list);
-    *(list++) = tree->key;
-    list = avl_keys_recurse(tree->right, list);
-    return list;
-}
-
-/** avl_keys returns a list of all keys contained in AVL. */
-static const char** avl_keys(const struct avl_node* tree, size_t* len) {
-    if (avl_is_nil(tree)) {
-        return NULL;
-    }
-    *len = avl_size(tree);
-    if (*len == 0) {
-        return NULL;
-    }
-    const char** list = calloc(*len, sizeof(char*));
-    avl_keys_recurse(tree, list);
-    return list;
+static const char* env_payload_key(const void* datav) {
+    struct env_payload* data = (struct env_payload*)datav;
+    return data->key;
 }
 
 /** lenv associates a symbol descriptor with a string. */
@@ -231,7 +73,7 @@ struct lenv* lenv_alloc(void) {
 
 static void lenv_clear(struct lenv* env) {
     env->len = 0;
-    avl_free(env->tree);
+    avl_free(env->tree, env_payload_free);
     env->tree = NULL;
 }
 
@@ -250,7 +92,7 @@ bool lenv_copy(struct lenv* dest, const struct lenv* src) {
     lenv_clear(dest);
     dest->par = src->par;
     dest->len = src->len;
-    dest->tree = avl_duplicate(src->tree);
+    dest->tree = avl_duplicate(src->tree, env_payload_copy);
     return true;
 }
 
@@ -269,7 +111,7 @@ bool lenv_are_equal(const struct lenv* left, const struct lenv* right) {
     struct lval* sym = lval_alloc();
     do {
         size_t len = 0;
-        const char** syms = avl_keys(env->tree, &len);
+        const char** syms = avl_keys(env->tree, env_payload_key, &len);
         for (size_t k = 0; k < len; k++) {
             lval_mut_sym(sym, syms[k]);
             if (!lenv_lookup(right, sym, NULL)) {
@@ -305,7 +147,7 @@ void lenv_print_to(const struct lenv* env, FILE* out) {
     size_t wrap = 80;
     while (env) {
         size_t len = 0;
-        const char** syms = avl_keys(env->tree, &len);
+        const char** syms = avl_keys(env->tree, env_payload_key, &len);
         size_t width = 0;
         indent(indent, width, out);
         width += fprintf(out, "lenv(%ld){", len);
@@ -350,10 +192,11 @@ bool lenv_lookup(const struct lenv* env,
         lval_mut_err(result, LERR_BAD_SYMBOL);
         return false;
     }
-    const struct avl_node* node = avl_lookup(env->tree, symbol);
+    struct env_payload symbolpl = {.key= (char*)symbol};
+    const struct env_payload* payload = avl_lookup(env->tree, env_payload_cmp, &symbolpl);
     /* Symbol found. */
-    if (node) {
-        lval_copy(result, node->val);
+    if (payload) {
+        lval_copy(result, payload->val);
         /* Don't return lval_copy return value because result can be NULL,
          * thus lval_copy fails. */
         return true;
@@ -378,8 +221,9 @@ bool lenv_put(struct lenv* env,
     }
     /* Insert into AVL. */
     bool insertion = false;
-    struct avl_node* node = avl_alloc(symbol, val);
-    env->tree = avl_insert(env->tree, node, &insertion);
+    struct env_payload* payload = env_payload_alloc(symbol, val);
+    struct avl_node* node = avl_alloc(payload);
+    env->tree = avl_insert(env->tree, node, env_payload_cmp, env_payload_free, &insertion);
     if (insertion) {
         env->len++;
     }

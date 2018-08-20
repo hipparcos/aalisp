@@ -335,48 +335,21 @@ bool last_are_all_equal(const struct last* left, const struct last* right) {
     return true;
 }
 
-static const char last_to_string_format_simple[] = "tag: %si, %d:%d";
-static const char last_to_string_format[] = "tag: %s, %d:%d, content: \"%s\"";
-void last_to_string(const struct last* ast, char* out) {
-    if (!ast) {
-        return;
-    }
-    if (!ast->content) {
-        sprintf(out, last_to_string_format_simple,
-                ltag_string[ast->tag], ast->line, ast->col);
-    } else {
-        sprintf(out, last_to_string_format,
-                ltag_string[ast->tag], ast->line, ast->col, ast->content);
-    }
-}
-
-size_t last_printlen(const struct last* ast) {
-    if (!ast) {
-        return 0;
-    }
-    size_t len = 0;
-    len += sizeof(last_to_string_format);
-    len += strlen(ltag_string[ast->tag]);
-    len += 10; // + last->line.
-    len += 10; // + last->col.
-    if (ast->content) {
-        len += strlen(ast->content);
-    }
-    return len;
-}
-
 static void last_print_to_indent(const struct last* ast, FILE* out, unsigned int indent) {
     if (!ast) {
         return;
     }
-    size_t len = last_printlen(ast);
-    char* buffer = calloc(len + 1, sizeof(char));
-    last_to_string(ast, buffer);
     while (indent-- > 0) {
         fputs("  ", out);
     }
-    fputs(buffer, out);
-    free(buffer);
+    if (!ast->content) {
+        fprintf(out, "tag: %si, %d:%d",
+                ltag_string[ast->tag], ast->line, ast->col);
+    } else {
+        fprintf(out, "tag: %s, %d:%d, content: \"%s\"",
+                ltag_string[ast->tag], ast->line, ast->col, ast->content);
+    }
+    fputc('\n', out);
 }
 
 void last_print_to(const struct last* ast, FILE* out) {
@@ -391,7 +364,6 @@ static void last_print_all_to_rec(const struct last* ast, FILE* out, unsigned in
         return;
     }
     last_print_to_indent(ast, out, level);
-    fputc('\n', out);
     for (size_t i = 0; i < ast->childrenc; i++) {
         last_print_all_to_rec(ast->children[i], out, level + 1);
     }

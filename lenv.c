@@ -127,21 +127,16 @@ static struct avl_node* avl_balance(struct avl_node* tree) {
 
 /** avl_insert inserts node in tree then returns the new root of the tree. */
 static struct avl_node* avl_insert(struct avl_node* tree, struct avl_node* node,
-        bool* overridden) {
+        bool* insertion) {
     if (avl_is_nil(node)) {
         return tree;
     }
     if (avl_is_nil(tree)) {
+        *insertion = true;
         return node;
     }
+    *insertion = false;
     int s = strcmp(node->key, tree->key);
-    /* Find  the right place. */
-    if (s < 0) {
-        tree->left = avl_insert(tree->left, node, overridden);
-    }
-    if (s > 0) {
-        tree->right = avl_insert(tree->right, node, overridden);
-    }
     /* Override. */
     if (s == 0) {
         node->left = tree->left;
@@ -149,11 +144,19 @@ static struct avl_node* avl_insert(struct avl_node* tree, struct avl_node* node,
         tree->left = NULL;
         tree->right = NULL;
         avl_free(tree);
-        tree = node;
-        *overridden = true;
+        return node;
+    }
+    /* Find  the right place. */
+    if (s < 0) {
+        tree->left = avl_insert(tree->left, node, insertion);
+    }
+    if (s > 0) {
+        tree->right = avl_insert(tree->right, node, insertion);
     }
     /* Balance. */
-    tree = avl_balance(tree);
+    if (*insertion) {
+        tree = avl_balance(tree);
+    }
     return tree;
 }
 
@@ -165,7 +168,6 @@ static const struct avl_node* avl_lookup(struct avl_node* tree, const char* key)
     int s = strcmp(key, tree->key);
     if (s < 0) {
         return avl_lookup(tree->left, key);
-
     }
     if (s > 0) {
         return avl_lookup(tree->right, key);
@@ -360,10 +362,10 @@ bool lenv_put(struct lenv* env,
         return false;
     }
     /* Insert into AVL. */
-    bool overridden = false;
+    bool insertion = false;
     struct avl_node* node = avl_alloc(symbol, val);
-    env->tree = avl_insert(env->tree, node, &overridden);
-    if (!overridden) {
+    env->tree = avl_insert(env->tree, node, &insertion);
+    if (insertion) {
         env->len++;
     }
     return !avl_is_nil(env->tree);

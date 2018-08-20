@@ -99,6 +99,9 @@ describe(lisp_eval, {
             lval_push(expected, two);
             lval_push(expected, thr);
         });
+    test_pass("eval {* 2 21}", "42", {
+            lval_mut_num(expected, 42);
+        });
     /* Variables definition. */
     test_pass("(def {x y} 1 2)(+ x y)", "3", {
             lval_mut_num(expected, 3);

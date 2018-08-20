@@ -113,6 +113,14 @@ int lbi_func_eval(struct lenv* env, const struct lval* args, struct lval* acc) {
     /* Retrieve arg 1. */
     struct lval* arg = lval_alloc();
     lval_index(args, 0, arg);
+    /* Mut Q-Expression in S-Expr. */
+    if (lval_type(arg) == LVAL_QEXPR) {
+        struct lval* cpy = lval_alloc();
+        lval_copy(cpy, arg);
+        lval_mut_sexpr(cpy);
+        lval_free(arg);
+        arg = cpy;
+    }
     /* Eval. */
     struct lval* r = lval_alloc();
     bool s = leval(env, arg, r);

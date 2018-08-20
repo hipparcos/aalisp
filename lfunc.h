@@ -12,7 +12,8 @@ struct lfunc;
  **   0 if success
  **  -1 if error
  **   n if nth argument generate an error */
-typedef int (*lcondition)(const struct lfunc*, const struct lenv*, const struct lval*);
+typedef int (*lcondition)(const struct lfunc*, const struct lenv*, const struct lval*,
+        const void* arg);
 
 /** lguard is a condition associated with an error. */
 struct lguard {
@@ -25,6 +26,8 @@ struct lguard {
     int argn;
     /** lguard.error is the error returned. */
     enum lerr error;
+    /** lguard.arg is a guard argument. */
+    void* arg;
 };
 
 /** lbuiltin is a pointer to a builtin function.

@@ -234,10 +234,11 @@ const struct lfunc lbuiltin_put = {
     .func         = lbi_func_put,
 };
 
+static size_t one = 1;
 static const struct lguard guards_fun[] = {
     {.condition= lbi_cond_qexpr,         .argn= 0, .error= LERR_BAD_OPERAND},
     {.condition= lbi_cond_list_of_sym,   .argn= 1, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_len1,          .argn= 1, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_min_len,       .argn= 1, .error= LERR_BAD_OPERAND, .arg= &one},
     {.condition= lbi_cond_list_of_sym,   .argn= 2, .error= LERR_BAD_OPERAND},
 };
 const struct lfunc lbuiltin_fun = {

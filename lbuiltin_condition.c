@@ -2,11 +2,12 @@
 
 #include <limits.h>
 
-#define UNUSED(x) (void)x
+#define UNUSED(x) ((void)x)
 
 int lbi_cond_max_argc(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* args) {
-    UNUSED(env);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* args,
+        const void* guard_arg) {
+    UNUSED(env); UNUSED(guard_arg);
     size_t len = lval_len(args);
     int max = fun->max_argc;
     if (max != -1 && (int)len > max) {
@@ -16,8 +17,9 @@ int lbi_cond_max_argc(
 }
 
 int lbi_cond_min_argc(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* args) {
-    UNUSED(env);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* args,
+        const void* guard_arg) {
+    UNUSED(env); UNUSED(guard_arg);
     size_t len = lval_len(args);
     int min = fun->min_argc;
     if (min != -1 && (int)len < min) {
@@ -27,34 +29,39 @@ int lbi_cond_min_argc(
 }
 
 int lbi_cond_func_pointer(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* args) {
-    UNUSED(env); UNUSED(args);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* args,
+        const void* guard_arg) {
+    UNUSED(env); UNUSED(args); UNUSED(guard_arg);
     if (!fun->accumulator && !fun->func) {
         return -1;
     }
     return 0;
 }
 int lbi_cond_is_not_zero(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
-    UNUSED(fun); UNUSED(env);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg) {
+    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
     return (!lval_is_zero(arg)) ? 0 : 1;
 }
 
 int lbi_cond_is_positive(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
-    UNUSED(fun); UNUSED(env);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg) {
+    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
     return (lval_sign(arg) > 0) ? 0 : 1;
 }
 
 int lbi_cond_is_integral(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
-    UNUSED(fun); UNUSED(env);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg) {
+    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
     return ((lval_type(arg) == LVAL_NUM || lval_type(arg) == LVAL_BIGNUM)) ? 0 : 1;
 }
 
 int lbi_cond_is_numeric(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
-    UNUSED(fun); UNUSED(env);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg) {
+    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
     return (lval_is_numeric(arg)) ? 0 : 1;
 }
 
@@ -70,32 +77,38 @@ static bool _too_big_for_ul(const struct lval* arg) {
     return result;
 }
 int lbi_cond_x_is_ul(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
-    UNUSED(fun); UNUSED(env);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg) {
+    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
     return (!_too_big_for_ul(arg)) ? 0 : 1;
 }
 
-int lbi_cond_len1(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
+int lbi_cond_min_len(
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg) {
     UNUSED(fun); UNUSED(env);
-    return (lval_len(arg) == 1) ? 0 : 1;
+    size_t min = *((size_t*)guard_arg);
+    return (lval_len(arg) >= min) ? 0 : 1;
 }
 
 int lbi_cond_qexpr(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
-    UNUSED(fun); UNUSED(env);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg) {
+    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
     return (lval_type(arg) == LVAL_QEXPR) ? 0 : 1;
 }
 
 int lbi_cond_qexpr_or_nil(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
-    UNUSED(fun); UNUSED(env);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg) {
+    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
     return (lval_type(arg) == LVAL_QEXPR || lval_is_nil(arg)) ? 0 : 1;
 }
 
 int lbi_cond_list(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
-    UNUSED(fun); UNUSED(env);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg) {
+    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
     return (lval_len(arg) > 0) ? 0 : 1;
 }
 
@@ -115,12 +128,14 @@ static int _is_list_of_type(enum ltype type, const struct lval* arg) {
     return 0;
 }
 int lbi_cond_list_of_sym(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
-    UNUSED(fun); UNUSED(env);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg) {
+    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
     return _is_list_of_type(LVAL_SYM, arg);
 }
 int lbi_cond_list_of_sexpr(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg) {
-    UNUSED(fun); UNUSED(env);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg) {
+    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
     return _is_list_of_type(LVAL_SEXPR, arg);
 }

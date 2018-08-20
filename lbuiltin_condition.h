@@ -7,36 +7,50 @@
 
 /* Conditions on lfunc. */
 int lbi_cond_max_argc(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* args);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* args,
+        const void* guard_arg);
 int lbi_cond_min_argc(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* args);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* args,
+        const void* guard_arg);
 int lbi_cond_func_pointer(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* args);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* args,
+        const void* guard_arg);
 
 /* Operators conditions. */
 int lbi_cond_is_not_zero(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg);
 int lbi_cond_is_positive(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg);
 int lbi_cond_is_integral(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg);
 int lbi_cond_is_numeric(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg);
 int lbi_cond_x_is_ul(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg);
 
 /* List conditions. */
-int lbi_cond_len1(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
+int lbi_cond_min_len(
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg);
 int lbi_cond_qexpr(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg);
 int lbi_cond_list_of_sym(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg);
 int lbi_cond_list_of_sexpr(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg);
 int lbi_cond_qexpr_or_nil(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg);
 int lbi_cond_list(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg);
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg);
 
 #endif

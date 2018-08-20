@@ -93,7 +93,7 @@ static int lfunc_check_guards(
         if (guard->argn > 0) {
             struct lval* child = lval_alloc();
             lval_index(args, guard->argn-1, child);
-            if (0 != (s = (guard->condition)(fun, env, child))) {
+            if (0 != (s = (guard->condition)(fun, env, child, guard->arg))) {
                 lval_free(child);
                 break;
             }
@@ -106,7 +106,7 @@ static int lfunc_check_guards(
             for (size_t a = 0; a < len; a++) {
                 struct lval* child = lval_alloc();
                 lval_index(args, a, child);
-                if (0 != (s = (guard->condition)(fun, env, child))) {
+                if (0 != (s = (guard->condition)(fun, env, child, guard->arg))) {
                     lval_free(child);
                     break;
                 }
@@ -119,7 +119,7 @@ static int lfunc_check_guards(
         }
         /* Guard applied on all args. */
         // guard->argn == -1;
-        if (0 != (s = (guard->condition)(fun, env, args))) {
+        if (0 != (s = (guard->condition)(fun, env, args, guard->arg))) {
             break;
         }
     }

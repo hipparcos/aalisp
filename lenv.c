@@ -8,6 +8,7 @@
 #include "lval.h"
 #include "lfunc.h"
 #include "lbuiltin.h"
+#include "leval.h"
 #include "generic/avl.h"
 
 struct env_payload {
@@ -245,6 +246,18 @@ bool lenv_put_builtin(struct lenv* env,
     return s;
 }
 
+static bool lenv_put_lval(struct lenv* env,
+        const char* symbol, const struct lval* val) {
+    if (!symbol || !val) {
+        return false;
+    }
+    struct lval* sym = lval_alloc();
+    lval_mut_sym(sym, symbol);
+    bool s = lenv_put(env, sym, val);
+    lval_free(sym);
+    return s;
+}
+
 bool lenv_def(struct lenv* env,
         const struct lval* sym, const struct lval* val) {
     if (!env) {
@@ -286,11 +299,8 @@ bool lenv_default(struct lenv* env) {
     /* IO functions. */
     lenv_put_builtin(env, "print", &lbuiltin_print);
     /* Environment variable. */
-    struct lval* dots = lval_alloc();
-    struct lval* dotv = lval_alloc();
-    lval_mut_sym(dots, ".");
-    lenv_put(env, dots, dotv);
-    lval_free(dots);
-    lval_free(dotv);
+    struct lval* dot = lval_alloc();
+    lenv_put_lval(env, ".", dot);
+    lval_free(dot);
     return true;
 }

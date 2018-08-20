@@ -292,22 +292,37 @@ size_t lenv_len(const struct lenv* env) {
     return len;
 }
 
+#define indent(indent, width, out) \
+    do { \
+        size_t spaces = indent * 2; \
+        while (spaces--) { \
+            fputc(' ', out); \
+            width++; \
+        } \
+    } while(0);
 void lenv_print_to(const struct lenv* env, FILE* out) {
-    int indent = 0;
+    size_t indent = 0;
+    size_t wrap = 80;
     while (env) {
         size_t len = 0;
         const char** syms = avl_keys(env->tree, &len);
-        int spaces = indent * 2;
-        while (spaces--) {
-            fputc(' ', out);
-        }
-        fprintf(out, "lenv(%ld){", len);
+        size_t width = 0;
+        indent(indent, width, out);
+        width += fprintf(out, "lenv(%ld){", len);
         if (syms) {
             for (size_t k = 0; k < len; k++) {
                 if (k) {
                     fputc(',', out);
+                    width++;
+                }
+                size_t len = strlen(syms[k]);
+                if (width + len >= wrap) {
+                    fputc('\n', out);
+                    width = 0;
+                    indent(indent+1, width, out);
                 }
                 fputs(syms[k], out);
+                width += len;
             }
             free(syms);
         }

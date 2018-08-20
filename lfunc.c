@@ -7,6 +7,7 @@
 #include "lval.h"
 #include "lenv.h"
 #include "lbuiltin_condition.h"
+#include "lbuiltin.h"
 
 #define LENGTH(arr) sizeof(arr)/sizeof(arr[0])
 
@@ -133,19 +134,31 @@ static int lfunc_check_guards(
 static struct lenv* lfunc_prepare_env(
         const struct lfunc* fun, struct lenv* par, const struct lval* args) {
     if (fun->lisp_func) {
+        struct lval* largs = lval_alloc();
+        lval_copy(largs, args);
         struct lenv* env = fun->scope;
         lenv_set_parent(env, par);
         /* Define local variable. */
         size_t len = lval_len(fun->formals);
         for (size_t a = 0; a < len; a++) {
             struct lval* sym = lval_alloc();
-            struct lval* arg = lval_alloc();
             lval_index(fun->formals, a, sym);
-            lval_index(args, a, arg);
+            /* Special case when & is the argument right before last one. */
+            if (a == len-2 && strcmp("&", lval_as_sym(sym)) == 0) {
+                lval_index(fun->formals, a+1, sym);
+                struct lval* list = lval_alloc();
+                lfunc_exec(&lbuiltin_list, env, largs, list);
+                lenv_put(env, sym, list);
+                lval_free(list);
+                lval_free(sym);
+                break;
+            }
+            struct lval* arg = lval_pop(largs, 0);
             lenv_put(env, sym, arg);
             lval_free(sym);
             lval_free(arg);
         }
+        lval_free(largs);
         return env;
     }
     return par;

@@ -38,6 +38,14 @@
         assert( lval_are_equal(result, expected)); \
     })
 
+#define push_num(args, num) \
+    do { \
+        struct lval* x = lval_alloc(); \
+        lval_mut_num(x, num); \
+        lval_push(args, x); \
+        lval_free(x); \
+    } while (0);
+
 describe(lisp_eval, {
     /* Happy path. */
     test_pass("", "nil", {
@@ -125,6 +133,15 @@ describe(lisp_eval, {
     /* Partial function application. */
     test_pass("(fun {mul x y} {* x y})(def {mul2} (mul 2))(mul2 256)", "512", {
             lval_mut_num(expected, 512);
+        });
+    /* User defined accumulator. */
+    test_pass("(fun {joinall x & xs} {join x xs})(joinall {1} 2 3 4 5)", "{1 2 3 4 5}", {
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 2);
+            push_num(expected, 3);
+            push_num(expected, 4);
+            push_num(expected, 5);
         });
 
     /* Errors. */

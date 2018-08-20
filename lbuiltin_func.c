@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "lval.h"
 #include "lenv.h"
@@ -207,12 +208,25 @@ int lbi_func_lambda(struct lenv* env, const struct lval* args, struct lval* acc)
     /* Retrieve arg 1: list of sexpr. */
     struct lval* body = lval_alloc();
     lval_index(args, 1, body);
-    /* Create function. */
+    /* Argument count. */
     size_t argc = lval_len(formals);
+    int min_argc = argc;
+    int max_argc = argc;
+    /* Special case when & is the argument right before last one. */
+    if (argc >= 3) {
+        struct lval* bef_last = lval_alloc();
+        lval_index(formals, argc - 2, bef_last);
+        if (strcmp("&", lval_as_sym(bef_last)) == 0) {
+            min_argc -= 2; // Remove &; last is optional.
+            max_argc = -1;
+        }
+        lval_free(bef_last);
+    }
+    /* Create lfunc. */
     struct lfunc func = {0};
     func.symbol = "lisp defined function";
-    func.min_argc = argc;
-    func.max_argc = argc;
+    func.min_argc = min_argc;
+    func.max_argc = max_argc;
     func.lisp_func = true;
     func.func = lbi_func_call;
     func.scope = lenv_alloc();

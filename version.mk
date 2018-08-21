@@ -1,3 +1,3 @@
-PROGNAME=aalisp
-VERSION=v0.0.1
+PROGNAME=dialecte
+VERSION=v0.0.12
 CODENAME=dev

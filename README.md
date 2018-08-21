@@ -1,6 +1,6 @@
-# aalisp
+# dialecte
 
-A dialect of Lisp written in C (version C11).
+dialecte \dja.lɛkt\ is a dialect of Lisp written in C (version C11).
 WIP...
 
 ## Getting started
@@ -24,12 +24,12 @@ Included under vendor/:
 ### Building & running
 
 ```bash
-git clone https://github.com/hipparcos/aalisp.git
-cd aalisp
+git clone https://github.com/hipparcos/dialecte.git
+cd dialecte
 git submodule init
 git submodule update
 make
-./aalisp
+./dialecte
 ```
 
 ### Running the tests

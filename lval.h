@@ -21,7 +21,6 @@ enum ltype {
     LVAL_SEXPR,
     LVAL_QEXPR,
 };
-extern const char* const ltype_string[10];
 
 /* Forward declaration of lfunc, see lfunc.h */
 struct lfunc;
@@ -105,6 +104,8 @@ size_t lval_len(const struct lval* v);
 /* Accessors */
 /** lval_type returns the type of v. */
 enum ltype lval_type(const struct lval* v);
+/** lval_type_string returns the type of v as string. */
+const char* lval_type_string(const struct lval* v);
 /** lval_type returns v as an error. Its type must be LVAL_ERR. */
 bool lval_as_err(const struct lval* v, enum lerr* r);
 /** lval_type returns v as a long. Its type must be LVAL_NUM. */

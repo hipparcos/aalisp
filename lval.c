@@ -13,19 +13,6 @@
 #define INLINE
 #endif
 
-const char* const ltype_string[] = {
-    "nil",
-    "num",
-    "bignum",
-    "double",
-    "error",
-    "string",
-    "symbol",
-    "function",
-    "sexpr",
-    "qexpr",
-};
-
 /** ldata is the return type of an evalution. */
 struct ldata {
     /** ldata.alive is a code used to detect mutation.
@@ -619,6 +606,22 @@ enum ltype lval_type(const struct lval* v) {
     return v->data->type;
 }
 
+const char* lval_type_string(const struct lval* v) {
+    switch (lval_type(v)) {
+    case LVAL_NIL:    return "nil";
+    case LVAL_NUM:    return "num";
+    case LVAL_BIGNUM: return "bignum";
+    case LVAL_DBL:    return "double";
+    case LVAL_ERR:    return "error";
+    case LVAL_STR:    return "string";
+    case LVAL_SYM:    return "symbol";
+    case LVAL_FUNC:   return "function";
+    case LVAL_SEXPR:  return "sexpr";
+    case LVAL_QEXPR:  return "qexpr";
+    default:          return "";
+    }
+}
+
 bool lval_as_err(const struct lval* v, enum lerr* r) {
     if (!lval_is_alive(v) || lval_type(v) != LVAL_ERR) {
         *r = LERR_DEAD_REF;
@@ -906,7 +909,7 @@ static void _lval_debug(const struct lval* v, char* out, bool recursive, int ind
         INDENT(out, indent);
         sprintf(out,
                 "  ldata{type: %s, len: %ld, alive: 0x%x, refc: %d, mutable: %s,\n",
-                ltype_string[v->data->type], v->data->len, v->data->alive, v->data->refc,
+                lval_type_string(v), v->data->len, v->data->alive, v->data->refc,
                 v->data->mutable ? "true" : "false");
         out += strlen(out);
         INDENT(out, indent);

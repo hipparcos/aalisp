@@ -11,7 +11,7 @@
 
 /* Operator: declaration */
 static const struct lguard guards_op_add[] = {
-    {.condition= lbi_cond_is_numeric, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_is_numeric, .error= LERR_BAD_OPERAND, .message= "is not numeric"},
 };
 const struct lfunc lbuiltin_op_add = {
     .symbol       = "+",
@@ -25,7 +25,7 @@ const struct lfunc lbuiltin_op_add = {
 };
 
 static const struct lguard guards_op_sub[] = {
-    {.condition= lbi_cond_is_numeric, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_is_numeric, .error= LERR_BAD_OPERAND, .message= "is not numeric"},
 };
 const struct lfunc lbuiltin_op_sub = {
     .symbol       = "-",
@@ -39,7 +39,7 @@ const struct lfunc lbuiltin_op_sub = {
 };
 
 static const struct lguard guards_op_mul[] = {
-    {.condition= lbi_cond_is_numeric, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_is_numeric, .error= LERR_BAD_OPERAND, .message= "is not numeric"},
 };
 const struct lfunc lbuiltin_op_mul = {
     .symbol       = "*",
@@ -53,8 +53,8 @@ const struct lfunc lbuiltin_op_mul = {
 };
 
 static const struct lguard guards_op_div[] = {
-    {.condition= lbi_cond_is_numeric,  .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_is_not_zero, .error= LERR_DIV_ZERO},
+    {.condition= lbi_cond_is_numeric,  .error= LERR_BAD_OPERAND, .message= "is not numeric"},
+    {.condition= lbi_cond_is_not_zero, .error= LERR_DIV_ZERO, .message= "is zero"},
 };
 const struct lfunc lbuiltin_op_div = {
     .symbol       = "/",
@@ -68,8 +68,8 @@ const struct lfunc lbuiltin_op_div = {
 };
 
 static const struct lguard guards_op_mod[] = {
-    {.condition= lbi_cond_is_integral, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_is_not_zero, .error= LERR_DIV_ZERO},
+    {.condition= lbi_cond_is_integral, .error= LERR_BAD_OPERAND, .message= "is not integral"},
+    {.condition= lbi_cond_is_not_zero, .error= LERR_DIV_ZERO, .message= "is zero"},
 };
 const struct lfunc lbuiltin_op_mod = {
     .symbol       = "%",
@@ -83,9 +83,9 @@ const struct lfunc lbuiltin_op_mod = {
 };
 
 static const struct lguard guards_op_fac[] = {
-    {.condition= lbi_cond_is_integral, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_is_positive, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_x_is_ul,     .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_is_integral, .error= LERR_BAD_OPERAND, .message= "is not integral"},
+    {.condition= lbi_cond_is_positive, .error= LERR_BAD_OPERAND, .message= "is not positive"},
+    {.condition= lbi_cond_x_is_ul,     .error= LERR_BAD_OPERAND, .message= "is too large"},
 };
 const struct lfunc lbuiltin_op_fac = {
     .symbol       = "!",
@@ -99,8 +99,8 @@ const struct lfunc lbuiltin_op_fac = {
 };
 
 static const struct lguard guards_op_pow[] = {
-    {.condition= lbi_cond_is_numeric, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_x_is_ul,    .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_is_numeric, .error= LERR_BAD_OPERAND, .message= "is not numeric"},
+    {.condition= lbi_cond_x_is_ul,    .error= LERR_BAD_OPERAND, .message= "is too large"},
 };
 const struct lfunc lbuiltin_op_pow = {
     .symbol       = "^",
@@ -114,8 +114,10 @@ const struct lfunc lbuiltin_op_pow = {
 };
 
 static const struct lguard guards_list_op[] = {
-    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_list,  .argn= 1, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND,
+        .message= "must be a Q-Expression"},
+    {.condition= lbi_cond_list,  .argn= 1, .error= LERR_BAD_OPERAND,
+        .message= "must be a list"},
 };
 const struct lfunc lbuiltin_head = {
     .symbol       = "head",
@@ -151,7 +153,8 @@ const struct lfunc lbuiltin_last = {
 };
 
 static const struct lguard guards_cons[] = {
-    {.condition= lbi_cond_qexpr, .argn= 2, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_qexpr, .argn= 2, .error= LERR_BAD_OPERAND,
+        .message= "must be a Q-Expression"},
 };
 const struct lfunc lbuiltin_cons = {
     .symbol       = "cons",
@@ -163,7 +166,8 @@ const struct lfunc lbuiltin_cons = {
 };
 
 static const struct lguard guards_len[] = {
-    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND,
+        .message= "must be a Q-Expression"},
 };
 const struct lfunc lbuiltin_len = {
     .symbol       = "len",
@@ -175,7 +179,8 @@ const struct lfunc lbuiltin_len = {
 };
 
 static const struct lguard guards_join[] = {
-    {.condition= lbi_cond_qexpr, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_qexpr, .error= LERR_BAD_OPERAND,
+        .message= "must be a Q-Expression"},
 };
 const struct lfunc lbuiltin_join = {
     .symbol       = "join",
@@ -215,8 +220,10 @@ const struct lfunc lbuiltin_eval = {
 };
 
 static const struct lguard guards_def[] = {
-    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_list_of_sym, .argn= 1, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND,
+        .message= "must be a Q-Expression"},
+    {.condition= lbi_cond_list_of_sym, .argn= 1, .error= LERR_BAD_OPERAND,
+        .message= "must be a list of symbols"},
 };
 const struct lfunc lbuiltin_def = {
     .symbol       = "def",
@@ -245,9 +252,12 @@ const struct lfunc lbuiltin_put = {
 
 static size_t one = 1;
 static const struct lguard guards_fun[] = {
-    {.condition= lbi_cond_qexpr,         .argn= 0, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_list_of_sym,   .argn= 1, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_min_len,       .argn= 1, .error= LERR_BAD_OPERAND, .arg= &one},
+    {.condition= lbi_cond_qexpr,         .argn= 0, .error= LERR_BAD_OPERAND,
+        .message= "must be a Q-Expression"},
+    {.condition= lbi_cond_list_of_sym,   .argn= 1, .error= LERR_BAD_OPERAND,
+        .message= "must be a list of symbols"},
+    {.condition= lbi_cond_min_len,       .argn= 1, .error= LERR_BAD_OPERAND, .arg= &one,
+        .message= "must be list of len >= 1"},
 };
 const struct lfunc lbuiltin_fun = {
     .symbol       = "fun",
@@ -259,9 +269,12 @@ const struct lfunc lbuiltin_fun = {
 };
 
 static const struct lguard guards_lambda[] = {
-    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_qexpr, .argn= 2, .error= LERR_BAD_OPERAND},
-    {.condition= lbi_cond_list_of_sym, .argn= 1, .error= LERR_BAD_OPERAND},
+    {.condition= lbi_cond_qexpr, .argn= 1, .error= LERR_BAD_OPERAND,
+        .message= "must be a Q-Expression"},
+    {.condition= lbi_cond_qexpr, .argn= 2, .error= LERR_BAD_OPERAND,
+        .message= "must be a Q-Expression"},
+    {.condition= lbi_cond_list_of_sym, .argn= 1, .error= LERR_BAD_OPERAND,
+        .message= "must be a list of symbols"},
 };
 const struct lfunc lbuiltin_lambda = {
     .symbol       = "lambda",
@@ -273,7 +286,8 @@ const struct lfunc lbuiltin_lambda = {
 };
 
 static const struct lguard guards_pack[] = {
-    {.condition= lbi_cond_type, .argn= 1, .error= LERR_BAD_OPERAND, .arg= INLINE_PTR(enum ltype, LVAL_FUNC)},
+    {.condition= lbi_cond_type, .argn= 1, .error= LERR_BAD_OPERAND,
+        .arg= INLINE_PTR(enum ltype, LVAL_FUNC), .message= "must be a function"},
 };
 const struct lfunc lbuiltin_pack = {
     .symbol       = "pack",
@@ -285,8 +299,10 @@ const struct lfunc lbuiltin_pack = {
 };
 
 static const struct lguard guards_unpack[] = {
-    {.condition= lbi_cond_type, .argn= 1, .error= LERR_BAD_OPERAND, .arg= INLINE_PTR(enum ltype, LVAL_FUNC)},
-    {.condition= lbi_cond_type, .argn= 2, .error= LERR_BAD_OPERAND, .arg= INLINE_PTR(enum ltype, LVAL_QEXPR)},
+    {.condition= lbi_cond_type, .argn= 1, .error= LERR_BAD_OPERAND,
+        .arg= INLINE_PTR(enum ltype, LVAL_FUNC), .message= "must be a function"},
+    {.condition= lbi_cond_type, .argn= 2, .error= LERR_BAD_OPERAND,
+        .arg= INLINE_PTR(enum ltype, LVAL_QEXPR), .message= "must be a Q-Expression"},
 };
 const struct lfunc lbuiltin_unpack = {
     .symbol       = "unpack",

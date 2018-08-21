@@ -188,6 +188,7 @@ static bool lenv_local_lookup(const struct lenv* env,
     const char* symbol = lval_as_sym(sym);
     if (!symbol) {
         lval_mut_err(result, LERR_BAD_SYMBOL);
+        lval_err_annotate(result, "lookup for nil");
         return false;
     }
     struct env_payload symbolpl = {.key= (char*)symbol};
@@ -201,6 +202,7 @@ static bool lenv_local_lookup(const struct lenv* env,
     }
     /* Fail. */
     lval_mut_err(result, LERR_BAD_SYMBOL);
+    lval_err_annotate(result, "symbol %s not defined in environment", symbol);
     return false;
 }
 

@@ -181,6 +181,8 @@ static int lbuiltin_operator(
     }
 
     lval_mut_err(acc, LERR_EVAL);
+    lval_err_annotate(acc,
+            "operator can't operate on type %s", lval_type_string(arg));
     return -1;
 }
 

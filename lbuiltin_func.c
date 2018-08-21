@@ -144,6 +144,8 @@ static int lbi_def(struct lenv* env,
         } else {
             lval_mut_err(result, LERR_TOO_MANY_ARGS);
         }
+        lval_err_annotate(result,
+                "def called with %ld symbol(s) and %ld value(s)", lensyms, lenvals);
         return -1;
     }
     /* Define symbols. */

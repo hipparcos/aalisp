@@ -103,6 +103,8 @@ static bool leval_sexpr(struct lenv* env,
 bool leval(struct lenv* env, const struct lval* v, struct lval* r) {
     if (!v) {
         lval_mut_err(r, LERR_EVAL);
+        lval_err_annotate(r,
+            "the impossible happens, NULL pointer received");
         return false;
     }
     switch (lval_type(v)) {

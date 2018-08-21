@@ -1,11 +1,11 @@
 out=$(PROGNAME)
 sources=$(PROGNAME).c vendor/mini-gmp/mini-gmp.c \
 		generic/avl.c \
-		leval.c lval.c lenv.c lbuiltin.c llexer.c lparser.c lmut.c \
+		leval.c lval.c lerr.c lenv.c lbuiltin.c llexer.c lparser.c lmut.c \
 		lfunc.c lbuiltin_condition.c lbuiltin_operator.c lbuiltin_func.c
 headers=vendor/mini-gmp/mini-gmp.h \
 		generic/avl.h \
-		leval.h lval.h lenv.h lbuiltin.h llexer.h lparser.h lmut.h \
+		leval.h lval.h lerr.h lenv.h lbuiltin.h llexer.h lparser.h lmut.h \
 		lfunc.h lbuiltin_condition.h lbuiltin_operator.h lbuiltin_func.h
 
 build_dir:=build

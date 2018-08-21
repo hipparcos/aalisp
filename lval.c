@@ -1,6 +1,7 @@
 #include "lval.h"
 
 #include <math.h>
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -24,17 +25,6 @@ const char* const ltype_string[] = {
     "sexpr",
     "qexpr",
 };
-const char* const lerr_string[] = {
-    "unknown error",
-    "dead reference",
-    "ast error",
-    "evaluation error",
-    "division by zero",
-    "bad symbol",
-    "bad operand",
-    "too many arguments",
-    "too few arguments",
-};
 
 /** ldata is the return type of an evalution. */
 struct ldata {
@@ -55,13 +45,13 @@ struct ldata {
     size_t len;
     /** ldata.payload must be considered according to ldata.type */
     union {
-        long          num;
-        mpz_t         bignum; // int > LONG_MAX.
-        double        dbl;
-        enum lerr     err;    // error code.
-        char*         str;    // string or symbol.
-        struct lval** cell;   // list of lval (can detect data mutation).
-        struct lfunc* func;   // pointer to a function descriptor.
+        long             num;
+        mpz_t            bignum; // int > LONG_MAX.
+        double           dbl;
+        char*            str;    // string or symbol.
+        struct lval**    cell;   // list of lval (can detect data mutation).
+        struct lfunc*    func;   // pointer to a function descriptor.
+        struct lerr_ctx* err;    // error.
     } payload;
 };
 
@@ -165,10 +155,12 @@ static bool ldata_clear(struct ldata* d) {
         d->payload.cell = NULL;
         break;
     case LVAL_FUNC:
-        if (d->payload.func) {
-            lfunc_free(d->payload.func);
-            d->payload.func = NULL;
-        }
+        lfunc_free(d->payload.func);
+        d->payload.func = NULL;
+        break;
+    case LVAL_ERR:
+        lerr_free(d->payload.err);
+        d->payload.err = NULL;
         break;
     default: break;
     }
@@ -316,7 +308,8 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
         dest->payload.dbl = src->payload.dbl;
         break;
     case LVAL_ERR:
-        dest->payload.err = src->payload.err;
+        dest->payload.err = lerr_alloc();
+        lerr_copy(dest->payload.err, src->payload.err);
         break;
     case LVAL_SEXPR:
     case LVAL_QEXPR:
@@ -428,9 +421,25 @@ bool lval_mut_err(struct lval* v, enum lerr e) {
         return false;
     }
     data->type = LVAL_ERR;
-    data->payload.err = e;
+    struct lerr_ctx* err = lerr_alloc();
+    err->code = e;
+    data->payload.err = err;
     data->len = 1;
     lval_connect(v, data);
+    return true;
+}
+
+bool lval_err_annotate(struct lval* v, const char* fmt, ...) {
+    if (!lval_is_mutable(v)) {
+        return false;
+    }
+    if (lval_type(v) != LVAL_ERR) {
+        return false;
+    }
+    va_list va;
+    va_start(va, fmt);
+    lerr_annotate_va(v->data->payload.err, fmt, va);
+    va_end(va);
     return true;
 }
 
@@ -615,7 +624,7 @@ bool lval_as_err(const struct lval* v, enum lerr* r) {
         *r = LERR_DEAD_REF;
         return false;
     }
-    *r = v->data->payload.err;
+    *r = v->data->payload.err->code;
     return true;
 }
 
@@ -717,11 +726,7 @@ bool lval_as_str(const struct lval* v, char* r, size_t len) {
         lval_list_as_str(v, r, len, '(', ')');
         break;
     case LVAL_ERR:
-        {
-        size_t idx = v->data->payload.err % sizeof(lerr_string);
-        const char* format = lerr_string[idx];
-        snprintf(r, len, "%s", format);
-        }
+        lerr_as_string(v->data->payload.err, r, len);
         break;
     case LVAL_FUNC:
         snprintf(r, len, "func");
@@ -796,7 +801,7 @@ bool lval_are_equal(const struct lval* x, const struct lval* y) {
     static const double epsilon = 0.000001;
     switch (x->data->type) {
     case LVAL_NIL:    return x->data->type == y->data->type;
-    case LVAL_ERR:    return x->data->payload.err == y->data->payload.err;
+    case LVAL_ERR:    return x->data->payload.err->code == y->data->payload.err->code;
     case LVAL_NUM:    return x->data->payload.num == y->data->payload.num;
     case LVAL_BIGNUM: return mpz_cmp(x->data->payload.bignum, y->data->payload.bignum) == 0;
     case LVAL_DBL:    return fabs(x->data->payload.dbl - y->data->payload.dbl) < epsilon;
@@ -836,7 +841,7 @@ size_t lval_printlen(const struct lval* v) {
     switch (v->data->type) {
     case LVAL_NIL:    len = 3;   break;
     case LVAL_ERR:
-        len = strlen(lerr_string[v->data->payload.err]);
+        len = lerr_printlen(v->data->payload.err);
         break;
     case LVAL_NUM:
         len = length_of_long(v->data->payload.num);

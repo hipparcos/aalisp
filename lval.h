@@ -6,6 +6,8 @@
 
 #include "vendor/mini-gmp/mini-gmp.h"
 
+#include "lerr.h"
+
 /** ltype is the type of a lval. */
 enum ltype {
     LVAL_NIL = 0,
@@ -20,20 +22,6 @@ enum ltype {
     LVAL_QEXPR,
 };
 extern const char* const ltype_string[10];
-
-/** lerr is an error code. */
-enum lerr {
-    LERR_UNKNOWN = 0,
-    LERR_DEAD_REF,
-    LERR_AST,
-    LERR_EVAL,
-    LERR_DIV_ZERO,
-    LERR_BAD_SYMBOL,
-    LERR_BAD_OPERAND,
-    LERR_TOO_MANY_ARGS,
-    LERR_TOO_FEW_ARGS,
-};
-extern const char* const lerr_string[9];
 
 /* Forward declaration of lfunc, see lfunc.h */
 struct lfunc;
@@ -86,6 +74,8 @@ bool lval_mut_bignum(struct lval* v, const mpz_t x);
 bool lval_mut_dbl(struct lval* v, double x);
 /** lval_mut_err mutates v to LVAL_ERR type. */
 bool lval_mut_err(struct lval* v, enum lerr err);
+/** lval_err_annotate annotates an error with the given string. */
+bool lval_err_annotate(struct lval* v, const char* fmt, ...);
 /** lval_mut_str mutates v to LVAL_STR type. str is copied. */
 bool lval_mut_str(struct lval* v, const char* str);
 /** lval_mut_sym mutates v to LVAL_SYM type. sym is copied */

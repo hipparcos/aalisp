@@ -30,6 +30,7 @@ extern const struct lfunc lbuiltin_def;
 extern const struct lfunc lbuiltin_put;
 extern const struct lfunc lbuiltin_fun;
 extern const struct lfunc lbuiltin_lambda;
+extern const struct lfunc lbuiltin_pack;
 
 /* IO functions. */
 extern const struct lfunc lbuiltin_print;

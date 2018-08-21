@@ -296,6 +296,8 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "fun", &lbuiltin_fun);
     lenv_put_builtin(env, "lambda", &lbuiltin_lambda);
     lenv_put_builtin(env, "\\",     &lbuiltin_lambda);
+    lenv_put_builtin(env, "pack",    &lbuiltin_pack);
+    lenv_put_builtin(env, "uncurry", &lbuiltin_pack);
     /* IO functions. */
     lenv_put_builtin(env, "print", &lbuiltin_print);
     /* Environment variable. */

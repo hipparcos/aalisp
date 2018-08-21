@@ -288,6 +288,25 @@ int lbi_func_fun(struct lenv* env, const struct lval* args, struct lval* acc) {
     return s;
 }
 
+int lbi_func_pack(struct lenv* env, const struct lval* args, struct lval* acc) {
+    struct lval* largs = lval_alloc();
+    lval_copy(largs, args);
+    lval_mut_qexpr(largs);
+    /* Retrieve arg 1: function pointer. */
+    struct lval* func_ptr = lval_pop(largs, 0);
+    /* Remaining args: function arguments. */
+    struct lval* func_args = lval_alloc(); // For clarity.
+    lval_mut_qexpr(func_args);
+    lval_push(func_args, largs);
+    /* Create Q-Expression. */
+    int s = lfunc_exec(lval_as_func(func_ptr), env, func_args, acc);
+    /* Cleanup. */
+    lval_free(func_ptr);
+    lval_free(func_args);
+    lval_free(largs);
+    return s;
+}
+
 int lbi_func_print(struct lenv* env, const struct lval* args, struct lval* acc) {
     UNUSED(env);
     size_t len = lval_len(args);

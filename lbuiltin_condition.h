@@ -37,6 +37,9 @@ int lbi_cond_x_is_ul(
 int lbi_cond_min_len(
         const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
         const void* guard_arg);
+int lbi_cond_type(
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg);
 int lbi_cond_qexpr(
         const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
         const void* guard_arg);

@@ -75,10 +75,18 @@ bool lfunc_are_equal(const struct lfunc* left, const struct lfunc* right) {
     CHECK(left->init_neutral == right->init_neutral);
     CHECK(lval_are_equal(left->neutral, right->neutral));
     CHECK(left->func == right->func);
-    CHECK(lenv_are_equal(left->scope, right->scope));
-    CHECK(lval_are_equal(left->formals, right->formals));
-    CHECK(lval_are_equal(left->body, right->body));
-    CHECK(lval_are_equal(left->args, right->args));
+    if (left->scope || right->scope) {
+        CHECK(lenv_are_equal(left->scope, right->scope));
+    }
+    if (left->formals || right->formals) {
+        CHECK(lval_are_equal(left->formals, right->formals));
+    }
+    if (left->body || right->body) {
+        CHECK(lval_are_equal(left->body, right->body));
+    }
+    if (left->args || right->args) {
+        CHECK(lval_are_equal(left->args, right->args));
+    }
     return true;
 }
 

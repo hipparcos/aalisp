@@ -91,6 +91,14 @@ int lbi_cond_min_len(
     return (lval_len(arg) >= min) ? 0 : 1;
 }
 
+int lbi_cond_type(
+        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
+        const void* guard_arg) {
+    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
+    enum ltype type = *((enum ltype*)guard_arg);
+    return (lval_type(arg) == type) ? 0 : 1;
+}
+
 int lbi_cond_qexpr(
         const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
         const void* guard_arg) {

@@ -263,6 +263,19 @@ const struct lfunc lbuiltin_lambda = {
     .func         = lbi_func_lambda,
 };
 
+static enum ltype type_func = LVAL_FUNC;
+static const struct lguard guards_pack[] = {
+    {.condition= lbi_cond_type, .argn= 1, .error= LERR_BAD_OPERAND, .arg= &type_func},
+};
+const struct lfunc lbuiltin_pack = {
+    .symbol       = "pack",
+    .min_argc     =  1,
+    .max_argc     = -1,
+    .guards       = &guards_pack[0],
+    .guardc       = LENGTH(guards_pack),
+    .func         = lbi_func_pack,
+};
+
 const struct lfunc lbuiltin_print = {
     .symbol       = "print",
     .min_argc     =  -1,

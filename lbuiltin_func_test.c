@@ -214,6 +214,18 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_pack, {
+        test_pass(&lbuiltin_pack, "happy path", {
+            /* Args. */
+            push_func(args, &lbuiltin_head);
+            push_num(args, 1);
+            push_num(args, 2);
+            push_num(args, 3);
+            /* Expected. */
+            lval_mut_num(expected, 1);
+        });
+    });
+
 });
 
 snow_main();

@@ -176,18 +176,15 @@ void lenv_print_to(const struct lenv* env, FILE* out) {
 }
 
 bool lenv_set_parent(struct lenv* env, struct lenv* par) {
-    if (!env || !par) {
+    if (!env) {
         return false;
     }
     env->par = par;
     return true;
 }
 
-bool lenv_lookup(const struct lenv* env,
+static bool lenv_local_lookup(const struct lenv* env,
         const struct lval* sym, struct lval* result) {
-    if (!env) {
-        return false;
-    }
     const char* symbol = lval_as_sym(sym);
     if (!symbol) {
         lval_mut_err(result, LERR_BAD_SYMBOL);
@@ -202,13 +199,18 @@ bool lenv_lookup(const struct lenv* env,
          * thus lval_copy fails. */
         return true;
     }
-    /* Lookup into parent env. */
-    if (env->par) {
-        return lenv_lookup(env->par, sym, result);
-    }
     /* Fail. */
     lval_mut_err(result, LERR_BAD_SYMBOL);
     return false;
+}
+
+bool lenv_lookup(const struct lenv* env,
+        const struct lval* sym, struct lval* result) {
+    if (!env) {
+        return false;
+    }
+    return lenv_local_lookup(env, sym, result)
+        || lenv_lookup(env->par, sym, result);
 }
 
 bool lenv_put(struct lenv* env,
@@ -258,6 +260,17 @@ static bool lenv_put_lval(struct lenv* env,
     return s;
 }
 
+bool lenv_override(struct lenv* env,
+        const struct lval* sym, const struct lval* val) {
+    if (!env) {
+        return false;
+    }
+    if (lenv_local_lookup(env, sym, NULL)) {
+        return lenv_put(env, sym, val);
+    }
+    return lenv_override(env->par, sym, val);
+}
+
 bool lenv_def(struct lenv* env,
         const struct lval* sym, const struct lval* val) {
     if (!env) {
@@ -291,6 +304,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "eval", &lbuiltin_eval);
     /* Environment manipulation functions. */
     lenv_put_builtin(env, "def", &lbuiltin_def);
+    lenv_put_builtin(env, "ovr", &lbuiltin_override);
     lenv_put_builtin(env, "put", &lbuiltin_put);
     lenv_put_builtin(env, "=",   &lbuiltin_put);
     lenv_put_builtin(env, "fun", &lbuiltin_fun);

@@ -8,9 +8,6 @@
 /** lenv associates a lval with a name. */
 struct lenv;
 
-/* Forward declaration of lfunc, see lfunc.h */
-struct lfunc;
-
 /** lenv_alloc creates a new lenv.
  ** Caller is responsible for calling lenv_free. */
 struct lenv* lenv_alloc(void);
@@ -28,7 +25,7 @@ void lenv_print_to(const struct lenv* env, FILE* out);
 /** lenv_print prints th elist of defined symbols to stdout. */
 #define lenv_print(env) lenv_print_to(env, stdout)
 
-/** lenv_set_parent set env parent to par. */
+/** lenv_set_parent sets env parent to par. */
 bool lenv_set_parent(struct lenv* env, struct lenv* par);
 /** lenv_lookup returns the lval associated to sym. */
 bool lenv_lookup(const struct lenv* env,
@@ -36,9 +33,9 @@ bool lenv_lookup(const struct lenv* env,
 /** lenv_put binds val to sym in env. */
 bool lenv_put(struct lenv* env,
         const struct lval* sym, const struct lval* val);
-/** lenv_put_builtin binds val to sym in env (helper function). */
-bool lenv_put_builtin(struct lenv* env,
-        const char* symbol, const struct lfunc* func);
+/** lenv_override tries to override sym in env and its parents. */
+bool lenv_override(struct lenv* env,
+        const struct lval* sym, const struct lval* val);
 /** lenv_def binds val to sym in env outermost parent. */
 bool lenv_def(struct lenv* env,
         const struct lval* sym, const struct lval* val);

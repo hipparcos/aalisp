@@ -25,6 +25,8 @@ int lbi_func_eval(struct lenv* env, const struct lval* args, struct lval* acc);
 
 /** lbi_func_def defines a symbol in the global environment. */
 int lbi_func_def(struct lenv* env, const struct lval* args, struct lval* acc);
+/** lbi_func_override overrides a symbol in env environment. */
+int lbi_func_override(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_put defines a symbol in the local environment. */
 int lbi_func_put(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_fun defines a function in the global environment. */

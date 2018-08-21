@@ -180,6 +180,22 @@ int lbi_func_def(struct lenv* env, const struct lval* args, struct lval* acc) {
     return s;
 }
 
+int lbi_func_override(struct lenv* env, const struct lval* args, struct lval* acc) {
+    /* Retrieve arg 1: list of symbols. */
+    struct lval* symbols = lval_alloc();
+    lval_index(args, 0, symbols);
+    /* Retrieve arg 2...n: list of values. */
+    struct lval* values = lval_alloc();
+    lval_copy(values, args);
+    lval_drop(values, 0); // Drops list of symbols.
+    /* Def. */
+    int s = lbi_def(env, lenv_override, symbols, values, acc);
+    /* Cleanup. */
+    lval_free(symbols);
+    lval_free(values);
+    return s;
+}
+
 int lbi_func_put(struct lenv* env, const struct lval* args, struct lval* acc) {
     /* Retrieve arg 1: list of symbols. */
     struct lval* symbols = lval_alloc();

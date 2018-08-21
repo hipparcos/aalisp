@@ -226,6 +226,23 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_unpack, {
+        test_pass(&lbuiltin_unpack, "happy path", {
+            /* Args. */
+            struct lval* qexpr = lval_alloc();
+            defer(lval_free(qexpr));
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            push_num(qexpr, 4);
+            push_func(args, &lbuiltin_op_add);
+            lval_push(args, qexpr);
+            /* Expected. */
+            lval_mut_num(expected, 10);
+        });
+    });
+
 });
 
 snow_main();

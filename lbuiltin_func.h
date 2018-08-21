@@ -33,6 +33,8 @@ int lbi_func_fun(struct lenv* env, const struct lval* args, struct lval* acc);
 int lbi_func_lambda(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_pack packs a function and its arguments together. */
 int lbi_func_pack(struct lenv* env, const struct lval* args, struct lval* acc);
+/** lbi_func_unpack evals a function and its list of arguments. */
+int lbi_func_unpack(struct lenv* env, const struct lval* args, struct lval* acc);
 
 /** lbi_func_print prints all its arguments. */
 int lbi_func_print(struct lenv* env, const struct lval* args, struct lval* acc);

@@ -307,6 +307,21 @@ int lbi_func_pack(struct lenv* env, const struct lval* args, struct lval* acc) {
     return s;
 }
 
+int lbi_func_unpack(struct lenv* env, const struct lval* args, struct lval* acc) {
+    /* Retrieve arg 1: function pointer. */
+    struct lval* func_ptr = lval_alloc();
+    lval_index(args, 0, func_ptr);
+    /* Retrieve arg 2: function arguments. */
+    struct lval* func_args = lval_alloc();
+    lval_index(args, 1, func_args);
+    /* Eval. */
+    int s = lfunc_exec(lval_as_func(func_ptr), env, func_args, acc);
+    /* Cleanup. */
+    lval_free(func_ptr);
+    lval_free(func_args);
+    return s;
+}
+
 int lbi_func_print(struct lenv* env, const struct lval* args, struct lval* acc) {
     UNUSED(env);
     size_t len = lval_len(args);

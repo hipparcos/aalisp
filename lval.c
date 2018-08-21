@@ -486,6 +486,9 @@ bool lval_mut_sexpr(struct lval* v) {
     if (!lval_is_mutable(v)) {
         return false;
     }
+    if (lval_type(v) == LVAL_SEXPR) {
+        return true;
+    }
     if (lval_type(v) == LVAL_QEXPR && v->data->refc == 1) {
         v->data->type = LVAL_SEXPR;
         return true;
@@ -503,6 +506,13 @@ bool lval_mut_sexpr(struct lval* v) {
 bool lval_mut_qexpr(struct lval* v) {
     if (!lval_is_mutable(v)) {
         return false;
+    }
+    if (lval_type(v) == LVAL_QEXPR) {
+        return true;
+    }
+    if (lval_type(v) == LVAL_SEXPR && v->data->refc == 1) {
+        v->data->type = LVAL_QEXPR;
+        return true;
     }
     struct ldata* data = NULL;
     if (!(data = lval_disconnect(v, true))) {

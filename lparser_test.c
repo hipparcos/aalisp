@@ -212,6 +212,27 @@ describe(lparse, {
             })[0]
         );
 
+    test_pass("nested s-expressions with $",
+            "(+ 1 $ ! 2)",
+            &((struct ast_list[]){
+                {.id= 1, .tag= LTAG_SYM, .content= "!", .children= NULL},
+                {.id= 2, .tag= LTAG_NUM, .content= "2", .children= NULL},
+                {.id= 3, .tag= LTAG_EXPR, .content= "",
+                    .children= &((size_t[]){1, 2, 0}[0])},
+                {.id= 4, .tag= LTAG_SEXPR, .content= "",
+                    .children= &((size_t[]){3, 0}[0])},
+                {.id= 5, .tag= LTAG_SYM, .content= "+", .children= NULL},
+                {.id= 6, .tag= LTAG_NUM, .content= "1", .children= NULL},
+                {.id= 7, .tag= LTAG_EXPR, .content= "",
+                    .children= &((size_t[]){5, 6, 4, 0}[0])},
+                {.id= 8, .tag= LTAG_SEXPR, .content= "",
+                    .children= &((size_t[]){7, 0}[0])},
+                {.id= 9, .tag= LTAG_PROG, .content= "",
+                    .children= &((size_t[]){8, 0}[0])},
+                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+            })[0]
+        );
+
     test_fail("NULL", NULL);
     test_fail("0-length input", "");
     test_fail("s-expr which does not begin with a symbol", "(1 + 2)");

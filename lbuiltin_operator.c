@@ -297,3 +297,12 @@ int lbi_op_eq(struct lenv* env, const struct lval* arg, struct lval* acc) {
     lval_free(casted_arg);
     return 0;
 }
+
+int lbi_op_neq(struct lenv* env, const struct lval* arg, struct lval* acc) {
+    UNUSED(env);
+    int s = lbi_op_eq(env, arg, acc);
+    if (lval_type(acc) != LVAL_ERR) {
+        lval_mut_bool(acc, !lval_as_bool(acc));
+    }
+    return s;
+}

@@ -16,6 +16,7 @@ extern const struct lfunc lbuiltin_op_fac;
 
 /* Boolean operators. */
 extern const struct lfunc lbuiltin_op_eq;
+extern const struct lfunc lbuiltin_op_neq;
 
 /* List manipulation functions. */
 extern const struct lfunc lbuiltin_head;

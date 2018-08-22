@@ -21,5 +21,7 @@ int lbi_op_pow(struct lenv* env, const struct lval* arg, struct lval* acc);
 
 /** lbi_op_eq is the == oerator. */
 int lbi_op_eq(struct lenv* env, const struct lval* arg, struct lval* acc);
+/** lbi_op_neq is the != oerator. */
+int lbi_op_neq(struct lenv* env, const struct lval* arg, struct lval* acc);
 
 #endif

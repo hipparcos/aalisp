@@ -124,6 +124,17 @@ const struct lfunc lbuiltin_op_eq = {
     .func         = lbi_op_eq,
 };
 
+const struct lfunc lbuiltin_op_neq = {
+    .symbol       = "!=",
+    .accumulator  = true,
+    .neutral      = &lnil,
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = NULL,
+    .guardc       = 0,
+    .func         = lbi_op_neq,
+};
+
 static const struct lguard guards_list_op[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_QEXPR)},

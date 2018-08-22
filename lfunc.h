@@ -28,7 +28,7 @@ struct lguard {
      **   -1 applied on all args. */
     int argn;
     /** lguard.error is the error returned. */
-    enum lerr error;
+    enum lerr_code error;
     /** lguard.message describe the error. */
     const char* message;
 };

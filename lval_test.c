@@ -46,7 +46,7 @@ describe(lval, {
         });
 
         it("mutates a lval to an error", {
-            enum lerr input = LERR_EVAL;
+            enum lerr_code input = LERR_EVAL;
             struct lval* v = lval_alloc();
             assert(lval_mut_err(v, input));
             assert(lval_type(v) == LVAL_ERR);
@@ -147,8 +147,8 @@ describe(lval, {
         });
 
         it("mutates a lval to an error and read it back", {
-            enum lerr expected = LERR_EVAL;
-            enum lerr got = 0;
+            enum lerr_code expected = LERR_EVAL;
+            enum lerr_code got = 0;
             struct lval* v = lval_alloc();
             assert(lval_mut_err(v, expected));
             assert(lval_type(v) == LVAL_ERR);

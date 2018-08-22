@@ -32,13 +32,13 @@ struct ldata {
     size_t len;
     /** ldata.payload must be considered according to ldata.type */
     union {
-        long             num;
-        mpz_t            bignum; // int > LONG_MAX.
-        double           dbl;
-        char*            str;    // string or symbol.
-        struct lval**    cell;   // list of lval (can detect data mutation).
-        struct lfunc*    func;   // pointer to a function descriptor.
-        struct lerr_ctx* err;    // error.
+        long          num;
+        mpz_t         bignum; // int > LONG_MAX.
+        double        dbl;
+        char*         str;    // string or symbol.
+        struct lval** cell;   // list of lval (can detect data mutation).
+        struct lfunc* func;   // pointer to a function descriptor.
+        struct lerr*  err;    // error.
     } payload;
 };
 
@@ -399,7 +399,7 @@ bool lval_mut_dbl(struct lval* v, double x) {
     return true;
 }
 
-bool lval_mut_err(struct lval* v, enum lerr e) {
+bool lval_mut_err(struct lval* v, enum lerr_code e) {
     if (!lval_is_mutable(v)) {
         return false;
     }
@@ -408,7 +408,7 @@ bool lval_mut_err(struct lval* v, enum lerr e) {
         return false;
     }
     data->type = LVAL_ERR;
-    struct lerr_ctx* err = lerr_alloc();
+    struct lerr* err = lerr_alloc();
     err->code = e;
     data->payload.err = err;
     data->len = 1;
@@ -622,7 +622,7 @@ const char* lval_type_string(const struct lval* v) {
     }
 }
 
-bool lval_as_err(const struct lval* v, enum lerr* r) {
+bool lval_as_err(const struct lval* v, enum lerr_code* r) {
     if (!lval_is_alive(v) || lval_type(v) != LVAL_ERR) {
         *r = LERR_DEAD_REF;
         return false;

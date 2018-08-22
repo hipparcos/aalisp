@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-const char* lerr_describe(enum lerr code) {
+const char* lerr_describe(enum lerr_code code) {
     switch (code) {
     case LERR_DEAD_REF:      return "dead reference";
     case LERR_AST:           return "ast error";
@@ -19,12 +19,12 @@ const char* lerr_describe(enum lerr code) {
     }
 }
 
-struct lerr_ctx* lerr_alloc(void) {
-    struct lerr_ctx* err = calloc(1, sizeof(struct lerr_ctx));
+struct lerr* lerr_alloc(void) {
+    struct lerr* err = calloc(1, sizeof(struct lerr));
     return err;
 }
 
-void lerr_free(struct lerr_ctx* err) {
+void lerr_free(struct lerr* err) {
     if (!err) {
         return;
     }
@@ -37,7 +37,7 @@ void lerr_free(struct lerr_ctx* err) {
     free(err);
 }
 
-void lerr_copy(struct lerr_ctx* dest, const struct lerr_ctx* src) {
+void lerr_copy(struct lerr* dest, const struct lerr* src) {
     if (!dest || !src) {
         return;
     }
@@ -50,31 +50,31 @@ void lerr_copy(struct lerr_ctx* dest, const struct lerr_ctx* src) {
     }
 }
 
-struct lerr_ctx* lerr_throw_va(enum lerr code, const char* fmt, va_list va) {
-    struct lerr_ctx* err = lerr_alloc();
+struct lerr* lerr_throw_va(enum lerr_code code, const char* fmt, va_list va) {
+    struct lerr* err = lerr_alloc();
     err->code = code;
     lerr_annotate_va(err, fmt, va);
     return err;
 }
 
-struct lerr_ctx* lerr_throw(enum lerr code, const char* fmt, ...) {
+struct lerr* lerr_throw(enum lerr_code code, const char* fmt, ...) {
     va_list va;
     va_start(va, fmt);
-    struct lerr_ctx* err = lerr_throw_va(code, fmt, va);
+    struct lerr* err = lerr_throw_va(code, fmt, va);
     va_end(va);
     return err;
 }
 
-struct lerr_ctx* lerr_propagate(struct lerr_ctx* inner, enum lerr code, const char* fmt, ...) {
+struct lerr* lerr_propagate(struct lerr* inner, enum lerr_code code, const char* fmt, ...) {
     va_list va;
     va_start(va, fmt);
-    struct lerr_ctx* outer = lerr_throw_va(code, fmt, va);
+    struct lerr* outer = lerr_throw_va(code, fmt, va);
     va_end(va);
     lerr_wrap(outer, inner);
     return outer;
 }
 
-void lerr_annotate(struct lerr_ctx* err, const char* fmt, ...) {
+void lerr_annotate(struct lerr* err, const char* fmt, ...) {
     if (!fmt || strlen(fmt) == 0) {
         err->message[0] = '\0';
         return;
@@ -85,7 +85,7 @@ void lerr_annotate(struct lerr_ctx* err, const char* fmt, ...) {
     va_end(va);
 }
 
-void lerr_annotate_va(struct lerr_ctx* err, const char* fmt, va_list va) {
+void lerr_annotate_va(struct lerr* err, const char* fmt, va_list va) {
     if (!fmt || strlen(fmt) == 0) {
         err->message[0] = '\0';
         return;
@@ -93,7 +93,7 @@ void lerr_annotate_va(struct lerr_ctx* err, const char* fmt, va_list va) {
     vsnprintf(err->message, sizeof(err->message), fmt, va);
 }
 
-void lerr_file_info(struct lerr_ctx* err, const char* file, int line, int col) {
+void lerr_file_info(struct lerr* err, const char* file, int line, int col) {
     if (!err) {
         return;
     }
@@ -110,23 +110,23 @@ void lerr_file_info(struct lerr_ctx* err, const char* file, int line, int col) {
     err->col = col;
 }
 
-void lerr_wrap(struct lerr_ctx* outer, struct lerr_ctx* inner) {
+void lerr_wrap(struct lerr* outer, struct lerr* inner) {
     if (!outer || !inner || outer->inner) {
         return;
     }
     outer->inner = inner;
 }
 
-const struct lerr_ctx* lerr_cause(const struct lerr_ctx* err) {
+const struct lerr* lerr_cause(const struct lerr* err) {
     while (err->inner) { err = err->inner; }
     return err;
 }
 
-void lerr_print_to(const struct lerr_ctx* err, FILE* out) {
+void lerr_print_to(const struct lerr* err, FILE* out) {
     if (!err) {
         return;
     }
-    const struct lerr_ctx* cause = lerr_cause(err);
+    const struct lerr* cause = lerr_cause(err);
     if (cause->file)
         { fprintf(out, "<%s>:", cause->file); }
     if (cause->line && cause->col)
@@ -140,7 +140,7 @@ void lerr_print_to(const struct lerr_ctx* err, FILE* out) {
     fputc('\n', out);
 }
 
-static size_t lerr_sprint(const struct lerr_ctx* err, char* out, size_t len) {
+static size_t lerr_sprint(const struct lerr* err, char* out, size_t len) {
     char dummy[2];
     if (!out) {
         out = &dummy[0];
@@ -149,7 +149,7 @@ static size_t lerr_sprint(const struct lerr_ctx* err, char* out, size_t len) {
     return snprintf(out, len, "Error #%d: %s", err->code, err->message);
 }
 
-size_t lerr_printlen(const struct lerr_ctx* err) {
+size_t lerr_printlen(const struct lerr* err) {
     if (!err) {
         return 0;
     }
@@ -158,7 +158,7 @@ size_t lerr_printlen(const struct lerr_ctx* err) {
 }
 
 /* Needed because of lval way of printing. */
-void lerr_as_string(const struct lerr_ctx* err, char* out, size_t len) {
+void lerr_as_string(const struct lerr* err, char* out, size_t len) {
     if (!err) {
         return;
     }

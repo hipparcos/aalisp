@@ -72,7 +72,7 @@ bool lval_mut_bignum(struct lval* v, const mpz_t x);
 /** lval_mut_dbl mutates v to LVAL_DBL type. */
 bool lval_mut_dbl(struct lval* v, double x);
 /** lval_mut_err mutates v to LVAL_ERR type. */
-bool lval_mut_err(struct lval* v, enum lerr err);
+bool lval_mut_err(struct lval* v, enum lerr_code err);
 /** lval_err_annotate annotates an error with the given string. */
 bool lval_err_annotate(struct lval* v, const char* fmt, ...);
 /** lval_mut_str mutates v to LVAL_STR type. str is copied. */
@@ -107,7 +107,7 @@ enum ltype lval_type(const struct lval* v);
 /** lval_type_string returns the type of v as string. */
 const char* lval_type_string(const struct lval* v);
 /** lval_type returns v as an error. Its type must be LVAL_ERR. */
-bool lval_as_err(const struct lval* v, enum lerr* r);
+bool lval_as_err(const struct lval* v, enum lerr_code* r);
 /** lval_type returns v as a long. Its type must be LVAL_NUM. */
 bool lval_as_num(const struct lval* v, long* r);
 /** lval_type returns v as a bignum. Its type must be LVAL_BIGNUM.

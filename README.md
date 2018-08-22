@@ -10,7 +10,8 @@ WIP...
 Building:
 - GNU Compiler Collection (gcc);
 - GNU Make (make);
-- GNU C Library (glibc/getopt): CLI flags parsing.
+- GNU C Library (glibc/getopt): CLI flags parsing;
+- GNU Readline (readline-x.x): CLI interface.
 
 Testing:
 - Valgrind (valgrind): memory leaks detection;

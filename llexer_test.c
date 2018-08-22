@@ -45,18 +45,22 @@ struct ltok* token_list_builder(const struct token_list* list) {
 #define _test_pass_body(input, expected, lexer) \
         struct ltok* expec = token_list_builder(expected); \
         defer(llex_free(expec)); \
-        struct ltok *got = NULL, *error = NULL; \
+        struct lerr* err = NULL; \
+        defer(lerr_free(err)); \
+        struct ltok* got = NULL; \
         defer(llex_free(got)); \
-        assert(got = lexer(input, &error)); \
-        assert(error == NULL); \
+        assert(got = lexer(input, &err)); \
+        assert(err == NULL); \
         assert(llex_are_all_equal(got, expec));
 
 #define test_fail(msg, input) \
     it("fails for " msg " `" input "`", { \
-        struct ltok *got = NULL, *error = NULL; \
-        assert(got = lisp_lex(input, &error)); \
+        struct lerr* err = NULL; \
+        defer(lerr_free(err)); \
+        struct ltok* got = NULL; \
+        assert(got = lisp_lex(input, &err)); \
         defer(llex_free(got)); \
-        assert(error != NULL); \
+        assert(err != NULL); \
     })
 
 describe(llex, {

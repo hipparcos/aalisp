@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "lerr.h"
+
 enum ltok_type {
     LTOK_EOF= 0,
     LTOK_ERR,
@@ -17,7 +19,6 @@ enum ltok_type {
     LTOK_DBL,
     LTOK_STR,
 };
-extern const char* ltok_type_string[10];
 
 struct ltok {
     enum ltok_type type;
@@ -33,10 +34,10 @@ struct ltok {
  ** The returned list always end with a LTOK_EOF token.
  ** error is set to the node containing an error or to NULL.
  ** Caller is responsible for calling llex_free() on tokens. */
-struct ltok* lisp_lex(const char* input, struct ltok** error);
+struct ltok* lisp_lex(const char* input, struct lerr** err);
 /** lisp_lex_surround acts as lisp_lex but surrounds tokens with `(` & `)`.
  ** It ensures that the output is a sexpr.  */
-struct ltok* lisp_lex_surround(const char* input, struct ltok** error);
+struct ltok* lisp_lex_surround(const char* input, struct lerr** err);
 /** llex_free clears a list of tokens.
  ** The list of tokens must end with a token of type LTOK_EOS.
  ** tokens must not be used afterwards */
@@ -47,6 +48,8 @@ bool llex_are_equal(struct ltok* left, struct ltok* right);
 /** llex_are_all_equal tells if two list of tokens are equal. */
 bool llex_are_all_equal(struct ltok* left, struct ltok* right);
 
+/** llex_ty_string returns the type of a token as string. */
+const char* llex_type_string(enum ltok_type type);
 /** llex_print_to prints token to the out file. */
 void llex_print_to(struct ltok* token, FILE* out);
 /** llex_print prints token to stdout. */

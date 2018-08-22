@@ -3,27 +3,23 @@
 #include <stdio.h>
 #include <string.h>
 
-const char* ltok_type_string[] = {
-    "EOF",
-    "error",
-    "(",
-    ")",
-    "{",
-    "}",
-    "symbol",
-    "number",
-    "double",
-    "string",
-};
+#include "lerr.h"
 
-enum llex_error {
-    LLEX_ERR_MISSING_QUOTE,
-    LLEX_ERR_UNKNOWN_CHARACTER,
-};
-static const char* llex_error_format[] = {
-    "missing closing quotation mark",
-    "unknown character '%c'",
-};
+const char* llex_type_string(enum ltok_type type) {
+    switch (type) {
+        case LTOK_EOF:  return "EOF";
+        case LTOK_ERR:  return "error";
+        case LTOK_OPAR: return "(";
+        case LTOK_CPAR: return ")";
+        case LTOK_OBRC: return "{";
+        case LTOK_CBRC: return "}";
+        case LTOK_SYM:  return "symbol";
+        case LTOK_NUM:  return "number";
+        case LTOK_DBL:  return "double";
+        case LTOK_STR:  return "string";
+    }
+    return NULL;
+}
 
 struct lscanner {
     const char* input;
@@ -33,7 +29,7 @@ struct lscanner {
     int line;
     int col;
     enum ltok_type tok;
-    enum llex_error err;
+    enum lerr_code err;
 };
 
 static inline bool llex_is_whitespace(char c) {
@@ -119,7 +115,7 @@ static bool llex_scan_string(struct lscanner* scanner) {
     // No closing " seen before EOF.
     if (*c == '\0') {
         scanner->tok = LTOK_ERR;
-        scanner->err = LLEX_ERR_MISSING_QUOTE;
+        scanner->err = LERR_LEXER_MISSING_QUOTE;
         return false;
     }
     // Include last quote.
@@ -205,7 +201,7 @@ static bool llex_next(struct lscanner* scanner) {
         return llex_scan_symbol(scanner);
     }
     scanner->tok = LTOK_ERR;
-    scanner->err = LLEX_ERR_UNKNOWN_CHARACTER;
+    scanner->err = LERR_LEXER_UNKNOWN_CHAR;
     return false;
 }
 
@@ -220,10 +216,7 @@ static struct ltok* llex_emit(struct lscanner* scanner) {
         return tok;
     }
     if (tok->type == LTOK_ERR) {
-        const char* err_format = llex_error_format[scanner->err];
-        size_t len = strlen(err_format) + 10 + 1;
-        tok->content = calloc(sizeof(char), len);
-        sprintf(tok->content, err_format, scanner->input[scanner->pos]);
+        tok->content = NULL;
         return tok;
     }
     tok->content = calloc(sizeof(char), scanner->width + 1);
@@ -265,7 +258,7 @@ static struct ltok** llex_append(struct ltok** last, struct ltok* curr) {
     return &((*last)->next);
 }
 
-static struct ltok* llex(const char* input, struct ltok** error, bool surround) {
+static struct ltok* llex(const char* input, struct lerr** err, bool surround) {
     if (!input || strlen(input) == 0) {
         return llex_emitEOF();
     }
@@ -273,8 +266,7 @@ static struct ltok* llex(const char* input, struct ltok** error, bool surround) 
     scanner.input = input;
     scanner.line = 1;
     scanner.col = 1;
-    struct ltok *head = NULL, *curr = NULL, **last = &head;
-    *error = NULL;
+    struct ltok *head = NULL, *curr = NULL, **last = &head, *error = NULL;
     while (input && llex_next(&scanner)) {
         curr = llex_emit(&scanner);
         last = llex_append(last, curr);
@@ -282,7 +274,7 @@ static struct ltok* llex(const char* input, struct ltok** error, bool surround) 
     /* Check for lexing error & append EOF. */
     curr = llex_emit(&scanner);
     if (curr->type == LTOK_ERR) {
-        *error = curr;
+        error = curr;
         last = llex_append(last, curr);
         /* Force EOF emission. */
         llex_append(last, llex_emitEOF());
@@ -301,15 +293,31 @@ static struct ltok* llex(const char* input, struct ltok** error, bool surround) 
         /* Last call to emit returns a LTOK_EOF. */
         llex_append(last, curr);
     }
+    /* Error handling. */
+    if (error) {
+        switch (scanner.err) {
+        case LERR_LEXER_MISSING_QUOTE:
+            *err = lerr_throw(scanner.err, "missing closing quotation mark");
+            break;
+        case LERR_LEXER_UNKNOWN_CHAR:
+            *err = lerr_throw(scanner.err, "unknown character '%c'",
+                    scanner.input[scanner.pos]);
+            break;
+        default:
+            *err = lerr_throw(scanner.err, "unknown error");
+            break;
+        }
+        lerr_file_info(*err, "", scanner.line, scanner.col);
+    }
     return head;
 }
 
-struct ltok* lisp_lex(const char* input, struct ltok** error) {
-    return llex(input, error, false);
+struct ltok* lisp_lex(const char* input, struct lerr** err) {
+    return llex(input, err, false);
 }
 
-struct ltok* lisp_lex_surround(const char* input, struct ltok** error) {
-    return llex(input, error, true);
+struct ltok* lisp_lex_surround(const char* input, struct lerr** err) {
+    return llex(input, err, true);
 }
 
 void llex_free(struct ltok* tokens) {
@@ -356,7 +364,7 @@ void llex_print_to(struct ltok* token, FILE* out) {
         return;
     }
     fprintf(out, "tok:{type: %s, %d:%d, content: \"%s\"}",
-            ltok_type_string[token->type], token->line, token->col, token->content);
+            llex_type_string(token->type), token->line, token->col, token->content);
     fputc('\n', out);
 }
 

@@ -135,74 +135,66 @@ void print_error_marker(FILE* out, int indent, int col) {
 
 #define CLEANUP(tokens, ast, program) \
     do { \
-        if (tokens)  llex_free(tokens); \
-        if (ast)     last_free(ast); \
-        if (program) lval_free(program); \
     } while(0);
 
 bool lisp_eval(struct lenv* env,
         const char* restrict input, struct lval* r, int prompt_len) {
-    /* Lex input. */
-    struct ltok *tokens = NULL, *lexer_error = NULL;
-    tokens = lisp_lex_surround(input, &lexer_error);
-    if (lexer_error != NULL) {
-        if (prompt_len >= 0) {
-            print_error_marker(stderr, prompt_len, lexer_error->col);
-            fprintf(stderr, "<interactive>:%d:%d: lexing error: %s.\n",
-                    lexer_error->line, lexer_error->col, lexer_error->content);
-        }
-        lval_mut_err_code(r, LERR_EVAL);
-        CLEANUP(tokens, NULL, NULL);
-        return false;
-    }
-    /* Parse input. */
-    struct last *ast, *parser_error = NULL;
-    ast = lisp_parse(tokens, &parser_error);
-    if (parser_error != NULL) {
-        if (prompt_len >= 0) {
-            print_error_marker(stderr, prompt_len, parser_error->col);
-            fprintf(stderr, "<interactive>:%d:%d: parsing error: %s.\n",
-                    parser_error->line, parser_error->col, parser_error->content);
-        }
-        lval_mut_err_code(r, LERR_EVAL);
-        CLEANUP(tokens, ast, NULL);
-        return false;
-    }
-    /* Mutate the AST. */
+    struct ltok *tokens = NULL;
+    struct last *ast = NULL, *parser_error = NULL;
     struct lval* program = NULL;
     struct last* mut_error = NULL;
-    program = lisp_mut(ast, &mut_error);
-    if (mut_error != NULL) {
-        if (prompt_len >= 0) {
-            print_error_marker(stderr, prompt_len, mut_error->col);
-            fprintf(stderr, "<interactive>:%d:%d: mutation error: %s.\n",
-                    mut_error->line, mut_error->col, mut_error->content);
+    struct lerr* error = NULL;
+    do {
+        /* Lex input. */
+        tokens = lisp_lex_surround(input, &error);
+        if (error != NULL) {
+            error = lerr_propagate(error, "lexing error:");
+            lval_mut_err_code(r, LERR_EVAL);
+            break;
         }
-        lval_mut_err_code(r, LERR_EVAL);
-        CLEANUP(tokens, ast, program);
-        return false;
-    }
-    /* Evaluate program. */
-    if (program && !leval(env, program, r)) {
-        if (prompt_len >= 0) {
-            int line = 0, col = 0;
-            if (r->ast) {
-                line = r->ast->line;
-                col  = r->ast->col;
-            }
-            print_error_marker(stderr, prompt_len, col);
-            struct lerr* err = lval_as_err(r);
-            struct lerr* cause = lerr_cause(err);
-            lerr_file_info(cause, "interactive", line, col);
-            struct lerr* wrapped = lerr_propagate(err, "evaluation error:");
-            lerr_print_to(wrapped, stderr);
-            lerr_free(wrapped);
+        /* Parse input. */
+        ast = lisp_parse(tokens, &parser_error);
+        if (parser_error != NULL) {
+            error = lerr_throw(LERR_EVAL, "parsing error: %s", parser_error->content);
+            error->line = parser_error->line;
+            error->col = parser_error->col;
+            lval_mut_err_code(r, LERR_EVAL);
+            break;
         }
-        CLEANUP(tokens, ast, program);
-        return false;
+        /* Mutate the AST. */
+        program = lisp_mut(ast, &mut_error);
+        if (mut_error != NULL) {
+            error = lerr_throw(LERR_EVAL, "mutation error: %s", mut_error->content);
+            error->line = mut_error->line;
+            error->col = mut_error->col;
+            lval_mut_err_code(r, LERR_EVAL);
+            break;
+        }
+        /* Evaluate program. */
+        if (program && !leval(env, program, r)) {
+            error = lerr_alloc();
+            lerr_copy(error, lval_as_err(r));
+            error = lerr_propagate(error, "eval error:");
+            break;
+        }
+    } while (0); // Allow to break.
+    /* Error handling. */
+    bool s = true;
+    if (error) {
+        struct lerr* cause = lerr_cause(error);
+        lerr_file_info(cause, "interactive", cause->line, cause->col);
+        if (prompt_len >= 0) {
+            print_error_marker(stderr, prompt_len, cause->col);
+            lerr_print_to(error, stderr);
+        }
+        lerr_free(error);
+        s = false;
     }
-    CLEANUP(tokens, ast, program);
-    return true;
+    /* Cleanup. */
+    if (tokens)  llex_free(tokens);
+    if (ast)     last_free(ast);
+    if (program) lval_free(program);
+    return s;
 }
 
 void lisp_eval_from_string(struct lenv* env,

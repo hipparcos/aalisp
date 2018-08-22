@@ -1,6 +1,7 @@
 #include "lerr.h"
 
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,25 +29,18 @@ void lerr_free(struct lerr* err) {
     if (!err) {
         return;
     }
+    if (err->inner) {
+        lerr_free(err->inner);
+    }
     if (err->file) {
         free(err->file);
     }
     free(err);
 }
 
-void lerr_free_all(struct lerr* err) {
-    if (!err) {
-        return;
-    }
-    if (err->inner) {
-        lerr_free_all(err->inner);
-    }
-    lerr_free(err);
-}
-
-void lerr_copy(struct lerr* dest, const struct lerr* src) {
+bool lerr_copy(struct lerr* dest, const struct lerr* src) {
     if (!dest || !src) {
-        return;
+        return false;
     }
     dest->code = src->code;
     lerr_annotate(dest, src->message);
@@ -55,6 +49,7 @@ void lerr_copy(struct lerr* dest, const struct lerr* src) {
         dest->inner = lerr_alloc();
         lerr_copy(dest->inner, src->inner);
     }
+    return true;
 }
 
 struct lerr* lerr_throw_va(enum lerr_code code, const char* fmt, va_list va) {

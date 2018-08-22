@@ -2,15 +2,21 @@
 #define H_LERR_
 
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
 
 /** lerr is an error code. */
 enum lerr_code {
     LERR_UNKNOWN = 0,
+    LERR_LEXER = 100,
+    LERR_LEXER_MISSING_QUOTE,
+    LERR_LEXER_UNKNOWN_CHAR,
+    LERR_PARSER = 200,
+    LERR_MUTATION = 300,
+    LERR_EVAL = 400,
     LERR_DEAD_REF,
     LERR_AST,
-    LERR_EVAL,
     LERR_DIV_ZERO,
     LERR_BAD_SYMBOL,
     LERR_BAD_OPERAND,
@@ -38,14 +44,11 @@ struct lerr {
  ** Caller is responsible for calling lerr_free on returned lerr. */
 struct lerr* lerr_alloc(void);
 /** lerr_free frees err.
- ** err must not be used afterwards. */
-void lerr_free(struct lerr* err);
-/** lerr_free_all frees err and all wrapped arrors.
  ** err must not be used afterwards.
  ** lerr_free_all must be called on the outermost error. */
-void lerr_free_all(struct lerr* err);
+void lerr_free(struct lerr* err);
 /** lerr_copy copies src into dest (and inner errors). */
-void lerr_copy(struct lerr* dest, const struct lerr* src);
+bool lerr_copy(struct lerr* dest, const struct lerr* src);
 /** lerr_throw allocates an error and describes it.
  ** Caller is responsible for calling lerr_free on returned lerr. */
 struct lerr* lerr_throw(enum lerr_code code, const char* fmt, ...);

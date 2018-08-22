@@ -146,7 +146,7 @@ static bool ldata_clear(struct ldata* d) {
         d->payload.func = NULL;
         break;
     case LVAL_ERR:
-        lerr_free_all(d->payload.err);
+        lerr_free(d->payload.err);
         d->payload.err = NULL;
         break;
     default: break;

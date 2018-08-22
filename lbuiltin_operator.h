@@ -24,4 +24,13 @@ int lbi_op_eq(struct lenv* env, const struct lval* arg, struct lval* acc);
 /** lbi_op_neq is the != oerator. */
 int lbi_op_neq(struct lenv* env, const struct lval* arg, struct lval* acc);
 
+/** lbi_op_gt is the > oerator. */
+int lbi_op_gt(struct lenv* env, const struct lval* arg, struct lval* acc);
+/** lbi_op_gte is the >= oerator. */
+int lbi_op_gte(struct lenv* env, const struct lval* arg, struct lval* acc);
+/** lbi_op_lt is the < oerator. */
+int lbi_op_lt(struct lenv* env, const struct lval* arg, struct lval* acc);
+/** lbi_op_lte is the <= oerator. */
+int lbi_op_lte(struct lenv* env, const struct lval* arg, struct lval* acc);
+
 #endif

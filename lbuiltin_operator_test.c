@@ -300,6 +300,98 @@ describe(builtin, {
         });
     });
 
+    subdesc(op_gt, {
+        test_pass(&lbuiltin_op_gt, "test x > y for x > y", {
+            push_num(args, 3);
+            push_num(args, 2);
+            lval_mut_bool(expected, true);
+        });
+        test_pass(&lbuiltin_op_gt, "test x > y for x = y", {
+            push_num(args, 2);
+            push_num(args, 2);
+            lval_mut_bool(expected, false);
+        });
+        test_pass(&lbuiltin_op_gt, "test x > y for x < y", {
+            push_num(args, 2);
+            push_num(args, 3);
+            lval_mut_bool(expected, false);
+        });
+        test_pass(&lbuiltin_op_gt, "test x > y for x > y with cast", {
+            push_dbl(args, 3);
+            push_num(args, 2);
+            lval_mut_bool(expected, true);
+        });
+    });
+
+    subdesc(op_gte, {
+        test_pass(&lbuiltin_op_gte, "test x >= y for x > y", {
+            push_num(args, 3);
+            push_num(args, 2);
+            lval_mut_bool(expected, true);
+        });
+        test_pass(&lbuiltin_op_gte, "test x >= y for x = y", {
+            push_num(args, 2);
+            push_num(args, 2);
+            lval_mut_bool(expected, true);
+        });
+        test_pass(&lbuiltin_op_gte, "test x >= y for x < y", {
+            push_num(args, 2);
+            push_num(args, 3);
+            lval_mut_bool(expected, false);
+        });
+        test_pass(&lbuiltin_op_gte, "test x >= y for x > y with cast", {
+            push_dbl(args, 3);
+            push_num(args, 2);
+            lval_mut_bool(expected, true);
+        });
+    });
+
+    subdesc(op_lt, {
+        test_pass(&lbuiltin_op_lt, "test x < y for x > y", {
+            push_num(args, 3);
+            push_num(args, 2);
+            lval_mut_bool(expected, false);
+        });
+        test_pass(&lbuiltin_op_lt, "test x < y for x = y", {
+            push_num(args, 2);
+            push_num(args, 2);
+            lval_mut_bool(expected, false);
+        });
+        test_pass(&lbuiltin_op_lt, "test x < y for x < y", {
+            push_num(args, 2);
+            push_num(args, 3);
+            lval_mut_bool(expected, true);
+        });
+        test_pass(&lbuiltin_op_lt, "test x < y for x < y with cast", {
+            push_dbl(args, 2);
+            push_num(args, 3);
+            lval_mut_bool(expected, true);
+        });
+    });
+
+    subdesc(op_lte, {
+        test_pass(&lbuiltin_op_lte, "test x <= y for x > y", {
+            push_num(args, 3);
+            push_num(args, 2);
+            lval_mut_bool(expected, false);
+        });
+        test_pass(&lbuiltin_op_lte, "test x <= y for x = y", {
+            push_num(args, 2);
+            push_num(args, 2);
+            lval_mut_bool(expected, true);
+        });
+        test_pass(&lbuiltin_op_lte, "test x <= y for x < y", {
+            push_num(args, 2);
+            push_num(args, 3);
+            lval_mut_bool(expected, true);
+        });
+        test_pass(&lbuiltin_op_lte, "test x <= y for x < y with cast", {
+            push_dbl(args, 2);
+            push_num(args, 3);
+            lval_mut_bool(expected, true);
+        });
+    });
+
 });
 
 snow_main();

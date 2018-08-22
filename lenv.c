@@ -298,6 +298,10 @@ bool lenv_default(struct lenv* env) {
     /* Boolean operators. */
     lenv_put_builtin(env, "==", &lbuiltin_op_eq);
     lenv_put_builtin(env, "!=", &lbuiltin_op_neq);
+    lenv_put_builtin(env, ">", &lbuiltin_op_gt);
+    lenv_put_builtin(env, ">=", &lbuiltin_op_gte);
+    lenv_put_builtin(env, "<", &lbuiltin_op_lt);
+    lenv_put_builtin(env, "<=", &lbuiltin_op_lte);
     /* List manipulation functions. */
     lenv_put_builtin(env, "head", &lbuiltin_head);
     lenv_put_builtin(env, "tail", &lbuiltin_tail);

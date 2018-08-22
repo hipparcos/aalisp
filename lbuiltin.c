@@ -135,6 +135,50 @@ const struct lfunc lbuiltin_op_neq = {
     .func         = lbi_op_neq,
 };
 
+const struct lfunc lbuiltin_op_gt = {
+    .symbol       = ">",
+    .accumulator  = true,
+    .neutral      = &lnil,
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = NULL,
+    .guardc       = 0,
+    .func         = lbi_op_gt,
+};
+
+const struct lfunc lbuiltin_op_gte = {
+    .symbol       = ">=",
+    .accumulator  = true,
+    .neutral      = &lnil,
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = NULL,
+    .guardc       = 0,
+    .func         = lbi_op_gte,
+};
+
+const struct lfunc lbuiltin_op_lt = {
+    .symbol       = "<",
+    .accumulator  = true,
+    .neutral      = &lnil,
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = NULL,
+    .guardc       = 0,
+    .func         = lbi_op_lt,
+};
+
+const struct lfunc lbuiltin_op_lte = {
+    .symbol       = "<=",
+    .accumulator  = true,
+    .neutral      = &lnil,
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = NULL,
+    .guardc       = 0,
+    .func         = lbi_op_lte,
+};
+
 static const struct lguard guards_list_op[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_QEXPR)},

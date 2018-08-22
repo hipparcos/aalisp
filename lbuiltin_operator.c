@@ -150,7 +150,10 @@ static bool lbuiltin_cast(
             lval_mut_num(casted_x, a);
             lval_mut_num(casted_y, b);
             return true; }
-        default: break;
+        default:
+            lval_dup(casted_x, x);
+            lval_dup(casted_y, y);
+            break;
     }
     return false;
 }
@@ -214,7 +217,7 @@ static int lbuiltin_operator(
     default: break;
     }
 
-    struct lerr* err = lerr_throw(LERR_EVAL, 
+    struct lerr* err = lerr_throw(LERR_EVAL,
             "operator can't operate on type %s", lval_type_string(lval_type(arg)));
     lval_mut_err_ptr(acc, err);
     return -1;
@@ -305,4 +308,41 @@ int lbi_op_neq(struct lenv* env, const struct lval* arg, struct lval* acc) {
         lval_mut_bool(acc, !lval_as_bool(acc));
     }
     return s;
+}
+
+int lbuiltin_compare(const struct lval* x, const struct lval* y) {
+    /* Cast. */
+    struct lval* casted_x = lval_alloc();
+    struct lval* casted_y = lval_alloc();
+    lbuiltin_cast(x, y, casted_x, casted_y);
+    /* Test. */
+    int s = lval_compare(casted_x, casted_y);
+    /* Cleanup. */
+    lval_free(casted_x);
+    lval_free(casted_y);
+    return s;
+}
+
+int lbi_op_gt(struct lenv* env, const struct lval* arg, struct lval* acc) {
+    UNUSED(env);
+    lval_mut_bool(acc, 0 < lbuiltin_compare(acc, arg));
+    return 0;
+}
+
+int lbi_op_gte(struct lenv* env, const struct lval* arg, struct lval* acc) {
+    UNUSED(env);
+    lval_mut_bool(acc, 0 <= lbuiltin_compare(acc, arg));
+    return 0;
+}
+
+int lbi_op_lt(struct lenv* env, const struct lval* arg, struct lval* acc) {
+    UNUSED(env);
+    lval_mut_bool(acc, 0 > lbuiltin_compare(acc, arg));
+    return 0;
+}
+
+int lbi_op_lte(struct lenv* env, const struct lval* arg, struct lval* acc) {
+    UNUSED(env);
+    lval_mut_bool(acc, 0 >= lbuiltin_compare(acc, arg));
+    return 0;
 }

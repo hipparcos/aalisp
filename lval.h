@@ -11,6 +11,7 @@
 /** ltype is the type of a lval. */
 enum ltype {
     LVAL_NIL = 0,
+    LVAL_BOOL,
     LVAL_NUM,
     LVAL_BIGNUM,
     LVAL_DBL,
@@ -65,6 +66,8 @@ bool lval_copy(struct lval* dest, const struct lval* src);
 /* Mutators */
 /** lval_mut_nil mutates v to LVAL_NIL type. */
 bool lval_mut_nil(struct lval* v);
+/** lval_mut_bool mutates v to LVAL_BOOL type. */
+bool lval_mut_bool(struct lval* v, bool x);
 /** lval_mut_num mutates v to LVAL_NUM type. */
 bool lval_mut_num(struct lval* v, long x);
 /** lval_mut_bignum mutates v to LVAL_BIGNUM type. x is copied. */
@@ -116,6 +119,8 @@ bool lval_as_err_code(const struct lval* v, enum lerr_code* r);
  ** The address pointer to the underlying error is returned.
  ** r stays valid until v is freed or mutated. */
 struct lerr* lval_as_err(const struct lval* v);
+/** lval_as_bool returns v as bool. */
+bool lval_as_bool(const struct lval* v);
 /** lval_type returns v as a long. Its type must be LVAL_NUM. */
 bool lval_as_num(const struct lval* v, long* r);
 /** lval_type returns v as a bignum. Its type must be LVAL_BIGNUM.

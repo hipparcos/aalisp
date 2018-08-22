@@ -107,6 +107,14 @@ describe(lval, {
     });
 
     subdesc(as, {
+        it("mutates a lval to bool and read it back", {
+            struct lval* v = lval_alloc();
+            defer(lval_free(v));
+            assert(lval_mut_bool(v, true));
+            assert(lval_type(v) == LVAL_BOOL);
+            assert(lval_as_bool(v));
+        });
+
         it("mutates a lval to a num and read it back", {
             long expected = 10;
             long got = 0;
@@ -180,6 +188,22 @@ describe(lval, {
             assert(got = lval_as_sym(v));
             assert(strcmp(got, expected) == 0);
             assert(lval_free(v));
+        });
+
+        it("mutates a lval to a num and read it back as a string", {
+            size_t len = 0;
+            char* got = NULL;
+            defer(if (got) free(got));
+            struct lval* v = lval_alloc();
+            defer(lval_free(v));
+            assert(lval_mut_bool(v, true));
+            assert(len = lval_printlen(v));
+            got = calloc(sizeof(char), len);
+            assert(lval_as_str(v, got, len));
+            assert(strcmp(got, "true") == 0);
+            assert(lval_mut_bool(v, false));
+            assert(lval_as_str(v, got, len));
+            assert(strcmp(got, "false") == 0);
         });
 
         it("mutates a lval to a num and read it back as a string", {

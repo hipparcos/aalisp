@@ -26,12 +26,13 @@ struct ldata {
     enum ltype type;
     /** ldata.len value:
      ** LVAL_NIL = 0;
-     ** LVAL_NUM, LVAL_BIGNUM, LVAL_DBL, LVAL_FUNC, LVAL_ERR = 1;
+     ** LVAL_BOOL, LVAL_NUM, LVAL_BIGNUM, LVAL_DBL, LVAL_FUNC, LVAL_ERR = 1;
      ** LVAL_STR, LVAL_SYM = strlen(str);
      ** LVAL_SEXPR, LVAL_QEXPR = number of elements. */
     size_t len;
     /** ldata.payload must be considered according to ldata.type */
     union {
+        bool          boolean;
         long          num;
         mpz_t         bignum; // int > LONG_MAX.
         double        dbl;
@@ -288,6 +289,9 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
     switch (src->type) {
     case LVAL_NIL:
         break;
+    case LVAL_BOOL:
+        dest->payload.boolean = src->payload.boolean;
+        break;
     case LVAL_NUM:
         dest->payload.num = src->payload.num;
         break;
@@ -351,6 +355,21 @@ bool lval_mut_nil(struct lval* v) {
         return false;
     }
     lval_clear(v); /* Default to nil, disconnect & connect. */
+    return true;
+}
+
+bool lval_mut_bool(struct lval* v, bool x) {
+    if (!lval_is_mutable(v)) {
+        return false;
+    }
+    struct ldata* data = NULL;
+    if (!(data = lval_disconnect(v, true))) {
+        return false;
+    }
+    data->type = LVAL_BOOL;
+    data->payload.boolean = x;
+    data->len = 1;
+    lval_connect(v, data);
     return true;
 }
 
@@ -656,6 +675,13 @@ struct lerr* lval_as_err(const struct lval* v) {
     return v->data->payload.err;
 }
 
+bool lval_as_bool(const struct lval* v) {
+    if (!lval_is_alive(v) || lval_type(v) != LVAL_BOOL) {
+        return false;
+    }
+    return v->data->payload.boolean;
+}
+
 bool lval_as_num(const struct lval* v, long* r) {
     if (!lval_is_alive(v) || lval_type(v) != LVAL_NUM) {
         *r = 0;
@@ -732,6 +758,9 @@ bool lval_as_str(const struct lval* v, char* r, size_t len) {
     switch (v->data->type) {
     case LVAL_NIL:
         snprintf(r, len, "nil");
+        break;
+    case LVAL_BOOL:
+        snprintf(r, len, (v->data->payload.boolean) ? "true" : "false");
         break;
     case LVAL_NUM:
         snprintf(r, len, "%li", v->data->payload.num);
@@ -829,6 +858,7 @@ bool lval_are_equal(const struct lval* x, const struct lval* y) {
     static const double epsilon = 0.000001;
     switch (x->data->type) {
     case LVAL_NIL:    return x->data->type == y->data->type;
+    case LVAL_BOOL:   return x->data->payload.boolean == y->data->payload.boolean;
     case LVAL_ERR:
         {
         struct lerr* cause_x = lerr_cause(x->data->payload.err);
@@ -872,7 +902,8 @@ size_t lval_printlen(const struct lval* v) {
     }
     size_t len = 0;
     switch (v->data->type) {
-    case LVAL_NIL:    len = 3;   break;
+    case LVAL_NIL:    len = 3; break;
+    case LVAL_BOOL:   len = 5; break;
     case LVAL_ERR:
         len = lerr_printlen(v->data->payload.err);
         break;

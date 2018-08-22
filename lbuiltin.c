@@ -113,6 +113,17 @@ const struct lfunc lbuiltin_op_pow = {
     .func         = lbi_op_pow,
 };
 
+const struct lfunc lbuiltin_op_eq = {
+    .symbol       = "==",
+    .accumulator  = true,
+    .neutral      = &lnil,
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = NULL,
+    .guardc       = 0,
+    .func         = lbi_op_eq,
+};
+
 static const struct lguard guards_list_op[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_QEXPR)},

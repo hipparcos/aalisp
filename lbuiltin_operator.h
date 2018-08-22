@@ -19,4 +19,7 @@ int lbi_op_fac(struct lenv* env, const struct lval* arg, struct lval* acc);
 /** lbi_op_pow is the ^ oerator. */
 int lbi_op_pow(struct lenv* env, const struct lval* arg, struct lval* acc);
 
+/** lbi_op_eq is the == oerator. */
+int lbi_op_eq(struct lenv* env, const struct lval* arg, struct lval* acc);
+
 #endif

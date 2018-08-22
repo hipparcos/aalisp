@@ -295,6 +295,8 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "%", &lbuiltin_op_mod);
     lenv_put_builtin(env, "^", &lbuiltin_op_pow);
     lenv_put_builtin(env, "!", &lbuiltin_op_fac);
+    /* Boolean operators. */
+    lenv_put_builtin(env, "==", &lbuiltin_op_eq);
     /* List manipulation functions. */
     lenv_put_builtin(env, "head", &lbuiltin_head);
     lenv_put_builtin(env, "tail", &lbuiltin_tail);

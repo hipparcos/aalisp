@@ -121,6 +121,40 @@ static enum ltype typeof_op(const struct lval* a, const struct lval *b) {
     return LVAL_NIL;
 }
 
+static bool lbuiltin_cast(
+        const struct lval* x,  const struct lval* y,
+        struct lval* casted_x, struct lval* casted_y) {
+    switch (typeof_op(x,y)) {
+        case LVAL_DBL: {
+            double a, b;
+            lval_as_dbl(x, &a);
+            lval_as_dbl(y, &b);
+            lval_mut_dbl(casted_x, a);
+            lval_mut_dbl(casted_y, b);
+            return true; }
+        case LVAL_BIGNUM: {
+            mpz_t a, b;
+            mpz_init(a);
+            mpz_init(b);
+            lval_as_bignum(x, a);
+            lval_as_bignum(y, b);
+            lval_mut_bignum(casted_x, a);
+            lval_mut_bignum(casted_y, b);
+            mpz_clear(a);
+            mpz_clear(b);
+            return true; }
+        case LVAL_NUM: {
+            long a, b;
+            lval_as_num(x, &a);
+            lval_as_num(y, &b);
+            lval_mut_num(casted_x, a);
+            lval_mut_num(casted_y, b);
+            return true; }
+        default: break;
+    }
+    return false;
+}
+
 /** lbuiltin_operator does the automatic casting of args then execute op. */
 static int lbuiltin_operator(
         /** op_* operates on basic types: dbl > bignum > num. */
@@ -248,4 +282,18 @@ int lbi_op_pow(struct lenv* env, const struct lval* arg, struct lval* acc) {
             lbi_op_dbl_pow,
             lbi_cond_num_pow_overflow,
             env, arg, acc);
+}
+
+int lbi_op_eq(struct lenv* env, const struct lval* arg, struct lval* acc) {
+    UNUSED(env);
+    /* Cast. */
+    struct lval* casted_acc = lval_alloc();
+    struct lval* casted_arg = lval_alloc();
+    lbuiltin_cast(acc, arg, casted_acc, casted_arg);
+    /* Test. */
+    lval_mut_bool(acc, lval_are_equal(casted_acc, casted_arg));
+    /* Cleanup. */
+    lval_free(casted_acc);
+    lval_free(casted_arg);
+    return 0;
 }

@@ -264,6 +264,24 @@ describe(builtin, {
         });
     });
 
+    subdesc(op_eq, {
+        test_pass(&lbuiltin_op_eq, "equals values", {
+            push_num(args, 2);
+            push_num(args, 2);
+            lval_mut_bool(expected, true);
+        });
+        test_pass(&lbuiltin_op_eq, "distinct values", {
+            push_num(args, 2);
+            push_num(args, 8);
+            lval_mut_bool(expected, false);
+        });
+        test_pass(&lbuiltin_op_eq, "equals values with cast", {
+            push_num(args, 2);
+            push_dbl(args, 2.0);
+            lval_mut_bool(expected, true);
+        });
+    });
+
 });
 
 snow_main();

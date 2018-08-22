@@ -28,6 +28,9 @@ void lerr_free(struct lerr_ctx* err) {
     if (!err) {
         return;
     }
+    if (err->inner) {
+        lerr_free(err->inner);
+    }
     if (err->file) {
         free(err->file);
     }
@@ -41,6 +44,34 @@ void lerr_copy(struct lerr_ctx* dest, const struct lerr_ctx* src) {
     dest->code = src->code;
     lerr_annotate(dest, src->message);
     lerr_file_info(dest, src->file, src->line, src->col);
+    if (src->inner) {
+        dest->inner = lerr_alloc();
+        lerr_copy(dest->inner, src->inner);
+    }
+}
+
+struct lerr_ctx* lerr_throw_va(enum lerr code, const char* fmt, va_list va) {
+    struct lerr_ctx* err = lerr_alloc();
+    err->code = code;
+    lerr_annotate_va(err, fmt, va);
+    return err;
+}
+
+struct lerr_ctx* lerr_throw(enum lerr code, const char* fmt, ...) {
+    va_list va;
+    va_start(va, fmt);
+    struct lerr_ctx* err = lerr_throw_va(code, fmt, va);
+    va_end(va);
+    return err;
+}
+
+struct lerr_ctx* lerr_propagate(struct lerr_ctx* inner, enum lerr code, const char* fmt, ...) {
+    va_list va;
+    va_start(va, fmt);
+    struct lerr_ctx* outer = lerr_throw_va(code, fmt, va);
+    va_end(va);
+    lerr_wrap(outer, inner);
+    return outer;
 }
 
 void lerr_annotate(struct lerr_ctx* err, const char* fmt, ...) {
@@ -79,39 +110,50 @@ void lerr_file_info(struct lerr_ctx* err, const char* file, int line, int col) {
     err->col = col;
 }
 
-#define FORMAT_LONG(err)  "Error #%d: %s: %s", err->code, lerr_describe(err->code), err->message
-#define FORMAT_SHORT(err) "Error #%d: %s", err->code, lerr_describe(err->code)
+void lerr_wrap(struct lerr_ctx* outer, struct lerr_ctx* inner) {
+    if (!outer || !inner || outer->inner) {
+        return;
+    }
+    outer->inner = inner;
+}
 
-static size_t lerr_sprint(const struct lerr_ctx* err, char* out, size_t len) {
-    char dummy[2];
-    char* dest = out;
-    if (!dest) {
-        dest = &dummy[0];
-        len = sizeof(dummy);
-    }
-    if (strlen(err->message) > 0) {
-        return snprintf(dest, len, FORMAT_LONG(err));
-    } else {
-        return snprintf(dest, len, FORMAT_SHORT(err));
-    }
+const struct lerr_ctx* lerr_cause(const struct lerr_ctx* err) {
+    while (err->inner) { err = err->inner; }
+    return err;
 }
 
 void lerr_print_to(const struct lerr_ctx* err, FILE* out) {
     if (!err) {
         return;
     }
-    if (strlen(err->message) > 0) {
-        fprintf(out, FORMAT_LONG(err));
-    } else {
-        fprintf(out, FORMAT_SHORT(err));
+    const struct lerr_ctx* cause = lerr_cause(err);
+    if (cause->file)
+        { fprintf(out, "<%s>:", cause->file); }
+    if (cause->line && cause->col)
+        { fprintf(out, "%d:%d:", cause->line, cause->col); }
+    if (cause->code)
+        { fprintf(out, "#%d", cause->code); }
+    while (err) {
+        fprintf(out, ": %s", err->message);
+        err = err->inner;
     }
     fputc('\n', out);
+}
+
+static size_t lerr_sprint(const struct lerr_ctx* err, char* out, size_t len) {
+    char dummy[2];
+    if (!out) {
+        out = &dummy[0];
+        len = sizeof(dummy);
+    }
+    return snprintf(out, len, "Error #%d: %s", err->code, err->message);
 }
 
 size_t lerr_printlen(const struct lerr_ctx* err) {
     if (!err) {
         return 0;
     }
+    err = lerr_cause(err);
     return 1 + lerr_sprint(err, NULL, 0);
 }
 
@@ -120,5 +162,6 @@ void lerr_as_string(const struct lerr_ctx* err, char* out, size_t len) {
     if (!err) {
         return;
     }
+    err = lerr_cause(err);
     lerr_sprint(err, out, len);
 }

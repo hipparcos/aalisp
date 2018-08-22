@@ -2,7 +2,11 @@
 
 #include <errno.h>
 
-static struct lval* lmut_num(const struct last* ast, struct last** error) {
+#include "lparser.h"
+#include "lerr.h"
+#include "lval.h"
+
+static struct lval* lmut_num(const struct last* ast, struct lerr** error) {
     (void)error;
     errno = 0;
     long n = strtol(ast->content, NULL, 10);
@@ -21,15 +25,15 @@ static struct lval* lmut_num(const struct last* ast, struct last** error) {
     return v;
 }
 
-static struct lval* lmut_dbl(const struct last* ast, struct last** error) {
+static struct lval* lmut_dbl(const struct last* ast, struct lerr** error) {
     errno = 0;
     double d = strtod(ast->content, NULL);
     struct lval* v = lval_alloc();
     if (errno == ERANGE) {
-        struct lerr* err = lerr_throw(LERR_BAD_OPERAND, "double number out of range");
-        lval_mut_err_ptr(v, err);
+        *error = lerr_throw(LERR_BAD_OPERAND, "double number out of range");
+        lerr_file_info(*error, "", ast->line, ast->col);
+        lval_mut_err_ptr(v, *error);
         v->ast = ast;
-        *error = (struct last*)ast;
         return v;
     }
     lval_mut_dbl(v, d);
@@ -37,7 +41,7 @@ static struct lval* lmut_dbl(const struct last* ast, struct last** error) {
     return v;
 }
 
-static struct lval* lmut_sym(const struct last* ast, struct last** error) {
+static struct lval* lmut_sym(const struct last* ast, struct lerr** error) {
     *error = NULL;
     struct lval* v = lval_alloc();
     lval_mut_sym(v, ast->content);
@@ -45,7 +49,7 @@ static struct lval* lmut_sym(const struct last* ast, struct last** error) {
     return v;
 }
 
-static struct lval* lmut_str(const struct last* ast, struct last** error) {
+static struct lval* lmut_str(const struct last* ast, struct lerr** error) {
     *error = NULL;
     struct lval* v = lval_alloc();
     lval_mut_str(v, ast->content);
@@ -53,10 +57,10 @@ static struct lval* lmut_str(const struct last* ast, struct last** error) {
     return v;
 }
 
-static struct lval* lmut_sexpr(const struct last* ast, struct last** error);
-static struct lval* lmut_qexpr(const struct last* ast, struct last** error);
+static struct lval* lmut_sexpr(const struct last* ast, struct lerr** error);
+static struct lval* lmut_qexpr(const struct last* ast, struct lerr** error);
 
-void lmut_fill_list(struct lval* list, const struct last* ast, struct last** error) {
+void lmut_fill_list(struct lval* list, const struct last* ast, struct lerr** error) {
     for (size_t c = 0; c < ast->childrenc; c++) {
         struct lval* o = NULL;
         switch (ast->children[c]->tag) {
@@ -68,10 +72,10 @@ void lmut_fill_list(struct lval* list, const struct last* ast, struct last** err
         case LTAG_QEXPR: o = lmut_qexpr(ast->children[c], error); break;
         default:
             o = lval_alloc();
-            struct lerr* err = lerr_throw(LERR_AST, "can't read AST");
-            lval_mut_err_ptr(o, err);
+            *error = lerr_throw(LERR_AST, "can't read AST");
+            lerr_file_info(*error, "", ast->line, ast->col);
+            lval_mut_err_ptr(o, *error);
             o->ast = ast;
-            *error = (struct last*)ast;
             break;
         }
         lval_push(list, o);
@@ -83,7 +87,7 @@ void lmut_fill_list(struct lval* list, const struct last* ast, struct last** err
     }
 }
 
-static struct lval* lmut_qexpr(const struct last* ast, struct last** error) {
+static struct lval* lmut_qexpr(const struct last* ast, struct lerr** error) {
     struct lval* v = lval_alloc();
     lval_mut_qexpr(v);
     v->ast = ast;
@@ -92,7 +96,7 @@ static struct lval* lmut_qexpr(const struct last* ast, struct last** error) {
     return v;
 }
 
-static struct lval* lmut_sexpr(const struct last* ast, struct last** error) {
+static struct lval* lmut_sexpr(const struct last* ast, struct lerr** error) {
     struct lval* v = lval_alloc();
     lval_mut_sexpr(v);
     v->ast = ast;
@@ -103,7 +107,7 @@ static struct lval* lmut_sexpr(const struct last* ast, struct last** error) {
     return v;
 }
 
-struct lval* lisp_mut(const struct last* ast, struct last** error) {
+struct lval* lisp_mut(const struct last* ast, struct lerr** error) {
     if (!ast) {
         *error = NULL;
         return NULL;
@@ -124,10 +128,10 @@ struct lval* lisp_mut(const struct last* ast, struct last** error) {
             s = lmut_sexpr(ast->children[c], error);
         } else {
             s = lval_alloc();
-            struct lerr* err = lerr_throw(LERR_AST, "can't read AST");
-            lval_mut_err_ptr(s, err);
+            *error = lerr_throw(LERR_AST, "can't read AST");
+            lerr_file_info(*error, "", ast->line, ast->col);
+            lval_mut_err_ptr(s, *error);
             s->ast = ast->children[c];
-            *error = (struct last*)ast->children[c];
         }
         lval_push(p, s);
         lval_free(s);

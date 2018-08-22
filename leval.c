@@ -142,29 +142,26 @@ bool lisp_eval(struct lenv* env,
     struct ltok* tokens = NULL;
     struct last* ast = NULL;
     struct lval* program = NULL;
-    struct last* mut_error = NULL;
     struct lerr* error = NULL;
     do {
         /* Lex input. */
         tokens = lisp_lex_surround(input, &error);
-        if (error != NULL) {
+        if (error) {
             error = lerr_propagate(error, "lexing error:");
             lval_mut_err_code(r, LERR_EVAL);
             break;
         }
         /* Parse input. */
         ast = lisp_parse(tokens, &error);
-        if (error != NULL) {
+        if (error) {
             error = lerr_propagate(error, "parsing error:");
             lval_mut_err_code(r, LERR_EVAL);
             break;
         }
         /* Mutate the AST. */
-        program = lisp_mut(ast, &mut_error);
-        if (mut_error != NULL) {
-            error = lerr_throw(LERR_EVAL, "mutation error: %s", mut_error->content);
-            error->line = mut_error->line;
-            error->col = mut_error->col;
+        program = lisp_mut(ast, &error);
+        if (error) {
+            error = lerr_propagate(error, "mutation error:");
             lval_mut_err_code(r, LERR_EVAL);
             break;
         }

@@ -3,6 +3,7 @@
 #include <limits.h>
 #include "vendor/mini-gmp/mini-gmp.h"
 
+#include "lerr.h"
 #include "llexer.h"
 #include "lparser.h"
 #include "lval.h"
@@ -14,25 +15,29 @@
         struct lval* expected = lval_alloc(); \
         __VA_ARGS__ \
         defer(lval_free(expected)); \
-        struct ltok *tokens = NULL, *lexer_error = NULL; \
+        struct lerr* err = NULL; \
+        defer(lerr_free(err)); \
+        struct ltok* tokens = NULL; \
         defer(llex_free(tokens)); \
-        assert(NULL != (tokens = lisp_lex(input, &lexer_error))); \
-        struct last *ast = NULL, *ast_error = NULL; \
+        assert(NULL != (tokens = lisp_lex(input, &err))); \
+        struct last* ast = NULL; \
         defer(last_free(ast)); \
-        assert(NULL != (ast = lisp_parse(tokens, &ast_error))); \
-        struct lval *got = NULL; \
+        assert(NULL != (ast = lisp_parse(tokens, &err))); \
+        struct lval* got = NULL; \
         defer(lval_free(got)); \
-        assert(NULL != (got = lisp_mut(ast, &ast_error))); \
+        assert(NULL != (got = lisp_mut(ast, &err))); \
         assert(lval_are_equal(got, expected)); \
     })
 
 #define test_fail(msg, input) \
     it("fails for " msg, { \
-        struct last *ast = NULL, *error = NULL; \
+        struct last* ast = NULL; \
         defer(last_free(ast)); \
+        struct lerr* err = NULL; \
+        defer(lerr_free(err)); \
         struct lval* got = NULL; \
         defer(lval_free(got)); \
-        assert(NULL == (got = lisp_mut(ast, &error))); \
+        assert(NULL == (got = lisp_mut(ast, &err))); \
     })
 
 #define _STRINGIFY(str) #str

@@ -120,6 +120,9 @@ void lerr_wrap(struct lerr* outer, struct lerr* inner) {
 }
 
 struct lerr* lerr_cause(struct lerr* err) {
+    if (!err) {
+        return NULL;
+    }
     while (err->inner) { err = err->inner; }
     return err;
 }

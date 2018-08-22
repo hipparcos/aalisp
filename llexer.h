@@ -32,7 +32,7 @@ struct ltok {
 /** lisp_lex transforms the input into a list of tokens.
  ** Returns the first element of the list of ltok.
  ** The returned list always end with a LTOK_EOF token.
- ** error is set to the node containing an error or to NULL.
+ ** err is allocated in case of error.
  ** Caller is responsible for calling llex_free() on tokens. */
 struct ltok* lisp_lex(const char* input, struct lerr** err);
 /** lisp_lex_surround acts as lisp_lex but surrounds tokens with `(` & `)`.

@@ -6,6 +6,7 @@
 #include <stdlib.h>
 
 #include "llexer.h"
+#include "lerr.h"
 
 enum ltag {
     LTAG_ERR,
@@ -18,10 +19,10 @@ enum ltag {
     LTAG_SEXPR,
     LTAG_QEXPR,
 };
-extern const char* ltag_string[9];
 
 struct last {
     enum ltag tag;
+    enum lerr_code err;
     char* content;
     int line;
     int col;
@@ -32,9 +33,9 @@ struct last {
 
 /** lisp_parse transforms a list of tokens into an ast.
  ** Returns the root of the ast.
- ** error is set to the node containing an error or to NULL.
+ ** err is allocated in case of error.
  ** Caller is responsible for calling last_free() on ast. */
-struct last* lisp_parse(struct ltok* tokens, struct last** error);
+struct last* lisp_parse(struct ltok* tokens, struct lerr** err);
 /** last_free clears ast.
  ** ast must not be used afterwards. */
 void last_free(struct last* ast);
@@ -44,6 +45,8 @@ bool last_are_equal(const struct last* left, const struct last* right);
 /** last_are_all_equal tells if two ast are equal. */ 
 bool last_are_all_equal(const struct last* left, const struct last* right);
 
+/** last_tag_string returns tag as string. */
+const char* last_tag_string(enum ltag tag);
 /** last_print_to prints the ast node to the file out. */
 void last_print_to(const struct last* ast, FILE* out);
 /** last_println prints the ast node to stdout. */

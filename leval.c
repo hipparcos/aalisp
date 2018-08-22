@@ -139,8 +139,8 @@ void print_error_marker(FILE* out, int indent, int col) {
 
 bool lisp_eval(struct lenv* env,
         const char* restrict input, struct lval* r, int prompt_len) {
-    struct ltok *tokens = NULL;
-    struct last *ast = NULL, *parser_error = NULL;
+    struct ltok* tokens = NULL;
+    struct last* ast = NULL;
     struct lval* program = NULL;
     struct last* mut_error = NULL;
     struct lerr* error = NULL;
@@ -153,11 +153,9 @@ bool lisp_eval(struct lenv* env,
             break;
         }
         /* Parse input. */
-        ast = lisp_parse(tokens, &parser_error);
-        if (parser_error != NULL) {
-            error = lerr_throw(LERR_EVAL, "parsing error: %s", parser_error->content);
-            error->line = parser_error->line;
-            error->col = parser_error->col;
+        ast = lisp_parse(tokens, &error);
+        if (error != NULL) {
+            error = lerr_propagate(error, "parsing error:");
             lval_mut_err_code(r, LERR_EVAL);
             break;
         }

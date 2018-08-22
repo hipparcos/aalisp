@@ -2,32 +2,23 @@
 
 #include <string.h>
 
-const char* ltag_string[] = {
-    "error",
-    "program",
-    "expr",
-    "num",
-    "double",
-    "symbol",
-    "string",
-    "sexpr",
-    "qexpr",
-};
 
-enum lparser_error {
-    LPARSER_ERR_MISSING_OPAR,
-    LPARSER_ERR_MISSING_CPAR,
-    LPARSER_ERR_MISSING_CBRC,
-    LPARSER_ERR_BAD_OPERAND,
-    LPARSER_ERR_BAD_EXPR,
-};
-static const char* lparser_error_string[] = {
-    "missing opening parenthesis",
-    "missing closing parenthesis",
-    "missing closing brace",
-    "operands must be of types num|double|string|symbol|sexpr|qexpr",
-    "an expression must start with a symbol or a `(`",
-};
+#include "lerr.h"
+
+const char* last_tag_string(enum ltag tag) {
+    switch (tag) {
+        case LTAG_ERR:   return "error";
+        case LTAG_PROG:  return "program";
+        case LTAG_EXPR:  return "expr";
+        case LTAG_NUM:   return "num";
+        case LTAG_DBL:   return "double";
+        case LTAG_SYM:   return "symbol";
+        case LTAG_STR:   return "string";
+        case LTAG_SEXPR: return "sexpr";
+        case LTAG_QEXPR: return "qexpr";
+    }
+    return NULL;
+}
 
 static struct last* last_alloc(enum ltag tag, const char* content, const struct ltok* tok) {
     struct last* ast = calloc(1, sizeof(struct last));
@@ -42,8 +33,10 @@ static struct last* last_alloc(enum ltag tag, const char* content, const struct 
     return ast;
 }
 
-static struct last* last_error(enum lparser_error error, const struct ltok* tok) {
-    return last_alloc(LTAG_ERR, lparser_error_string[error], tok);
+static struct last* last_error(enum lerr_code error, const struct ltok* tok) {
+    struct last* err = last_alloc(LTAG_ERR, "", tok);
+    err->err = error;
+    return err;
 }
 
 static bool last_attach(struct last* child, struct last* parent) {
@@ -154,7 +147,7 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
         curr = curr->next;
         break;
     default:
-        expr = last_error(LPARSER_ERR_BAD_EXPR, curr);
+        expr = last_error(LERR_PARSER_BAD_EXPR, curr);
     case LTOK_EOF:
         *last = curr;
         return expr;
@@ -171,7 +164,7 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
                 operand = lparse_qexpr(curr, &curr);
                 break;
             default:
-                operand = last_error(LPARSER_ERR_BAD_OPERAND, curr);
+                operand = last_error(LERR_PARSER_BAD_OPERAND, curr);
                 break;
             }
         }
@@ -197,7 +190,7 @@ static struct last* lparse_sexpr(struct ltok* first, struct ltok** last) {
     }
     // (.
     if (curr->type != LTOK_OPAR) {
-        sexpr = last_error(LPARSER_ERR_MISSING_OPAR, curr);
+        sexpr = last_error(LERR_PARSER_MISSING_OPAR, curr);
         *last = curr;
         return sexpr;
     }
@@ -210,7 +203,7 @@ static struct last* lparse_sexpr(struct ltok* first, struct ltok** last) {
     }
     // ) or error.
     if (curr->type != LTOK_CPAR) {
-        sexpr = last_error(LPARSER_ERR_MISSING_CPAR, curr);
+        sexpr = last_error(LERR_PARSER_MISSING_CPAR, curr);
     } else {
         sexpr = last_alloc(LTAG_SEXPR, "", curr);
         curr = curr->next; // Skip ).
@@ -241,7 +234,7 @@ static struct last* lparse_qexpr(struct ltok* first, struct ltok** last) {
                 operand = lparse_qexpr(curr, &curr);
                 break;
             default:
-                operand = last_error(LPARSER_ERR_BAD_OPERAND, curr);
+                operand = last_error(LERR_PARSER_BAD_OPERAND, curr);
                 break;
             }
         }
@@ -259,7 +252,7 @@ static struct last* lparse_qexpr(struct ltok* first, struct ltok** last) {
     }
     // } or error.
     if (curr->type != LTOK_CBRC) {
-        struct last* err = last_error(LPARSER_ERR_MISSING_CBRC, curr);
+        struct last* err = last_error(LERR_PARSER_MISSING_CBRC, curr);
         last_attach(qexpr, err);
         qexpr = err;
     }
@@ -286,11 +279,38 @@ static struct last* lparse_program(struct ltok* tokens, struct last** error) {
     return prg;
 }
 
-struct last* lisp_parse(struct ltok* tokens, struct last** error) {
+struct last* lisp_parse(struct ltok* tokens, struct lerr** err) {
     if (!tokens) {
         return NULL;
     }
-    return lparse_program(tokens, error);
+    struct last* ast_error = NULL;
+    struct last* ast = lparse_program(tokens, &ast_error);
+    /* Error handling. */
+    if (ast_error) {
+        switch (ast_error->err) {
+        case LERR_PARSER_MISSING_OPAR:
+            *err = lerr_throw(ast_error->err, "missing opening parenthesis");
+            break;
+        case LERR_PARSER_MISSING_CPAR:
+            *err = lerr_throw(ast_error->err, "missing closing parenthesis");
+            break;
+        case LERR_PARSER_MISSING_CBRC:
+            *err = lerr_throw(ast_error->err, "missing closing brace");
+            break;
+        case LERR_PARSER_BAD_OPERAND:
+            *err = lerr_throw(ast_error->err,
+                    "operands must be of types num|double|string|symbol|sexpr|qexpr");
+            break;
+        case LERR_PARSER_BAD_EXPR:
+            *err = lerr_throw(ast_error->err, "an expression must start with a symbol or a `(`");
+            break;
+        default:
+            *err = lerr_throw(LERR_PARSER, "unknown error");
+            break;
+        }
+        lerr_file_info(*err, "", ast_error->line, ast_error->col);
+    }
+    return ast;
 }
 
 void last_free(struct last* ast) {
@@ -344,10 +364,10 @@ static void last_print_to_indent(const struct last* ast, FILE* out, unsigned int
     }
     if (!ast->content) {
         fprintf(out, "tag: %si, %d:%d",
-                ltag_string[ast->tag], ast->line, ast->col);
+                last_tag_string(ast->tag), ast->line, ast->col);
     } else {
         fprintf(out, "tag: %s, %d:%d, content: \"%s\"",
-                ltag_string[ast->tag], ast->line, ast->col, ast->content);
+                last_tag_string(ast->tag), ast->line, ast->col, ast->content);
     }
     fputc('\n', out);
 }

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "lerr.h"
 #include "llexer.h"
 
 #include "vendor/snow/snow/snow.h"
@@ -62,23 +63,27 @@ struct last* ast_builder(struct ast_list* list) {
     it("passes for " msg " `" input "`", { \
         struct last* expec = ast_builder(expected); \
         defer(last_free(expec)); \
-        struct ltok *tokens = NULL, *lexer_error = NULL; \
+        struct lerr* err = NULL; \
+        defer(lerr_free(err)); \
+        struct ltok* tokens = NULL; \
         defer(llex_free(tokens)); \
-        assert(tokens = lisp_lex(input, &lexer_error)); \
-        struct last *got = NULL, *error = NULL; \
+        assert(tokens = lisp_lex(input, &err)); \
+        struct last* got = NULL; \
         defer(last_free(got)); \
-        assert(got = lisp_parse(tokens, &error)); \
+        assert(got = lisp_parse(tokens, &err)); \
         assert(last_are_all_equal(got, expec)); \
     })
 
 #define test_fail(msg, input) \
     it("fails for " msg, { \
-        struct ltok *tokens = NULL, *lexer_error = NULL; \
+        struct ltok* tokens = NULL; \
         defer(llex_free(tokens)); \
-        assert(tokens = lisp_lex(input, &lexer_error)); \
-        struct last *got = NULL, *error = NULL; \
+        struct lerr* err = NULL; \
+        defer(lerr_free(err)); \
+        assert(tokens = lisp_lex(input, &err)); \
+        struct last* got = NULL; \
         defer(last_free(got)); \
-        assert(!(got = lisp_parse(tokens, &error)) || error != NULL); \
+        assert(!(got = lisp_parse(tokens, &err)) || err != NULL); \
     })
 
 describe(lparse, {

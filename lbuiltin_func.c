@@ -135,23 +135,9 @@ static int lbi_def(struct lenv* env,
         bool (*def)(struct lenv*, const struct lval*, const struct lval*),
         const struct lval* symbols, const struct lval* values,
         struct lval* result) {
-    /* Check len. */
-    size_t lensyms = lval_len(symbols);
-    size_t lenvals = lval_len(values);
-    if (lenvals != lensyms) {
-        enum lerr_code code = 0;
-        if (lenvals < lensyms) {
-            code = LERR_TOO_FEW_ARGS;
-        } else {
-            code = LERR_TOO_MANY_ARGS;
-        }
-        struct lerr* err = lerr_throw(code,
-                "def called with %ld symbol(s) and %ld value(s)", lensyms, lenvals);
-        lval_mut_err_ptr(result, err);
-        return -1;
-    }
     /* Define symbols. */
-    for (size_t c = 0; c < lensyms; c++) {
+    size_t len = lval_len(symbols);
+    for (size_t c = 0; c < len; c++) {
         struct lval* sym = lval_alloc();
         struct lval* value = lval_alloc();
         lval_index(symbols, c, sym);

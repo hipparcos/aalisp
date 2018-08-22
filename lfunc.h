@@ -5,6 +5,16 @@
 
 #include "lval.h"
 #include "lenv.h"
+#include "lerr.h"
+
+#define define_condition(name) \
+    int lbi_##name( \
+            const void* param, \
+            const struct lfunc* fun, \
+            const struct lval* arg, \
+            struct lerr** err)
+#define use_condition(name) \
+    lbi_##name
 
 struct lfunc;
 
@@ -13,24 +23,22 @@ struct lfunc;
  **  -1 if error
  **   n if nth argument generate an error */
 typedef int (*lcondition)(
-        const struct lfunc*, const struct lenv*, const struct lval*,
-        const void* arg);
+        const void*         param,
+        const struct lfunc* fun,
+        const struct lval*  arg,
+        struct lerr**       err);
 
 /** lguard is a condition associated with an error. */
 struct lguard {
     /** lguard.condition is the condition to be verified. */
     lcondition condition;
-    /** lguard.arg is a guard argument passed to condition. */
-    void* arg;
+    /** lguard.param is a guard argument passed to condition. */
+    void* param;
     /** lguard.argn is the number of the argument concerned
      **   >0 applied on nth args;
      **    0 applied on each args;
      **   -1 applied on all args. */
     int argn;
-    /** lguard.error is the error returned. */
-    enum lerr_code error;
-    /** lguard.message describe the error. */
-    const char* message;
 };
 
 /** lbuiltin is a pointer to a builtin function.

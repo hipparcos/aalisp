@@ -1,59 +1,25 @@
 #ifndef _H_LBUILTIN_CONDITION_
 #define _H_LBUILTIN_CONDITION_
 
-#include "lval.h"
-#include "lenv.h"
 #include "lfunc.h"
 
 /* Conditions on lfunc. */
-int lbi_cond_max_argc(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* args,
-        const void* guard_arg);
-int lbi_cond_min_argc(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* args,
-        const void* guard_arg);
-int lbi_cond_func_pointer(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* args,
-        const void* guard_arg);
+define_condition(must_have_max_argc);
+define_condition(must_have_min_argc);
+define_condition(must_have_func_ptr);
 
 /* Operators conditions. */
-int lbi_cond_is_not_zero(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg);
-int lbi_cond_is_positive(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg);
-int lbi_cond_is_integral(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg);
-int lbi_cond_is_numeric(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg);
-int lbi_cond_x_is_ul(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg);
+define_condition(must_be_numeric);
+define_condition(must_be_integral);
+define_condition(must_be_positive);
+define_condition(must_be_non_zero);
+define_condition(must_be_unsigned_long);
 
 /* List conditions. */
-int lbi_cond_min_len(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg);
-int lbi_cond_type(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg);
-int lbi_cond_qexpr(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg);
-int lbi_cond_list_of_sym(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg);
-int lbi_cond_list_of_sexpr(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg);
-int lbi_cond_qexpr_or_nil(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg);
-int lbi_cond_list(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg);
+define_condition(must_be_of_type);
+define_condition(must_have_min_len);
+define_condition(must_be_of_equal_len);
+define_condition(must_be_list_of);
+define_condition(must_be_a_list);
 
 #endif

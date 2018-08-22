@@ -109,13 +109,13 @@ size_t lval_len(const struct lval* v);
 /** lval_type returns the type of v. */
 enum ltype lval_type(const struct lval* v);
 /** lval_type_string returns the type of v as string. */
-const char* lval_type_string(const struct lval* v);
+const char* lval_type_string(enum ltype type);
 /** lval_type returns v as an error code. Its type must be LVAL_ERR. */
 bool lval_as_err_code(const struct lval* v, enum lerr_code* r);
 /** lval_type returns v as an lerr. Its type must be LVAL_ERR.
  ** The address pointer to the underlying error is returned.
  ** r stays valid until v is freed or mutated. */
-bool lval_as_err(const struct lval* v, struct lerr** r);
+struct lerr* lval_as_err(const struct lval* v);
 /** lval_type returns v as a long. Its type must be LVAL_NUM. */
 bool lval_as_num(const struct lval* v, long* r);
 /** lval_type returns v as a bignum. Its type must be LVAL_BIGNUM.

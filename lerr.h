@@ -38,9 +38,12 @@ struct lerr {
  ** Caller is responsible for calling lerr_free on returned lerr. */
 struct lerr* lerr_alloc(void);
 /** lerr_free frees err.
- ** err must not be used afterwards.
- ** lerr_free must be called on the outermost error. */
+ ** err must not be used afterwards. */
 void lerr_free(struct lerr* err);
+/** lerr_free_all frees err and all wrapped arrors.
+ ** err must not be used afterwards.
+ ** lerr_free_all must be called on the outermost error. */
+void lerr_free_all(struct lerr* err);
 /** lerr_copy copies src into dest (and inner errors). */
 void lerr_copy(struct lerr* dest, const struct lerr* src);
 /** lerr_throw allocates an error and describes it.
@@ -49,7 +52,7 @@ struct lerr* lerr_throw(enum lerr_code code, const char* fmt, ...);
 struct lerr* lerr_throw_va(enum lerr_code code, const char* fmt, va_list va);
 /** lerr_propagate allocates an error, describes it and wraps an inner error.
  ** Caller is responsible for calling lerr_free on returned lerr. */
-struct lerr* lerr_propagate(struct lerr* inner, enum lerr_code code, const char* fmt, ...);
+struct lerr* lerr_propagate(struct lerr* inner, const char* fmt, ...);
 
 /** lerr_describe returns a message describing the error code. */
 const char* lerr_describe(enum lerr_code code);
@@ -62,15 +65,15 @@ void lerr_file_info(struct lerr* err, const char* file, int line, int col);
 void lerr_wrap(struct lerr* outer, struct lerr* inner);
 /** lerr_cause returns the innermost error.
  ** Returned pointer stays valid until lerr_free is called on the outermost error. */
-const struct lerr* lerr_cause(const struct lerr* err);
+struct lerr* lerr_cause(struct lerr* err);
 
 /** lerr_printlen returns the length of the error when printed as string. */
-size_t lerr_printlen(const struct lerr* err);
+size_t lerr_printlen(struct lerr* err);
 /** lerr_as_string returns the error as string printed in out. */
-void lerr_as_string(const struct lerr* err, char* out, size_t len);
+void lerr_as_string(struct lerr* err, char* out, size_t len);
 /** lerr_print_to prints err to  the file out. */
-void lerr_print_to(const struct lerr* err, FILE* out);
+void lerr_print_to(struct lerr* err, FILE* out);
 /** lerr_print prints err to stdout. */
-#define lerr_print(err,out) lerr_print_to(err, stdout)
+#define lerr_print(err) lerr_print_to(err, stdout)
 
 #endif

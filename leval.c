@@ -191,12 +191,12 @@ bool lisp_eval(struct lenv* env,
                 col  = r->ast->col;
             }
             print_error_marker(stderr, prompt_len, col);
-            size_t len = lval_printlen(r);
-            char* err = calloc(1, len);
-            lval_as_str(r, err, len);
-            fprintf(stderr, "<interactive>:%d:%d: evaluation error: %s.\n",
-                    line, col, err);
-            free(err);
+            struct lerr* err = lval_as_err(r);
+            struct lerr* cause = lerr_cause(err);
+            lerr_file_info(cause, "interactive", line, col);
+            struct lerr* wrapped = lerr_propagate(err, "evaluation error:");
+            lerr_print_to(wrapped, stderr);
+            lerr_free(wrapped);
         }
         CLEANUP(tokens, ast, program);
         return false;

@@ -146,7 +146,7 @@ static bool ldata_clear(struct ldata* d) {
         d->payload.func = NULL;
         break;
     case LVAL_ERR:
-        lerr_free(d->payload.err);
+        lerr_free_all(d->payload.err);
         d->payload.err = NULL;
         break;
     default: break;
@@ -624,8 +624,8 @@ enum ltype lval_type(const struct lval* v) {
     return v->data->type;
 }
 
-const char* lval_type_string(const struct lval* v) {
-    switch (lval_type(v)) {
+const char* lval_type_string(enum ltype type) {
+    switch (type) {
     case LVAL_NIL:    return "nil";
     case LVAL_NUM:    return "num";
     case LVAL_BIGNUM: return "bignum";
@@ -649,13 +649,11 @@ bool lval_as_err_code(const struct lval* v, enum lerr_code* r) {
     return true;
 }
 
-bool lval_as_err(const struct lval* v, struct lerr** r) {
+struct lerr* lval_as_err(const struct lval* v) {
     if (!lval_is_alive(v) || lval_type(v) != LVAL_ERR) {
-        *r = NULL;
-        return false;
+        return NULL;
     }
-    *r = v->data->payload.err;
-    return true;
+    return v->data->payload.err;
 }
 
 bool lval_as_num(const struct lval* v, long* r) {
@@ -831,7 +829,12 @@ bool lval_are_equal(const struct lval* x, const struct lval* y) {
     static const double epsilon = 0.000001;
     switch (x->data->type) {
     case LVAL_NIL:    return x->data->type == y->data->type;
-    case LVAL_ERR:    return x->data->payload.err->code == y->data->payload.err->code;
+    case LVAL_ERR:
+        {
+        struct lerr* cause_x = lerr_cause(x->data->payload.err);
+        struct lerr* cause_y = lerr_cause(y->data->payload.err);
+        return cause_x->code == cause_y->code;
+        }
     case LVAL_NUM:    return x->data->payload.num == y->data->payload.num;
     case LVAL_BIGNUM: return mpz_cmp(x->data->payload.bignum, y->data->payload.bignum) == 0;
     case LVAL_DBL:    return fabs(x->data->payload.dbl - y->data->payload.dbl) < epsilon;
@@ -936,7 +939,7 @@ static void _lval_debug(const struct lval* v, char* out, bool recursive, int ind
         INDENT(out, indent);
         sprintf(out,
                 "  ldata{type: %s, len: %ld, alive: 0x%x, refc: %d, mutable: %s,\n",
-                lval_type_string(v), v->data->len, v->data->alive, v->data->refc,
+                lval_type_string(lval_type(v)), v->data->len, v->data->alive, v->data->refc,
                 v->data->mutable ? "true" : "false");
         out += strlen(out);
         INDENT(out, indent);

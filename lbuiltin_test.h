@@ -3,6 +3,7 @@
 #include "vendor/snow/snow/snow.h"
 
 #include "lval.h"
+#include "lerr.h"
 #include "lenv.h"
 #include "lfunc.h"
 

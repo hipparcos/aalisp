@@ -28,13 +28,20 @@ void lerr_free(struct lerr* err) {
     if (!err) {
         return;
     }
-    if (err->inner) {
-        lerr_free(err->inner);
-    }
     if (err->file) {
         free(err->file);
     }
     free(err);
+}
+
+void lerr_free_all(struct lerr* err) {
+    if (!err) {
+        return;
+    }
+    if (err->inner) {
+        lerr_free_all(err->inner);
+    }
+    lerr_free(err);
 }
 
 void lerr_copy(struct lerr* dest, const struct lerr* src) {
@@ -65,10 +72,10 @@ struct lerr* lerr_throw(enum lerr_code code, const char* fmt, ...) {
     return err;
 }
 
-struct lerr* lerr_propagate(struct lerr* inner, enum lerr_code code, const char* fmt, ...) {
+struct lerr* lerr_propagate(struct lerr* inner, const char* fmt, ...) {
     va_list va;
     va_start(va, fmt);
-    struct lerr* outer = lerr_throw_va(code, fmt, va);
+    struct lerr* outer = lerr_throw_va(0, fmt, va);
     va_end(va);
     lerr_wrap(outer, inner);
     return outer;
@@ -117,24 +124,24 @@ void lerr_wrap(struct lerr* outer, struct lerr* inner) {
     outer->inner = inner;
 }
 
-const struct lerr* lerr_cause(const struct lerr* err) {
+struct lerr* lerr_cause(struct lerr* err) {
     while (err->inner) { err = err->inner; }
     return err;
 }
 
-void lerr_print_to(const struct lerr* err, FILE* out) {
+void lerr_print_to(struct lerr* err, FILE* out) {
     if (!err) {
         return;
     }
-    const struct lerr* cause = lerr_cause(err);
+    struct lerr* cause = lerr_cause(err);
     if (cause->file)
         { fprintf(out, "<%s>:", cause->file); }
     if (cause->line && cause->col)
         { fprintf(out, "%d:%d:", cause->line, cause->col); }
     if (cause->code)
-        { fprintf(out, "#%d", cause->code); }
+        { fprintf(out, "error #%d:", cause->code); }
     while (err) {
-        fprintf(out, ": %s", err->message);
+        fprintf(out, " %s", err->message);
         err = err->inner;
     }
     fputs(".\n", out);
@@ -149,7 +156,7 @@ static size_t lerr_sprint(const struct lerr* err, char* out, size_t len) {
     return snprintf(out, len, "Error #%d: %s", err->code, err->message);
 }
 
-size_t lerr_printlen(const struct lerr* err) {
+size_t lerr_printlen(struct lerr* err) {
     if (!err) {
         return 0;
     }
@@ -158,7 +165,7 @@ size_t lerr_printlen(const struct lerr* err) {
 }
 
 /* Needed because of lval way of printing. */
-void lerr_as_string(const struct lerr* err, char* out, size_t len) {
+void lerr_as_string(struct lerr* err, char* out, size_t len) {
     if (!err) {
         return;
     }

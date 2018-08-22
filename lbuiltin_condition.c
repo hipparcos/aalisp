@@ -2,126 +2,172 @@
 
 #include <limits.h>
 
-#define UNUSED(x) ((void)x)
+#include "lval.h"
+#include "lerr.h"
+#include "lfunc.h"
 
-int lbi_cond_max_argc(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* args,
-        const void* guard_arg) {
-    UNUSED(env); UNUSED(guard_arg);
-    size_t len = lval_len(args);
+#define unused(x) ((void)x)
+
+define_condition(must_have_max_argc) {
+    unused(param);
+    size_t len = lval_len(arg);
     int max = fun->max_argc;
     if (max != -1 && (int)len > max) {
+        *err = lerr_throw(LERR_TOO_MANY_ARGS,
+                "takes %d arguments at maximum", max);
         return -1;
     }
     return 0;
 }
 
-int lbi_cond_min_argc(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* args,
-        const void* guard_arg) {
-    UNUSED(env); UNUSED(guard_arg);
-    size_t len = lval_len(args);
+define_condition(must_have_min_argc) {
+    unused(param);
+    size_t len = lval_len(arg);
     int min = fun->min_argc;
     if (min != -1 && (int)len < min) {
+        *err = lerr_throw(LERR_TOO_FEW_ARGS,
+                "takes %d arguments at minimum", min);
         return -1;
     }
     return 0;
 }
 
-int lbi_cond_func_pointer(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* args,
-        const void* guard_arg) {
-    UNUSED(env); UNUSED(args); UNUSED(guard_arg);
+define_condition(must_have_func_ptr) {
+    unused(param); unused(arg);
     if (!fun->accumulator && !fun->func) {
+        *err = lerr_throw(LERR_EVAL,
+                "incorrect builtin definition");
         return -1;
     }
     return 0;
 }
-int lbi_cond_is_not_zero(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg) {
-    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
-    return (!lval_is_zero(arg)) ? 0 : 1;
+
+define_condition(must_be_numeric) {
+    unused(param); unused(fun);
+    if (!lval_is_numeric(arg)) {
+        *err = lerr_throw(LERR_BAD_OPERAND,
+                "must be numeric");
+        return 1;
+    }
+    return 0;
 }
 
-int lbi_cond_is_positive(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg) {
-    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
-    return (lval_sign(arg) > 0) ? 0 : 1;
+define_condition(must_be_integral) {
+    unused(param); unused(fun);
+    if ((lval_type(arg) != LVAL_NUM && lval_type(arg) != LVAL_BIGNUM)) {
+        *err = lerr_throw(LERR_BAD_OPERAND,
+                "must be integral");
+        return 1;
+    }
+    return 0;
 }
 
-int lbi_cond_is_integral(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg) {
-    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
-    return ((lval_type(arg) == LVAL_NUM || lval_type(arg) == LVAL_BIGNUM)) ? 0 : 1;
+define_condition(must_be_positive) {
+    unused(param); unused(fun);
+    if (lval_sign(arg) < 0) {
+        *err = lerr_throw(LERR_BAD_OPERAND,
+                "must be positive");
+        return 1;
+    }
+    return 0;
 }
 
-int lbi_cond_is_numeric(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg) {
-    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
-    return (lval_is_numeric(arg)) ? 0 : 1;
+define_condition(must_be_non_zero) {
+    unused(param); unused(fun);
+    if (lval_is_zero(arg)) {
+        *err = lerr_throw(LERR_DIV_ZERO,
+                "must not be 0");
+        return 1;
+    }
+    return 0;
 }
 
-static bool _too_big_for_ul(const struct lval* arg) {
+define_condition(must_be_unsigned_long) {
+    unused(param); unused(fun);
+    if (lval_type(arg) == LVAL_NUM) {
+        return 0;
+    }
+    if (lval_type(arg) == LVAL_DBL) {
+        return 0;
+    }
     if (lval_type(arg) != LVAL_BIGNUM) {
-        return false;
+        *err = lerr_throw(LERR_BAD_OPERAND,
+                "must be integral");
+        return 1;
     }
     mpz_t r;
     mpz_init(r);
     lval_as_bignum(arg, r);
-    bool result = mpz_cmp_ui(r, ULONG_MAX) > 0;
+    if (mpz_cmp_ui(r, ULONG_MAX) > 0) {
+        *err = lerr_throw(LERR_BAD_OPERAND,
+                "is too large");
+        mpz_clear(r);
+        return 1;
+    }
     mpz_clear(r);
-    return result;
-}
-int lbi_cond_x_is_ul(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg) {
-    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
-    return (!_too_big_for_ul(arg)) ? 0 : 1;
+    return 0;
 }
 
-int lbi_cond_min_len(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg) {
-    UNUSED(fun); UNUSED(env);
-    size_t min = *((size_t*)guard_arg);
-    return (lval_len(arg) >= min) ? 0 : 1;
+define_condition(must_be_of_type) {
+    unused(fun);
+    enum ltype type = *((enum ltype*)param);
+    if (lval_type(arg) != type) {
+        *err = lerr_throw(LERR_BAD_OPERAND,
+                "must be of type %s", lval_type_string(type));
+        return 1;
+    }
+    return 0;
 }
 
-int lbi_cond_type(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg) {
-    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
-    enum ltype type = *((enum ltype*)guard_arg);
-    return (lval_type(arg) == type) ? 0 : 1;
+define_condition(must_have_min_len) {
+    unused(fun);
+    size_t min = *((size_t*)param);
+    if (lval_len(arg) < min) {
+        *err = lerr_throw(LERR_BAD_OPERAND,
+                "must have a length of at least %ld", min);
+        return 1;
+    }
+    return 0;
 }
 
-int lbi_cond_qexpr(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg) {
-    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
-    return (lval_type(arg) == LVAL_QEXPR) ? 0 : 1;
+define_condition(must_be_of_equal_len) {
+    unused(fun); unused(param);
+    struct lval* list = lval_alloc();
+    lval_index(arg, 0, list);
+    size_t list_len = lval_len(list);
+    size_t args_len = lval_len(arg);
+    if (args_len-1 < list_len) {
+        *err = lerr_throw(LERR_TOO_FEW_ARGS,
+                "lenght must match: %ld symbol(s) and %ld value(s)", list_len, args_len-1);
+        lval_free(list);
+        return 1;
+    }
+    if (args_len-1 > list_len) {
+        *err = lerr_throw(LERR_TOO_MANY_ARGS,
+                "lenght must match: %ld symbol(s) and %ld value(s)", list_len, args_len-1);
+        lval_free(list);
+        return 1;
+    }
+    lval_free(list);
+    return 0;
 }
 
-int lbi_cond_qexpr_or_nil(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg) {
-    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
-    return (lval_type(arg) == LVAL_QEXPR || lval_is_nil(arg)) ? 0 : 1;
-}
-
-int lbi_cond_list(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg) {
-    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
-    return (lval_len(arg) > 0) ? 0 : 1;
-}
-
-static int _is_list_of_type(enum ltype type, const struct lval* arg) {
+define_condition(must_be_a_list) {
+    unused(param); unused(fun);
     if (!lval_is_list(arg)) {
+        *err = lerr_throw(LERR_BAD_OPERAND,
+                "must be a list");
+        return 1;
+    }
+    return 0;
+}
+
+define_condition(must_be_list_of) {
+    unused(fun);
+    enum ltype type = *((enum ltype*)param);
+    if (!lval_is_list(arg)) {
+        *err = lerr_throw(LERR_BAD_OPERAND,
+                "must be a list");
         return 1;
     }
     size_t len = lval_len(arg);
@@ -129,21 +175,11 @@ static int _is_list_of_type(enum ltype type, const struct lval* arg) {
         struct lval* child = lval_alloc();
         lval_index(arg, c, child);
         if (lval_type(child) != type) {
+            *err = lerr_throw(LERR_BAD_OPERAND,
+                    "must be a list of %s", lval_type_string(type));
             return 1;
         }
         lval_free(child);
     }
     return 0;
-}
-int lbi_cond_list_of_sym(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg) {
-    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
-    return _is_list_of_type(LVAL_SYM, arg);
-}
-int lbi_cond_list_of_sexpr(
-        const struct lfunc* fun, const struct lenv* env, const struct lval* arg,
-        const void* guard_arg) {
-    UNUSED(fun); UNUSED(env); UNUSED(guard_arg);
-    return _is_list_of_type(LVAL_SEXPR, arg);
 }

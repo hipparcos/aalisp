@@ -181,7 +181,7 @@ static int lbuiltin_operator(
     }
 
     struct lerr* err = lerr_throw(LERR_EVAL, 
-            "operator can't operate on type %s", lval_type_string(arg));
+            "operator can't operate on type %s", lval_type_string(lval_type(arg)));
     lval_mut_err_ptr(acc, err);
     return -1;
 }

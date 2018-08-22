@@ -884,6 +884,49 @@ bool lval_are_equal(const struct lval* x, const struct lval* y) {
     }
 }
 
+#define payload(x) (x->data->payload)
+#define compare(x,y) ((x > y) - (x < y))
+#define compare_payload(x,y,m) compare(payload(x).m, payload(y).m)
+
+int lval_compare(const struct lval* x, const struct lval* y) {
+    if (!lval_is_alive(x))              return -1;
+    if (!lval_is_alive(y))              return -1;
+    if (x->data == y->data)             return 0;
+    if (x->data->type != y->data->type) return -1;
+    if (x->data->len != y->data->len)   return -1;
+    switch (x->data->type) {
+    case LVAL_NIL:
+        return 0;
+    case LVAL_BOOL:
+        return compare_payload(x, y, boolean);
+    case LVAL_NUM:
+        return compare_payload(x, y, num);
+    case LVAL_DBL:
+        return compare_payload(x, y, dbl);
+    case LVAL_BIGNUM:
+        return mpz_cmp(payload(x).bignum, payload(y).bignum);
+    case LVAL_STR:
+    case LVAL_SYM:
+        return strcmp(payload(x).str, payload(y).str);
+    case LVAL_FUNC:
+    case LVAL_ERR:
+        return lval_are_equal(x, y);
+    case LVAL_SEXPR:
+    case LVAL_QEXPR:
+        if (lval_len(x) != lval_len(y)) {
+            return compare(lval_len(x), lval_len(y));
+        }
+        for (size_t c = 0; c < x->data->len; c++) {
+            int s = 0;
+            if (0 != (s = lval_compare(x->data->payload.cell[c], y->data->payload.cell[c]))) {
+                return s;
+            }
+        }
+        return 0;
+    }
+    return -1;
+}
+
 static size_t length_of_long(long l) {
     if (l == 0) {
         return 1;

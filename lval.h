@@ -157,6 +157,12 @@ int lval_sign(const struct lval* v);
 bool lval_is_list(const struct lval* v);
 /** lval_are_equal returns true if x and y data are equal. */
 bool lval_are_equal(const struct lval* x, const struct lval* y);
+/** lval_compare compares x to y.
+ ** lval_compare returns:
+ **   <0 if x < y
+ **   =0 if x == y
+ **   >0 if x > y */
+int lval_compare(const struct lval* x, const struct lval* y);
 /** lval_printlen returns the minimum size in bytes required to print v. */
 size_t lval_printlen(const struct lval* v);
 /** lval_printlen_debug is equivalent to lval_printlen but adds the length of the debug header. */

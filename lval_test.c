@@ -683,6 +683,79 @@ describe(lval, {
 
     });
 
+    subdesc(compare, {
+        it("passes for LVAL_NUM", {
+            struct lval* a = lval_alloc();
+            struct lval* b = lval_alloc();
+            defer(lval_free(a));
+            defer(lval_free(b));
+            assert(lval_mut_num(a, 10));
+            assert(lval_mut_num(b, 20));
+            assert(0 > lval_compare(a, b));
+            assert(lval_mut_num(a, 20));
+            assert(lval_mut_num(b, 20));
+            assert(0 == lval_compare(a, b));
+            assert(lval_mut_num(a, 20));
+            assert(lval_mut_num(b, 10));
+            assert(0 < lval_compare(a, b));
+        });
+
+        it("passes for LVAL_STR", {
+            struct lval* a = lval_alloc();
+            struct lval* b = lval_alloc();
+            defer(lval_free(a));
+            defer(lval_free(b));
+            assert(lval_mut_str(a, "za"));
+            assert(lval_mut_str(b, "zz"));
+            assert(0 > lval_compare(a, b));
+            assert(lval_mut_str(a, "zz"));
+            assert(lval_mut_str(b, "zz"));
+            assert(0 == lval_compare(a, b));
+            assert(lval_mut_str(a, "zz"));
+            assert(lval_mut_str(b, "za"));
+            assert(0 < lval_compare(a, b));
+        });
+
+        it("passes for LVAL_QEXPR", {
+            struct lval* a = lval_alloc();
+            struct lval* b = lval_alloc();
+            struct lval* x = lval_alloc();
+            struct lval* y = lval_alloc();
+            defer(lval_free(a));
+            defer(lval_free(b));
+            defer(lval_free(x));
+            defer(lval_free(y));
+            lval_mut_num(x, 10);
+            lval_mut_num(y, 20);
+            /* a < b */
+            assert(lval_mut_qexpr(a));
+            lval_push(a, x);
+            lval_push(a, x);
+            lval_push(b, x);
+            lval_push(b, y);
+            assert(lval_mut_qexpr(b));
+            assert(0 > lval_compare(a, b));
+            /* a = b */
+            lval_clear(a); lval_clear(b);
+            assert(lval_mut_qexpr(a));
+            assert(lval_mut_qexpr(b));
+            lval_push(a, x);
+            lval_push(a, y);
+            lval_push(b, x);
+            lval_push(b, y);
+            assert(0 == lval_compare(a, b));
+            /* a > b */
+            lval_clear(a); lval_clear(b);
+            assert(lval_mut_qexpr(a));
+            assert(lval_mut_qexpr(b));
+            lval_push(a, x);
+            lval_push(a, y);
+            lval_push(b, x);
+            lval_push(b, x);
+            assert(0 < lval_compare(a, b));
+        });
+    });
+
     subdesc(sexpr, {
         it("lval_push works", {
             struct lval* sym = lval_alloc();

@@ -62,6 +62,11 @@ Arithmetic:
 > - 618.5 572.5 4
 42
 ```
+Control flow:
+```lisp
+> if (> 42 0) {+ 21 21} {0}
+42
+```
 List operations:
 ```lisp
 > list 1 2 3 4

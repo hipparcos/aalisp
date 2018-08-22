@@ -143,6 +143,10 @@ describe(lisp_eval, {
             push_num(expected, 4);
             push_num(expected, 5);
         });
+    /* Control flow. */
+    test_pass("if (> 42 0) {+ 21 21} {0}", "42", {
+            lval_mut_num(expected, 42);
+        });
 
     /* Errors. */
     test_fail("/ 10 0", LERR_DIV_ZERO);

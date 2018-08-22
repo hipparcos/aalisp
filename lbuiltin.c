@@ -179,6 +179,19 @@ const struct lfunc lbuiltin_op_lte = {
     .func         = lbi_op_lte,
 };
 
+static const struct lguard guards_if[] = {
+    {.argn= 1, .condition= use_condition(must_be_of_type),
+        .param= inline_ptr(enum ltype, LVAL_BOOL)},
+};
+const struct lfunc lbuiltin_if = {
+    .symbol       = "if",
+    .min_argc     =  2,
+    .max_argc     =  3,
+    .guards       = &guards_if[0],
+    .guardc       = LENGTH(guards_if),
+    .func         = lbi_func_if,
+};
+
 static const struct lguard guards_list_op[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_QEXPR)},

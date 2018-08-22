@@ -51,6 +51,14 @@
         lval_free(x); \
     } while (0);
 
+#define push_bool(args, boolean) \
+    do { \
+        struct lval* x = lval_alloc(); \
+        lval_mut_bool(x, boolean); \
+        lval_push(args, x); \
+        lval_free(x); \
+    } while (0);
+
 #define push_num(args, num) \
     do { \
         struct lval* x = lval_alloc(); \

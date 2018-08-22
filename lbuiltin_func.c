@@ -13,6 +13,29 @@
 
 #define UNUSED(x) (void)x
 
+int lbi_func_if(struct lenv* env, const struct lval* args, struct lval* acc) {
+    /* Retrieve arg 1: boolean. */
+    struct lval* boolean = lval_alloc();
+    lval_index(args, 0, boolean);
+    /* Retrieve arg 2 or 3: branch. */
+    struct lval* branch = lval_alloc();
+    if (lval_as_bool(boolean)) {
+        lval_index(args, 1, branch);
+    } else {
+        lval_index(args, 2, branch);
+    }
+    /* Eval. */
+    struct lval* wrap = lval_alloc();
+    lval_mut_sexpr(wrap);
+    lval_push(wrap, branch);
+    bool s = lfunc_exec(&lbuiltin_eval, env, wrap, acc);
+    lval_free(wrap);
+    /* Cleanup. */
+    lval_free(boolean);
+    lval_free(branch);
+    return s;
+}
+
 int lbi_func_head(struct lenv* env, const struct lval* args, struct lval* acc) {
     UNUSED(env);
     /* Retrieve arg 1. */

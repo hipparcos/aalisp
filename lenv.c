@@ -201,7 +201,7 @@ static bool lenv_local_lookup(const struct lenv* env,
         return true;
     }
     /* Fail. */
-    struct lerr* err = lerr_throw(LERR_BAD_SYMBOL, 
+    struct lerr* err = lerr_throw(LERR_BAD_SYMBOL,
             "symbol %s not defined in environment", symbol);
     lval_mut_err_ptr(result, err);
     return false;
@@ -252,14 +252,21 @@ bool lenv_put_builtin(struct lenv* env,
 }
 
 static bool lenv_put_lval(struct lenv* env,
-        const char* symbol, const struct lval* val) {
-    if (!symbol || !val) {
+        const char* symbol, struct lval* val) {
+    if (!symbol) {
         return false;
+    }
+    struct lval* lval = val;
+    if (!val) {
+        lval = lval_alloc();
     }
     struct lval* sym = lval_alloc();
     lval_mut_sym(sym, symbol);
-    bool s = lenv_put(env, sym, val);
+    bool s = lenv_put(env, sym, lval);
     lval_free(sym);
+    if (!val) {
+        lval_free(lval);
+    }
     return s;
 }
 
@@ -302,6 +309,8 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, ">=", &lbuiltin_op_gte);
     lenv_put_builtin(env, "<", &lbuiltin_op_lt);
     lenv_put_builtin(env, "<=", &lbuiltin_op_lte);
+    /* Control flow functions. */
+    lenv_put_builtin(env, "if", &lbuiltin_if);
     /* List manipulation functions. */
     lenv_put_builtin(env, "head", &lbuiltin_head);
     lenv_put_builtin(env, "tail", &lbuiltin_tail);
@@ -327,8 +336,12 @@ bool lenv_default(struct lenv* env) {
     /* IO functions. */
     lenv_put_builtin(env, "print", &lbuiltin_print);
     /* Environment variable. */
-    struct lval* dot = lval_alloc();
-    lenv_put_lval(env, ".", dot);
-    lval_free(dot);
+    lenv_put_lval(env, ".", NULL);
+    struct lval* boolean = lval_alloc();
+    lval_mut_bool(boolean, true);
+    lenv_put_lval(env, "true", boolean);
+    lval_mut_bool(boolean, false);
+    lenv_put_lval(env, "false", boolean);
+    lval_free(boolean);
     return true;
 }

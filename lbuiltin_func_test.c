@@ -4,6 +4,21 @@
 
 describe(builtin, {
 
+    subdesc(func_if, {
+        test_pass(&lbuiltin_if, "happy path branch true", {
+            push_bool(args, true);
+            push_num(args, 1);
+            push_num(args, 2);
+            lval_mut_num(expected, 1);
+        });
+        test_pass(&lbuiltin_if, "happy path branch false", {
+            push_bool(args, false);
+            push_num(args, 1);
+            push_num(args, 2);
+            lval_mut_num(expected, 2);
+        });
+    });
+
     subdesc(func_head, {
         test_pass(&lbuiltin_head, "happy path", {
             struct lval* qexpr = lval_alloc();

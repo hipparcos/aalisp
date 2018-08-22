@@ -102,9 +102,9 @@ static bool leval_sexpr(struct lenv* env,
 
 bool leval(struct lenv* env, const struct lval* v, struct lval* r) {
     if (!v) {
-        lval_mut_err(r, LERR_EVAL);
-        lval_err_annotate(r,
-            "the impossible happens, NULL pointer received");
+        struct lerr* err = lerr_throw(LERR_EVAL,
+                "the impossible happens, NULL pointer received");
+        lval_mut_err_ptr(r, err);
         return false;
     }
     switch (lval_type(v)) {
@@ -151,7 +151,7 @@ bool lisp_eval(struct lenv* env,
             fprintf(stderr, "<interactive>:%d:%d: lexing error: %s.\n",
                     lexer_error->line, lexer_error->col, lexer_error->content);
         }
-        lval_mut_err(r, LERR_EVAL);
+        lval_mut_err_code(r, LERR_EVAL);
         CLEANUP(tokens, NULL, NULL);
         return false;
     }
@@ -164,7 +164,7 @@ bool lisp_eval(struct lenv* env,
             fprintf(stderr, "<interactive>:%d:%d: parsing error: %s.\n",
                     parser_error->line, parser_error->col, parser_error->content);
         }
-        lval_mut_err(r, LERR_EVAL);
+        lval_mut_err_code(r, LERR_EVAL);
         CLEANUP(tokens, ast, NULL);
         return false;
     }
@@ -178,7 +178,7 @@ bool lisp_eval(struct lenv* env,
             fprintf(stderr, "<interactive>:%d:%d: mutation error: %s.\n",
                     mut_error->line, mut_error->col, mut_error->content);
         }
-        lval_mut_err(r, LERR_EVAL);
+        lval_mut_err_code(r, LERR_EVAL);
         CLEANUP(tokens, ast, program);
         return false;
     }

@@ -137,7 +137,7 @@ void lerr_print_to(const struct lerr* err, FILE* out) {
         fprintf(out, ": %s", err->message);
         err = err->inner;
     }
-    fputc('\n', out);
+    fputs(".\n", out);
 }
 
 static size_t lerr_sprint(const struct lerr* err, char* out, size_t len) {

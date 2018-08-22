@@ -180,9 +180,9 @@ static int lbuiltin_operator(
     default: break;
     }
 
-    lval_mut_err(acc, LERR_EVAL);
-    lval_err_annotate(acc,
+    struct lerr* err = lerr_throw(LERR_EVAL, 
             "operator can't operate on type %s", lval_type_string(arg));
+    lval_mut_err_ptr(acc, err);
     return -1;
 }
 

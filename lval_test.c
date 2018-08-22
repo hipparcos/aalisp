@@ -48,7 +48,7 @@ describe(lval, {
         it("mutates a lval to an error", {
             enum lerr_code input = LERR_EVAL;
             struct lval* v = lval_alloc();
-            assert(lval_mut_err(v, input));
+            assert(lval_mut_err_code(v, input));
             assert(lval_type(v) == LVAL_ERR);
             assert(lval_free(v));
         });
@@ -150,9 +150,9 @@ describe(lval, {
             enum lerr_code expected = LERR_EVAL;
             enum lerr_code got = 0;
             struct lval* v = lval_alloc();
-            assert(lval_mut_err(v, expected));
+            assert(lval_mut_err_code(v, expected));
             assert(lval_type(v) == LVAL_ERR);
-            assert(lval_as_err(v, &got));
+            assert(lval_as_err_code(v, &got));
             assert(got == expected);
             assert(lval_free(v));
         });

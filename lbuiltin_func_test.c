@@ -185,7 +185,7 @@ describe(builtin, {
             lval_push(args, qexpr);
             push_num(args, 100);
             lval_free(qexpr);
-            lval_mut_err(expected, LERR_TOO_FEW_ARGS);
+            lval_mut_err_code(expected, LERR_TOO_FEW_ARGS);
         });
 
         test_fail(&lbuiltin_def, "symbols < args", {
@@ -196,7 +196,7 @@ describe(builtin, {
             push_num(args, 100);
             push_num(args, 200);
             lval_free(qexpr);
-            lval_mut_err(expected, LERR_TOO_MANY_ARGS);
+            lval_mut_err_code(expected, LERR_TOO_MANY_ARGS);
         });
     });
 

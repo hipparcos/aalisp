@@ -156,17 +156,17 @@ describe(builtin, {
         test_fail(&lbuiltin_op_div, "divisor of type LVAL_NUM = 0", {
             push_num(args, 200);
             push_num(args, 0);
-            lval_mut_err(expected, LERR_DIV_ZERO);
+            lval_mut_err_code(expected, LERR_DIV_ZERO);
         });
         test_fail(&lbuiltin_op_div, "divisor of type LVAL_BIGNUM = 0", {
             push_bignum(args, 200);
             push_bignum(args, 0);
-            lval_mut_err(expected, LERR_DIV_ZERO);
+            lval_mut_err_code(expected, LERR_DIV_ZERO);
         });
         test_fail(&lbuiltin_op_div, "divisor of type LVAL_DBL = 0", {
             push_dbl(args, 200);
             push_dbl(args, 0.0);
-            lval_mut_err(expected, LERR_DIV_ZERO);
+            lval_mut_err_code(expected, LERR_DIV_ZERO);
         });
     });
 
@@ -179,7 +179,7 @@ describe(builtin, {
         test_fail(&lbuiltin_op_mod, "LVAL_DBL", {
             push_dbl(args, 10.0);
             push_dbl(args, 8.0);
-            lval_mut_err(expected, LERR_BAD_OPERAND);
+            lval_mut_err_code(expected, LERR_BAD_OPERAND);
         });
         test_pass(&lbuiltin_op_mod, "LVAL_BIGNUM", {
             push_bignum(args, 10);
@@ -194,12 +194,12 @@ describe(builtin, {
         test_fail(&lbuiltin_op_mod, "divisor of type LVAL_NUM = 0", {
             push_num(args, 10);
             push_num(args, 0);
-            lval_mut_err(expected, LERR_DIV_ZERO);
+            lval_mut_err_code(expected, LERR_DIV_ZERO);
         });
         test_fail(&lbuiltin_op_mod, "divisor of type LVAL_BIGNUM = 0", {
             push_bignum(args, 10);
             push_bignum(args, 0);
-            lval_mut_err(expected, LERR_DIV_ZERO);
+            lval_mut_err_code(expected, LERR_DIV_ZERO);
         });
     });
 
@@ -210,7 +210,7 @@ describe(builtin, {
         });
         test_fail(&lbuiltin_op_fac, "LVAL_DBL", {
             push_dbl(args, 20.0);
-            lval_mut_err(expected, LERR_BAD_OPERAND);
+            lval_mut_err_code(expected, LERR_BAD_OPERAND);
         });
         test_pass(&lbuiltin_op_fac, "LVAL_BIGNUM", {
             push_bignum(args, 20);
@@ -222,12 +222,12 @@ describe(builtin, {
         });
         test_fail(&lbuiltin_op_fac, "LVAL_NUM < 0", {
             push_num(args, -20);
-            lval_mut_err(expected, LERR_BAD_OPERAND);
+            lval_mut_err_code(expected, LERR_BAD_OPERAND);
         });
         test_fail(&lbuiltin_op_fac, "number of operands > 1", {
             push_num(args, 9);
             push_num(args, 8);
-            lval_mut_err(expected, LERR_TOO_MANY_ARGS);
+            lval_mut_err_code(expected, LERR_TOO_MANY_ARGS);
         });
     });
 

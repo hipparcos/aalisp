@@ -28,7 +28,7 @@
     it("fails: "input" => "#err, { \
         struct lval *expected = lval_alloc(); \
         defer(lval_free(expected)); \
-        lval_mut_err(expected, err); \
+        lval_mut_err_code(expected, err); \
         struct lval *result = lval_alloc(); \
         defer(lval_free(result)); \
         struct lenv* env = lenv_alloc(); \

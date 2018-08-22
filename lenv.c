@@ -187,8 +187,8 @@ static bool lenv_local_lookup(const struct lenv* env,
         const struct lval* sym, struct lval* result) {
     const char* symbol = lval_as_sym(sym);
     if (!symbol) {
-        lval_mut_err(result, LERR_BAD_SYMBOL);
-        lval_err_annotate(result, "lookup for nil");
+        struct lerr* err = lerr_throw(LERR_BAD_SYMBOL, "lookup for nil");
+        lval_mut_err_ptr(result, err);
         return false;
     }
     struct env_payload symbolpl = {.key= (char*)symbol};
@@ -201,8 +201,9 @@ static bool lenv_local_lookup(const struct lenv* env,
         return true;
     }
     /* Fail. */
-    lval_mut_err(result, LERR_BAD_SYMBOL);
-    lval_err_annotate(result, "symbol %s not defined in environment", symbol);
+    struct lerr* err = lerr_throw(LERR_BAD_SYMBOL, 
+            "symbol %s not defined in environment", symbol);
+    lval_mut_err_ptr(result, err);
     return false;
 }
 

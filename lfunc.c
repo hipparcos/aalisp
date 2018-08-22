@@ -144,10 +144,10 @@ static int lfunc_check_guards(
             lval_index(args, guard->argn-1, child);
             if (0 != (s = (guard->condition)(fun, env, child, guard->arg))) {
                 lval_free(child);
-                lval_mut_err(acc, guard->error);
                 lfunc_guard_message(fun, guard, &errbuf[0], sizeof(errbuf));
-                lval_err_annotate(acc,
-                        "argument %ld of %s %s", guard->argn, fun->symbol, errbuf);
+                struct lerr* err = lerr_throw(guard->error,
+                        "argument %ld of %s %s", guard->argn, fun->symbol, &errbuf[0]);
+                lval_mut_err_ptr(acc, err);
                 break;
             }
             lval_free(child);
@@ -160,11 +160,12 @@ static int lfunc_check_guards(
                 struct lval* child = lval_alloc();
                 lval_index(args, a, child);
                 if (0 != (s = (guard->condition)(fun, env, child, guard->arg))) {
+                    s = a+1;
                     lval_free(child);
-                    lval_mut_err(acc, guard->error);
                     lfunc_guard_message(fun, guard, &errbuf[0], sizeof(errbuf));
-                    lval_err_annotate(acc,
-                            "argument %ld of %s %s", a+1, fun->symbol, errbuf);
+                    struct lerr* err = lerr_throw(guard->error,
+                            "argument %ld of %s %s", a+1, fun->symbol, &errbuf[0]);
+                    lval_mut_err_ptr(acc, err);
                     break;
                 }
                 lval_free(child);
@@ -177,9 +178,9 @@ static int lfunc_check_guards(
         /* Guard applied on all args. */
         // guard->argn == -1;
         if (0 != (s = (guard->condition)(fun, env, args, guard->arg))) {
-            lval_mut_err(acc, guard->error);
             lfunc_guard_message(fun, guard, &errbuf[0], sizeof(errbuf));
-            lval_err_annotate(acc, &errbuf[0]);
+            struct lerr* err = lerr_throw(guard->error, &errbuf[0]);
+            lval_mut_err_ptr(acc, err);
             break;
         }
     }
@@ -245,8 +246,8 @@ static struct lguard lbuitin_guards[] = {
 int lfunc_exec(const struct lfunc* fun, struct lenv* env,
         const struct lval* args, struct lval* acc) {
     if (!fun) {
-        lval_mut_err(acc, LERR_EVAL);
-        lval_err_annotate(acc, "nil can't be executed");
+        struct lerr* err = lerr_throw(LERR_EVAL, "nil can't be executed");
+        lval_mut_err_ptr(acc, err);
         return -1;
     }
     /* Partial application. */

@@ -399,7 +399,7 @@ bool lval_mut_dbl(struct lval* v, double x) {
     return true;
 }
 
-bool lval_mut_err(struct lval* v, enum lerr_code e) {
+bool lval_mut_err_code(struct lval* v, enum lerr_code code) {
     if (!lval_is_mutable(v)) {
         return false;
     }
@@ -409,24 +409,42 @@ bool lval_mut_err(struct lval* v, enum lerr_code e) {
     }
     data->type = LVAL_ERR;
     struct lerr* err = lerr_alloc();
-    err->code = e;
+    err->code = code;
     data->payload.err = err;
     data->len = 1;
     lval_connect(v, data);
     return true;
 }
 
-bool lval_err_annotate(struct lval* v, const char* fmt, ...) {
+bool lval_mut_err(struct lval* v, const struct lerr* err) {
     if (!lval_is_mutable(v)) {
         return false;
     }
-    if (lval_type(v) != LVAL_ERR) {
+    struct ldata* data = NULL;
+    if (!(data = lval_disconnect(v, true))) {
         return false;
     }
-    va_list va;
-    va_start(va, fmt);
-    lerr_annotate_va(v->data->payload.err, fmt, va);
-    va_end(va);
+    data->type = LVAL_ERR;
+    struct lerr* errp = lerr_alloc();
+    lerr_copy(errp, err);
+    data->payload.err = errp;
+    data->len = 1;
+    lval_connect(v, data);
+    return true;
+}
+
+bool lval_mut_err_ptr(struct lval* v, struct lerr* errp) {
+    if (!lval_is_mutable(v)) {
+        return false;
+    }
+    struct ldata* data = NULL;
+    if (!(data = lval_disconnect(v, true))) {
+        return false;
+    }
+    data->type = LVAL_ERR;
+    data->payload.err = errp;
+    data->len = 1;
+    lval_connect(v, data);
     return true;
 }
 
@@ -622,12 +640,21 @@ const char* lval_type_string(const struct lval* v) {
     }
 }
 
-bool lval_as_err(const struct lval* v, enum lerr_code* r) {
+bool lval_as_err_code(const struct lval* v, enum lerr_code* r) {
     if (!lval_is_alive(v) || lval_type(v) != LVAL_ERR) {
         *r = LERR_DEAD_REF;
         return false;
     }
     *r = v->data->payload.err->code;
+    return true;
+}
+
+bool lval_as_err(const struct lval* v, struct lerr** r) {
+    if (!lval_is_alive(v) || lval_type(v) != LVAL_ERR) {
+        *r = NULL;
+        return false;
+    }
+    *r = v->data->payload.err;
     return true;
 }
 

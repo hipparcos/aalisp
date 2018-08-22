@@ -26,9 +26,8 @@ static struct lval* lmut_dbl(const struct last* ast, struct last** error) {
     double d = strtod(ast->content, NULL);
     struct lval* v = lval_alloc();
     if (errno == ERANGE) {
-        lval_mut_err(v, LERR_BAD_OPERAND);
-        lval_err_annotate(v,
-            "double number out of range");
+        struct lerr* err = lerr_throw(LERR_BAD_OPERAND, "double number out of range");
+        lval_mut_err_ptr(v, err);
         v->ast = ast;
         *error = (struct last*)ast;
         return v;
@@ -69,9 +68,8 @@ void lmut_fill_list(struct lval* list, const struct last* ast, struct last** err
         case LTAG_QEXPR: o = lmut_qexpr(ast->children[c], error); break;
         default:
             o = lval_alloc();
-            lval_mut_err(o, LERR_AST);
-            lval_err_annotate(o,
-                    "can't read AST");
+            struct lerr* err = lerr_throw(LERR_AST, "can't read AST");
+            lval_mut_err_ptr(o, err);
             o->ast = ast;
             *error = (struct last*)ast;
             break;
@@ -112,9 +110,8 @@ struct lval* lisp_mut(const struct last* ast, struct last** error) {
     }
     struct lval* p = lval_alloc();
     if (ast->tag != LTAG_PROG) {
-        lval_mut_err(p, LERR_AST);
-        lval_err_annotate(p,
-                "can't read AST");
+        struct lerr* err = lerr_throw(LERR_AST, "can't read AST");
+        lval_mut_err_ptr(p, err);
         *error = NULL;
         return p;
     }
@@ -127,9 +124,8 @@ struct lval* lisp_mut(const struct last* ast, struct last** error) {
             s = lmut_sexpr(ast->children[c], error);
         } else {
             s = lval_alloc();
-            lval_mut_err(s, LERR_AST);
-            lval_err_annotate(s,
-                "can't read AST");
+            struct lerr* err = lerr_throw(LERR_AST, "can't read AST");
+            lval_mut_err_ptr(s, err);
             s->ast = ast->children[c];
             *error = (struct last*)ast->children[c];
         }

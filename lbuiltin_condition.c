@@ -72,13 +72,20 @@ define_condition(must_be_positive) {
     return 0;
 }
 
-define_condition(must_be_non_zero) {
+define_condition(divisor_must_be_non_zero) {
     unused(param); unused(fun);
-    if (lval_is_zero(arg)) {
-        *err = lerr_throw(LERR_DIV_ZERO,
-                "must not be 0");
-        return 1;
+    size_t len = lval_len(arg);
+    struct lval* d = lval_alloc();
+    for (size_t c = 1; c < len; c++) {
+        lval_index(arg, c, d);
+        if (lval_is_zero(d)) {
+            *err = lerr_throw(LERR_DIV_ZERO,
+                    "divisor must not be 0");
+            lval_free(d);
+            return c+1;
+        }
     }
+    lval_free(d);
     return 0;
 }
 

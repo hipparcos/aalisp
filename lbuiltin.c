@@ -54,7 +54,7 @@ const struct lfunc lbuiltin_op_mul = {
 
 static const struct lguard guards_op_div[] = {
     {.argn= 0, .condition= use_condition(must_be_numeric)},
-    {.argn= 0, .condition= use_condition(must_be_non_zero)},
+    {.argn= -1, .condition= use_condition(divisor_must_be_non_zero)},
 };
 const struct lfunc lbuiltin_op_div = {
     .symbol       = "/",
@@ -69,7 +69,7 @@ const struct lfunc lbuiltin_op_div = {
 
 static const struct lguard guards_op_mod[] = {
     {.argn= 0, .condition= use_condition(must_be_integral)},
-    {.argn= 0, .condition= use_condition(must_be_non_zero)},
+    {.argn= -1, .condition= use_condition(divisor_must_be_non_zero)},
 };
 const struct lfunc lbuiltin_op_mod = {
     .symbol       = "%",

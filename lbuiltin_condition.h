@@ -12,7 +12,7 @@ define_condition(must_have_func_ptr);
 define_condition(must_be_numeric);
 define_condition(must_be_integral);
 define_condition(must_be_positive);
-define_condition(must_be_non_zero);
+define_condition(divisor_must_be_non_zero);
 define_condition(must_be_unsigned_long);
 
 /* List conditions. */

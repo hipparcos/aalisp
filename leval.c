@@ -29,6 +29,8 @@ static bool leval_expr(
             r->ast = child->ast;
             lval_free(child);
         }
+        struct lerr* cause = lerr_cause(lval_as_err(r));
+        lerr_file_info(cause, NULL, r->ast->line, r->ast->col);
     }
     return lval_type(r) != LVAL_ERR;
 }
@@ -61,6 +63,8 @@ static bool leval_sexpr(struct lenv* env,
             lval_free(x);
             lval_free(child);
             lval_free(expr);
+            struct lerr* cause = lerr_cause(lval_as_err(r));
+            lerr_file_info(cause, NULL, r->ast->line, r->ast->col);
             return false;
         }
         lval_push(expr, x);
@@ -84,6 +88,8 @@ static bool leval_sexpr(struct lenv* env,
         lval_free(child);
         lval_free(func);
         lval_free(expr);
+        struct lerr* cause = lerr_cause(lval_as_err(r));
+        lerr_file_info(cause, NULL, r->ast->line, r->ast->col);
         return false;
     }
     lval_free(child);
@@ -132,10 +138,6 @@ void print_error_marker(FILE* out, int indent, int col) {
     fputc('^', out);
     fputc('\n', out);
 }
-
-#define CLEANUP(tokens, ast, program) \
-    do { \
-    } while(0);
 
 bool lisp_eval(struct lenv* env,
         const char* restrict input, struct lval* r, int prompt_len) {

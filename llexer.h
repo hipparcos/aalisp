@@ -14,6 +14,7 @@ enum ltok_type {
     LTOK_CPAR,
     LTOK_OBRC,
     LTOK_CBRC,
+    LTOK_DOLL,
     LTOK_SYM,
     LTOK_NUM,
     LTOK_DBL,

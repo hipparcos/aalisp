@@ -161,12 +161,12 @@ describe(llex, {
         );
 
     test_pass("symbols",
-            "symbol  + == $",
+            "symbol  + == -",
             &((struct token_list[]){
                 {LTOK_SYM, "symbol"},
                 {LTOK_SYM, "+"},
                 {LTOK_SYM, "=="},
-                {LTOK_SYM, "$"},
+                {LTOK_SYM, "-"},
                 {LTOK_EOF, ""},
                 {0, NULL}
             })[0]
@@ -181,6 +181,19 @@ describe(llex, {
                 {LTOK_SYM, "!"},
                 {LTOK_NUM, "21"},
                 {LTOK_CPAR, ")"},
+                {LTOK_EOF, ""},
+                {0, NULL}
+            })[0]
+        );
+
+    test_pass("simple expression with $",
+            "+ 1 $ ! 21",
+            &((struct token_list[]){
+                {LTOK_SYM, "+"},
+                {LTOK_NUM, "1"},
+                {LTOK_DOLL, "$"},
+                {LTOK_SYM, "!"},
+                {LTOK_NUM, "21"},
                 {LTOK_EOF, ""},
                 {0, NULL}
             })[0]

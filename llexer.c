@@ -13,6 +13,7 @@ const char* llex_type_string(enum ltok_type type) {
         case LTOK_CPAR: return ")";
         case LTOK_OBRC: return "{";
         case LTOK_CBRC: return "}";
+        case LTOK_DOLL: return "$";
         case LTOK_SYM:  return "symbol";
         case LTOK_NUM:  return "number";
         case LTOK_DBL:  return "double";
@@ -182,6 +183,10 @@ static bool llex_next(struct lscanner* scanner) {
         return true;
     case '}':
         scanner->tok = LTOK_CBRC;
+        llex_retain(scanner);
+        return true;
+    case '$':
+        scanner->tok = LTOK_DOLL;
         llex_retain(scanner);
         return true;
     case '"':

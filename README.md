@@ -77,6 +77,8 @@ List operations:
 1
 > eval (head {(+ 1 1) (+ 2 2)})
 2
+> map (\ {x} {* x x}) {1 2 3 4}
+{1 4 9 16}
 ```
 Functions definition:
 ```lisp

@@ -150,6 +150,14 @@ describe(lisp_eval, {
     test_pass("(= {r} 0)(loop {!= r 42} {(= {r} (+ r 1))})(r)", "42", {
             lval_mut_num(expected, 42);
         });
+    /* List functions. */
+    test_pass("map (\\ {x} {* 2 x}) {1 2 3 4}", "{2 4 6 8}", {
+            lval_mut_qexpr(expected);
+            push_num(expected, 2);
+            push_num(expected, 4);
+            push_num(expected, 6);
+            push_num(expected, 8);
+        });
 
     /* Errors. */
     test_fail("/ 10 0", LERR_DIV_ZERO);

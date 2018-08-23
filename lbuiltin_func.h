@@ -27,6 +27,8 @@ int lbi_func_join(struct lenv* env, const struct lval* args, struct lval* acc);
 int lbi_func_list(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_eval evaluates x and put the result into acc. */
 int lbi_func_eval(struct lenv* env, const struct lval* args, struct lval* acc);
+/** lbi_func_map apply a function onto each element of a list. */
+int lbi_func_map(struct lenv* env, const struct lval* args, struct lval* acc);
 
 /** lbi_func_def defines a symbol in the global environment. */
 int lbi_func_def(struct lenv* env, const struct lval* args, struct lval* acc);

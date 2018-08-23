@@ -344,6 +344,20 @@ const struct lfunc lbuiltin_eval = {
     .func         = lbi_func_eval,
 };
 
+static const struct lguard guards_map[] = {
+    {.argn= 1, .condition= use_condition(must_be_of_type),
+        .param= inline_ptr(enum ltype, LVAL_FUNC)},
+    {.argn= 2, .condition= use_condition(must_be_a_list)}
+};
+const struct lfunc lbuiltin_map = {
+    .symbol       = "map",
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = &guards_map[0],
+    .guardc       = LENGTH(guards_map),
+    .func         = lbi_func_map,
+};
+
 static const struct lguard guards_def[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_QEXPR)},

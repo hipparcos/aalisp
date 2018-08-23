@@ -185,6 +185,49 @@ int lbi_func_eval(struct lenv* env, const struct lval* args, struct lval* acc) {
     return !s;
 }
 
+int lbi_func_map(struct lenv* env, const struct lval* args, struct lval* acc) {
+    /* Retrieve arg 1: function. */
+    struct lval* func = lval_alloc();
+    lval_index(args, 0, func);
+    const struct lfunc* func_ptr = lval_as_func(func);
+    lval_free(func);
+    /* Retrieve arg 2: list. */
+    struct lval* list = lval_alloc();
+    lval_index(args, 1, list);
+    if (lval_type(list) == LVAL_SEXPR) {
+        lval_mut_sexpr(acc);
+    } else {
+        lval_mut_qexpr(acc);
+    }
+    /* Map. */
+    int s = 0;
+    size_t len = lval_len(list);
+    struct lval* elem = lval_alloc();
+    struct lval* res = lval_alloc();
+    struct lval* wrap = lval_alloc();
+    for (size_t e = 0; e < len; e++) {
+        lval_index(list, e, elem);
+        lval_clear(res);
+        lval_clear(wrap);
+        lval_mut_qexpr(wrap);
+        lval_push(wrap, elem);
+        lval_clear(func_ptr->args);
+        lval_mut_qexpr(func_ptr->args);
+        s = lfunc_exec(func_ptr, env, wrap, res);
+        if (s != 0) {
+            lval_dup(acc, res);
+            break;
+        }
+        lval_push(acc, res);
+    }
+    lval_free(elem);
+    lval_free(res);
+    lval_free(wrap);
+    /* Cleanup. */
+    lval_free(list);
+    return s;
+}
+
 static int lbi_def(struct lenv* env,
         bool (*def)(struct lenv*, const struct lval*, const struct lval*),
         const struct lval* symbols, const struct lval* values,

@@ -325,6 +325,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "join", &lbuiltin_join);
     lenv_put_builtin(env, "list", &lbuiltin_list);
     lenv_put_builtin(env, "eval", &lbuiltin_eval);
+    lenv_put_builtin(env, "map", &lbuiltin_map);
     /* Environment manipulation functions. */
     lenv_put_builtin(env, "def", &lbuiltin_def);
     lenv_put_builtin(env, "ovr", &lbuiltin_override);

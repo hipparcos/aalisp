@@ -14,6 +14,8 @@
 #include "lfunc.h"
 #include "lbuiltin.h"
 
+static bool leval_lval(struct lenv* env, const struct lval* v, struct lval* r, bool exec);
+
 static bool leval_expr(
         struct lenv* env, const struct lval* func, const struct lval* args, struct lval* r) {
     /* Execute expression. */
@@ -45,8 +47,10 @@ static void leval_set_dot(struct lenv* env, const struct lval* r) {
     lval_free(dot);
 }
 
+/** leval_sexpr evaluates an S-Expression.
+ ** exec tells if the S-Expression should be evaluated like an expression. */
 static bool leval_sexpr(struct lenv* env,
-        const struct lval* v, struct lval* r) {
+        const struct lval* v, struct lval* r, bool exec) {
     /* Empty sexpr. */
     size_t len = lval_len(v);
     if (len == 0) {
@@ -60,7 +64,7 @@ static bool leval_sexpr(struct lenv* env,
         struct lval* child = lval_alloc();
         lval_index(v, c, child);
         struct lval* x = lval_alloc();
-        if (!leval(env, child, x)) {
+        if (!leval_lval(env, child, x, true)) {
             lval_dup(r, x);
             lval_free(x);
             lval_free(child);
@@ -82,6 +86,10 @@ static bool leval_sexpr(struct lenv* env,
         lval_free(x);
         lval_free(child);
     }
+    if (!exec) {
+        lval_free(expr);
+        return true;
+    }
     /* First child is a symbol, it's an expression. */
     bool s = true;
     struct lval* child = lval_pop(expr, 0);
@@ -96,7 +104,9 @@ static bool leval_sexpr(struct lenv* env,
     return s;
 }
 
-bool leval(struct lenv* env, const struct lval* v, struct lval* r) {
+/** leval_lval does the proper action depending of the type of v.
+ ** exec tells if the S-Expression should be evaluated like an expression. */
+static bool leval_lval(struct lenv* env, const struct lval* v, struct lval* r, bool exec) {
     if (!v) {
         struct lerr* err = lerr_throw(LERR_EVAL,
                 "the impossible happens, NULL pointer received");
@@ -111,7 +121,7 @@ bool leval(struct lenv* env, const struct lval* v, struct lval* r) {
         return s;
         }
     case LVAL_SEXPR:
-        return leval_sexpr(env, v, r);
+        return leval_sexpr(env, v, r, exec);
     case LVAL_ERR:
         lval_dup(r, v);
         return false;
@@ -119,6 +129,10 @@ bool leval(struct lenv* env, const struct lval* v, struct lval* r) {
         lval_dup(r, v);
         return true;
     }
+}
+
+bool leval(struct lenv* env, const struct lval* v, struct lval* r) {
+    return leval_lval(env, v, r, true);
 }
 
 void print_error_marker(FILE* out, int indent, int col) {
@@ -158,7 +172,7 @@ bool lisp_eval(struct lenv* env,
             break;
         }
         /* Evaluate program. */
-        if (program && !leval(env, program, r)) {
+        if (program && !leval_lval(env, program, r, false)) {
             error = lerr_alloc();
             lerr_copy(error, lval_as_err(r));
             error = lerr_propagate(error, "eval error:");

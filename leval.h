@@ -15,7 +15,10 @@ void lisp_eval_from_string(struct lenv* env,
 /** lisp_eval_from_file evaluates the content of input and prints result to stdout. */
 void lisp_eval_from_file(struct lenv* env, FILE* input);
 
-/** leval evaluates v into r */
+/** leval evaluates v into r.
+ ** env  is the global environment;
+ ** v    is the program to execute;
+ ** r    is the result. */
 bool leval(struct lenv* env, const struct lval* v, struct lval* r);
 
 #endif

@@ -106,7 +106,7 @@ Environment operations:
 - [x] Implement partial function application;
 - [x] Implement functions (chapter 12);
 - [ ] Improve error reporting;
-- [ ] Implement conditionals (chapter 13);
+- [x] Implement conditionals (chapter 13);
 - [ ] Implement strings (chapter 14);
 - [ ] Implemnt elem, take, map, filter, fold, reverse;
 - [ ] Implement standard library (chapter 15);

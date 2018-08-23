@@ -257,7 +257,7 @@ int lbi_func_put(struct lenv* env, const struct lval* args, struct lval* acc) {
 }
 
 static int lbi_func_call(struct lenv* env, const struct lval* args, struct lval* acc) {
-    return leval(env, args, acc);
+    return (leval(env, args, acc)) ? 0 : 1;
 }
 
 int lbi_func_lambda(struct lenv* env, const struct lval* args, struct lval* acc) {

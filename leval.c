@@ -30,7 +30,9 @@ static bool leval_expr(
             lval_free(child);
         }
         struct lerr* cause = lerr_cause(lval_as_err(r));
-        lerr_file_info(cause, NULL, r->ast->line, r->ast->col);
+        if (r->ast) {
+            lerr_file_info(cause, NULL, r->ast->line, r->ast->col);
+        }
     }
     return lval_type(r) != LVAL_ERR;
 }
@@ -64,7 +66,9 @@ static bool leval_sexpr(struct lenv* env,
             lval_free(child);
             lval_free(expr);
             struct lerr* cause = lerr_cause(lval_as_err(r));
-            lerr_file_info(cause, NULL, r->ast->line, r->ast->col);
+            if (r->ast) {
+                lerr_file_info(cause, NULL, r->ast->line, r->ast->col);
+            }
             return false;
         }
         lval_push(expr, x);
@@ -89,7 +93,9 @@ static bool leval_sexpr(struct lenv* env,
         lval_free(func);
         lval_free(expr);
         struct lerr* cause = lerr_cause(lval_as_err(r));
-        lerr_file_info(cause, NULL, r->ast->line, r->ast->col);
+        if (r->ast) {
+            lerr_file_info(cause, NULL, r->ast->line, r->ast->col);
+        }
         return false;
     }
     lval_free(child);

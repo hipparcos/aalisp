@@ -78,6 +78,8 @@ struct lfunc {
 /** lfunc_alloc creates a lfunc.
  ** Caller is respnsible for calling lfunc_free. */
 struct lfunc* lfunc_alloc(void);
+/** lfunc_init ensures that dynamically allocated components of lfunc are allocated. */
+void lfunc_init(struct lfunc*);
 /** lfunc_free frees fun.
  ** fun must not be used afterwards. */
 void lfunc_free(struct lfunc* fun);

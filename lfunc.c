@@ -14,7 +14,18 @@
 
 struct lfunc* lfunc_alloc(void) {
     struct lfunc* fun = calloc(1, sizeof(struct lfunc));
+    lfunc_init(fun);
     return fun;
+}
+
+void lfunc_init(struct lfunc* fun) {
+    fun->scope = lenv_alloc();
+    fun->formals = lval_alloc();
+    lval_mut_qexpr(fun->formals);
+    fun->body = lval_alloc();
+    lval_mut_sexpr(fun->body);
+    fun->args = lval_alloc();
+    lval_mut_qexpr(fun->args);
 }
 
 static void lfunc_clear(struct lfunc* fun) {
@@ -42,20 +53,18 @@ bool lfunc_copy(struct lfunc* dest, const struct lfunc* src) {
     }
     lfunc_clear(dest);
     memcpy(dest, src, sizeof(struct lfunc));
+    lfunc_init(dest);
     if (src->scope) {
-        dest->scope = lenv_alloc();
         lenv_copy(dest->scope, src->scope);
     }
     if (src->formals) {
-        dest->formals = lval_alloc();
         lval_copy(dest->formals, src->formals);
     }
     if (src->body) {
-        dest->body = lval_alloc();
         lval_copy(dest->body, src->body);
+        lval_mut_sexpr(dest->body);
     }
     if (src->args) {
-        dest->args = lval_alloc();
         lval_copy(dest->args, src->args);
     }
     return true;

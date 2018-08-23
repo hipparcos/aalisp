@@ -141,7 +141,7 @@ const char* lval_as_sym(const struct lval* v);
 /** lval_as_func returns v as a lbuiltin pointer.
  ** The pointed value is NOT a copy of the symbol.
  ** The pointer stays valid while v is alive. */
-const struct lfunc* lval_as_func(const struct lval* v);
+struct lfunc* lval_as_func(const struct lval* v);
 
 /* Inquiries */
 /** lval_is_nil returns true if v is nil. */

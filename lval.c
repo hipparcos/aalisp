@@ -799,7 +799,7 @@ const char* lval_as_sym(const struct lval* v) {
     return v->data->payload.str;
 }
 
-const struct lfunc* lval_as_func(const struct lval* v) {
+struct lfunc* lval_as_func(const struct lval* v) {
     if (!lval_is_alive(v) || lval_type(v) != LVAL_FUNC) {
         return NULL;
     }

@@ -236,7 +236,8 @@ bool lenv_put(struct lenv* env,
     return !avl_is_nil(env->tree);
 }
 
-bool lenv_put_builtin(struct lenv* env,
+/* Caution: call this function with statically allocated symbol string only. */
+static bool lenv_put_builtin(struct lenv* env,
         const char* symbol, const struct lfunc* func) {
     if (!symbol || !func) {
         return false;
@@ -245,6 +246,8 @@ bool lenv_put_builtin(struct lenv* env,
     lval_mut_sym(sym, symbol);
     struct lval* fun = lval_alloc();
     lval_mut_func(fun, func);
+    struct lfunc* func_ptr = lval_as_func(fun);
+    func_ptr->symbol = symbol;
     bool s = lenv_put(env, sym, fun);
     lval_free(fun);
     lval_free(sym);

@@ -100,6 +100,36 @@ bool lfunc_are_equal(const struct lfunc* left, const struct lfunc* right) {
     return true;
 }
 
+size_t lfunc_type_string(const struct lfunc* fun, char* out, size_t len) {
+    if (!fun) {
+        return 0;
+    }
+    char dummy[2]; // To get length of generated string.
+    if (!out) {
+        out = &dummy[0];
+        len = sizeof(dummy);
+    }
+    int min = fun->min_argc;
+    if (min < 0) {
+        min = 0;
+    }
+    int max = fun->max_argc;
+    char maxs[21];
+    if (max < 0) {
+        snprintf(maxs, sizeof(maxs), "∞");
+    } else {
+        snprintf(maxs, sizeof(maxs), "%d", max);
+    }
+    int bound = 0;
+    if (fun->args) {
+        bound = (int) lval_len(fun->args);
+    }
+    if (min == max) {
+        return snprintf(out, len, "func(%d/%s)", bound, maxs);
+    }
+    return snprintf(out, len, "func(%d/%d-%s)", bound, min, maxs);
+}
+
 static int lfunc_check_guards(
         const struct lfunc* fun,
         const struct lguard* guards, size_t guardc,

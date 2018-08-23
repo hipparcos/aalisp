@@ -786,7 +786,7 @@ bool lval_as_str(const struct lval* v, char* r, size_t len) {
         lerr_as_string(v->data->payload.err, r, len);
         break;
     case LVAL_FUNC:
-        snprintf(r, len, "func");
+        lfunc_type_string(v->data->payload.func, r, len);
         break;
     }
     return true;
@@ -974,7 +974,7 @@ size_t lval_printlen(const struct lval* v) {
         }
         break;
     case LVAL_FUNC:
-        len = 4; // func.
+        len = lfunc_type_string(v->data->payload.func, NULL, 0);
         break;
     }
     return len + 1; // + '\0'

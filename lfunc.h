@@ -2,6 +2,7 @@
 #define _H_LFUNC_
 
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include "lval.h"
 #include "lenv.h"
@@ -88,6 +89,9 @@ void lfunc_free(struct lfunc* fun);
 bool lfunc_copy(struct lfunc* dest, const struct lfunc* src);
 /** lfunc_are_equal tells if two func are equal. */
 bool lfunc_are_equal(const struct lfunc*, const struct lfunc*);
+/** lfunc_type_string returns a string describing the function (number of args,
+ ** number of bound args...) or the length of the string if out is NULL. */
+size_t lfunc_type_string(const struct lfunc* fun, char* out, size_t len);
 
 /** lfunc_exec is a lbuiltin.
  ** lfunc_exec returns:

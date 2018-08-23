@@ -125,6 +125,27 @@ static struct last* lparse_atom(struct ltok* curr, struct ltok** last) {
 static struct last* lparse_sexpr(struct ltok* first, struct ltok** last, bool skip);
 static struct last* lparse_qexpr(struct ltok* first, struct ltok** last);
 
+static struct last* lparse_list(struct ltok* curr, struct ltok** last) {
+    if (curr->type == LTOK_EOF) {
+        return NULL;
+    }
+    struct last* list = NULL;
+    switch (curr->type) {
+    case LTOK_OPAR:
+        list = lparse_sexpr(curr, &curr, true);
+        break;
+    case LTOK_DOLL:
+        list = lparse_sexpr(curr, &curr, false);
+        break;
+    case LTOK_OBRC:
+        list = lparse_qexpr(curr, &curr);
+        break;
+    default: break;
+    }
+    *last = curr;
+    return list;
+}
+
 static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
     struct ltok* curr = first;
     struct last* expr = NULL;
@@ -155,21 +176,9 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
     /* Operands. */
     while (curr->type != LTOK_CPAR && curr->type != LTOK_EOF) {
         struct last* operand = NULL;
-        if (!(operand = lparse_atom(curr, &curr))) {
-            switch (curr->type) {
-            case LTOK_OPAR:
-                operand = lparse_sexpr(curr, &curr, true);
-                break;
-            case LTOK_DOLL:
-                operand = lparse_sexpr(curr, &curr, false);
-                break;
-            case LTOK_OBRC:
-                operand = lparse_qexpr(curr, &curr);
-                break;
-            default:
-                operand = last_error(LERR_PARSER_BAD_OPERAND, curr);
-                break;
-            }
+        if (!(operand = lparse_atom(curr, &curr)) &&
+            !(operand = lparse_list(curr, &curr))) {
+              operand = last_error(LERR_PARSER_BAD_OPERAND, curr);
         }
         // Error = break.
         if (operand->tag == LTAG_ERR) {
@@ -228,21 +237,9 @@ static struct last* lparse_qexpr(struct ltok* first, struct ltok** last) {
     // LTOK_CPAR needed to detect missing `}`.
     while (curr->type != LTOK_CBRC && curr->type != LTOK_CPAR && curr->type != LTOK_EOF) {
         struct last* operand = NULL;
-        if (!(operand = lparse_atom(curr, &curr))) {
-            switch (curr->type) {
-            case LTOK_OPAR:
-                operand = lparse_sexpr(curr, &curr, true);
-                break;
-            case LTOK_DOLL:
-                operand = lparse_sexpr(curr, &curr, false);
-                break;
-            case LTOK_OBRC:
-                operand = lparse_qexpr(curr, &curr);
-                break;
-            default:
-                operand = last_error(LERR_PARSER_BAD_OPERAND, curr);
-                break;
-            }
+        if (!(operand = lparse_atom(curr, &curr)) &&
+            !(operand = lparse_list(curr, &curr))) {
+              operand = last_error(LERR_PARSER_BAD_OPERAND, curr);
         }
         // Error = break.
         if (operand->tag == LTAG_ERR) {

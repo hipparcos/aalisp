@@ -95,7 +95,7 @@ describe(lisp_eval, {
     test_pass("(head {1 2 3})", "1", {
             lval_mut_num(expected, 1);
         });
-    test_pass("((head {+ -}) 2 1)", "3", {
+    test_pass("((eval $ head {+ -}) 2 1)", "3", {
             lval_mut_num(expected, 3);
         });
     test_pass("(tail {1 2 3})", "{2 3}", {

@@ -102,5 +102,7 @@ size_t lfunc_type_string(const struct lfunc* fun, char* out, size_t len);
  **   n if nth argument generate an error */
 int lfunc_exec(
         const struct lfunc* fun, struct lenv* env, const struct lval* args, struct lval* acc);
+/** lfunc_push_args does partial application of fun on args. */
+void lfunc_push_args(const struct lfunc* fun, const struct lval* args);
 
 #endif

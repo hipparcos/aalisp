@@ -202,6 +202,7 @@ int lbi_func_map(struct lenv* env, const struct lval* args, struct lval* acc) {
     /* Map. */
     int s = 0;
     size_t len = lval_len(list);
+    size_t len_bound = lval_len(func_ptr->args);
     struct lval* elem = lval_alloc();
     struct lval* res = lval_alloc();
     struct lval* wrap = lval_alloc();
@@ -211,13 +212,14 @@ int lbi_func_map(struct lenv* env, const struct lval* args, struct lval* acc) {
         lval_clear(wrap);
         lval_mut_qexpr(wrap);
         lval_push(wrap, elem);
-        lval_clear(func_ptr->args);
-        lval_mut_qexpr(func_ptr->args);
+        /* Elem is added to func_ptr->args. */
         s = lfunc_exec(func_ptr, env, wrap, res);
         if (s != 0) {
             lval_dup(acc, res);
             break;
         }
+        /* Drop last argument. */
+        lval_drop(func_ptr->args, len_bound);
         lval_push(acc, res);
     }
     lval_free(elem);
@@ -421,6 +423,22 @@ int lbi_func_unpack(struct lenv* env, const struct lval* args, struct lval* acc)
     lval_free(func_ptr);
     lval_free(func_args);
     return s;
+}
+
+int lbi_func_partial(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    struct lval* largs = lval_alloc();
+    lval_copy(largs, args);
+    lval_mut_qexpr(largs);
+    /* Retrieve arg 1: function pointer. */
+    struct lval* func = lval_pop(largs, 0);
+    lval_dup(acc, func);
+    struct lfunc* fun_ptr = lval_as_func(acc);
+    lfunc_push_args(fun_ptr, largs);
+    /* Cleanup. */
+    lval_free(func);
+    lval_free(largs);
+    return 0;
 }
 
 int lbi_func_print(struct lenv* env, const struct lval* args, struct lval* acc) {

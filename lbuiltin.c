@@ -450,6 +450,19 @@ const struct lfunc lbuiltin_unpack = {
     .func         = lbi_func_unpack,
 };
 
+static const struct lguard guards_partial[] = {
+    {.argn= 1, .condition= use_condition(must_be_of_type),
+        .param= inline_ptr(enum ltype, LVAL_FUNC)},
+};
+const struct lfunc lbuiltin_partial = {
+    .symbol       = "partial",
+    .min_argc     =  1,
+    .max_argc     =  -1,
+    .guards       = &guards_partial[0],
+    .guardc       = LENGTH(guards_partial),
+    .func         = lbi_func_partial,
+};
+
 const struct lfunc lbuiltin_print = {
     .symbol       = "print",
     .min_argc     =  -1,

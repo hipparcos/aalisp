@@ -83,33 +83,17 @@ static bool leval_sexpr(struct lenv* env,
         lval_free(child);
     }
     /* First child is a symbol, it's an expression. */
+    bool s = true;
     struct lval* child = lval_pop(expr, 0);
     struct lval* args = expr; // aliasing for clarity.
-    struct lval* func = lval_alloc();
-    /* Re-eval first arg; allow ((head {+ -}) 1 2). */
-    if (!leval(env, child, func)) {
-        lval_dup(r, func);
-        lval_free(child);
-        lval_free(func);
-        lval_free(expr);
-        struct lerr* cause = lerr_cause(lval_as_err(r));
-        if (r->ast) {
-            lerr_file_info(cause, NULL, r->ast->line, r->ast->col);
-        }
-        return false;
+    if (lval_type(child) == LVAL_FUNC) {
+        lval_mut_nil(r);
+        s = leval_expr(env, child, args, r);
+        leval_set_dot(env, r);
     }
     lval_free(child);
-    if (lval_type(func) == LVAL_FUNC) {
-        lval_mut_nil(r);
-        bool s = leval_expr(env, func, args, r);
-        lval_free(func);
-        lval_free(expr);
-        leval_set_dot(env, r);
-        return s;
-    }
-    lval_free(func);
     lval_free(expr);
-    return true;
+    return s;
 }
 
 bool leval(struct lenv* env, const struct lval* v, struct lval* r) {

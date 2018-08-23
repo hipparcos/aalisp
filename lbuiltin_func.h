@@ -36,6 +36,7 @@ int lbi_func_def(struct lenv* env, const struct lval* args, struct lval* acc);
 int lbi_func_override(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_put defines a symbol in the local environment. */
 int lbi_func_put(struct lenv* env, const struct lval* args, struct lval* acc);
+
 /** lbi_func_fun defines a function in the global environment. */
 int lbi_func_fun(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_lambda defines a function. */
@@ -44,6 +45,8 @@ int lbi_func_lambda(struct lenv* env, const struct lval* args, struct lval* acc)
 int lbi_func_pack(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_unpack evals a function and its list of arguments. */
 int lbi_func_unpack(struct lenv* env, const struct lval* args, struct lval* acc);
+/** lbi_func_partial does partial application. */
+int lbi_func_partial(struct lenv* env, const struct lval* args, struct lval* acc);
 
 /** lbi_func_print prints all its arguments. */
 int lbi_func_print(struct lenv* env, const struct lval* args, struct lval* acc);

@@ -6,6 +6,8 @@
 
 /** lbi_func_if is the conditional function. */
 int lbi_func_if(struct lenv* env, const struct lval* args, struct lval* acc);
+/** lbi_func_loop is the while function. */
+int lbi_func_loop(struct lenv* env, const struct lval* args, struct lval* acc);
 
 /** lbi_func_head returns the first element of a Q-Expression. */
 int lbi_func_head(struct lenv* env, const struct lval* args, struct lval* acc);

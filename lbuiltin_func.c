@@ -28,11 +28,42 @@ int lbi_func_if(struct lenv* env, const struct lval* args, struct lval* acc) {
     struct lval* wrap = lval_alloc();
     lval_mut_sexpr(wrap);
     lval_push(wrap, branch);
-    bool s = lfunc_exec(&lbuiltin_eval, env, wrap, acc);
+    int s = lfunc_exec(&lbuiltin_eval, env, wrap, acc);
     lval_free(wrap);
     /* Cleanup. */
     lval_free(boolean);
     lval_free(branch);
+    return s;
+}
+
+int lbi_func_loop(struct lenv* env, const struct lval* args, struct lval* acc) {
+    /* Retrieve arg 1: boolean. */
+    struct lval* branch_cond = lval_alloc();
+    lval_index(args, 0, branch_cond);
+    struct lval* wrap_cond = lval_alloc();
+    lval_mut_sexpr(wrap_cond);
+    lval_push(wrap_cond, branch_cond);
+    /* Retrieve arg 2 or 3: branch. */
+    struct lval* branch_body = lval_alloc();
+    lval_index(args, 1, branch_body);
+    struct lval* wrap_body = lval_alloc();
+    lval_mut_sexpr(wrap_body);
+    lval_push(wrap_body, branch_body);
+    /* Loop. */
+    int s = 0;
+    struct lval* boolean = lval_alloc();
+    while (0 == (s = lfunc_exec(&lbuiltin_eval, env, wrap_cond, boolean)) && lval_as_bool(boolean)) {
+        s = lfunc_exec(&lbuiltin_eval, env, wrap_body, acc);
+        if (s != 0) {
+            break;
+        }
+    }
+    lval_free(boolean);
+    /* Cleanup. */
+    lval_free(wrap_cond);
+    lval_free(wrap_body);
+    lval_free(branch_cond);
+    lval_free(branch_body);
     return s;
 }
 

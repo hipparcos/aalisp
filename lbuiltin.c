@@ -227,6 +227,19 @@ const struct lfunc lbuiltin_if = {
     .func         = lbi_func_if,
 };
 
+static const struct lguard guards_loop[] = {
+    {.argn= 0, .condition= use_condition(must_be_of_type),
+        .param= inline_ptr(enum ltype, LVAL_QEXPR)},
+};
+const struct lfunc lbuiltin_loop = {
+    .symbol       = "loop",
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = &guards_loop[0],
+    .guardc       = LENGTH(guards_loop),
+    .func         = lbi_func_loop,
+};
+
 static const struct lguard guards_list_op[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_QEXPR)},

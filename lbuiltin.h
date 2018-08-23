@@ -27,6 +27,7 @@ extern const struct lfunc lbuiltin_op_not;
 
 /* Control flow functions. */
 extern const struct lfunc lbuiltin_if;
+extern const struct lfunc lbuiltin_loop;
 
 /* List manipulation functions. */
 extern const struct lfunc lbuiltin_head;

@@ -314,6 +314,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "not", &lbuiltin_op_not);
     /* Control flow functions. */
     lenv_put_builtin(env, "if", &lbuiltin_if);
+    lenv_put_builtin(env, "loop", &lbuiltin_loop);
     /* List manipulation functions. */
     lenv_put_builtin(env, "head", &lbuiltin_head);
     lenv_put_builtin(env, "tail", &lbuiltin_tail);

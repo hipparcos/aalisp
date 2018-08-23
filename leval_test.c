@@ -147,6 +147,9 @@ describe(lisp_eval, {
     test_pass("if (> 42 0) {+ 21 21} {0}", "42", {
             lval_mut_num(expected, 42);
         });
+    test_pass("(= {r} 0)(loop {!= r 42} {(= {r} (+ r 1))})(r)", "42", {
+            lval_mut_num(expected, 42);
+        });
 
     /* Errors. */
     test_fail("/ 10 0", LERR_DIV_ZERO);

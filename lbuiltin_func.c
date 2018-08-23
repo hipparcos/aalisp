@@ -327,7 +327,7 @@ int lbi_func_lambda(struct lenv* env, const struct lval* args, struct lval* acc)
     }
     /* Create lfunc. */
     struct lfunc func = {0};
-    func.symbol = "lisp defined function";
+    func.symbol = "λ";
     func.min_argc = min_argc;
     func.max_argc = max_argc;
     func.lisp_func = true;
@@ -368,6 +368,9 @@ int lbi_func_fun(struct lenv* env, const struct lval* args, struct lval* acc) {
         lval_free(body);
         return s + 1; // step over first arg.
     }
+    /* Set symbol. */
+    struct lfunc* fun_ptr = lval_as_func(acc);
+    lfunc_set_symbol(fun_ptr, lval_as_sym(name));
     /* Environment registration. */
     struct lval* def = lval_alloc();
     lval_mut_qexpr(def);

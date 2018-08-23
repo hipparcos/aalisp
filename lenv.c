@@ -247,7 +247,7 @@ static bool lenv_put_builtin(struct lenv* env,
     struct lval* fun = lval_alloc();
     lval_mut_func(fun, func);
     struct lfunc* func_ptr = lval_as_func(fun);
-    func_ptr->symbol = symbol;
+    lfunc_set_symbol(func_ptr, symbol);
     bool s = lenv_put(env, sym, fun);
     lval_free(fun);
     lval_free(sym);

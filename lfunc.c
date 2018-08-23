@@ -19,6 +19,9 @@ struct lfunc* lfunc_alloc(void) {
 }
 
 void lfunc_init(struct lfunc* fun) {
+    if (!fun) {
+        return;
+    }
     fun->scope = lenv_alloc();
     fun->formals = lval_alloc();
     lval_mut_qexpr(fun->formals);
@@ -26,6 +29,21 @@ void lfunc_init(struct lfunc* fun) {
     lval_mut_sexpr(fun->body);
     fun->args = lval_alloc();
     lval_mut_qexpr(fun->args);
+}
+
+void lfunc_set_symbol(struct lfunc* fun, const char* symbol) {
+    if (!fun) {
+        return;
+    }
+    if (fun->symbol) {
+        free(fun->symbol);
+        fun->symbol = NULL;
+    }
+    if (symbol) {
+        size_t len = strlen(symbol);
+        fun->symbol = calloc(len+1, 1);
+        strncpy(fun->symbol, symbol, len);
+    }
 }
 
 static void lfunc_clear(struct lfunc* fun) {
@@ -44,6 +62,10 @@ void lfunc_free(struct lfunc* fun) {
         return;
     }
     lfunc_clear(fun);
+    if (fun->symbol) {
+        free(fun->symbol);
+        fun->symbol = NULL;
+    }
     free(fun);
 }
 
@@ -53,7 +75,9 @@ bool lfunc_copy(struct lfunc* dest, const struct lfunc* src) {
     }
     lfunc_clear(dest);
     memcpy(dest, src, sizeof(struct lfunc));
+    dest->symbol = NULL; // To not free src->symbol when calling set_symbol.
     lfunc_init(dest);
+    lfunc_set_symbol(dest, src->symbol);
     if (src->scope) {
         lenv_copy(dest->scope, src->scope);
     }
@@ -124,10 +148,18 @@ size_t lfunc_type_string(const struct lfunc* fun, char* out, size_t len) {
     if (fun->args) {
         bound = (int) lval_len(fun->args);
     }
-    if (min == max) {
-        return snprintf(out, len, "func(%d/%s)", bound, maxs);
+    const char* opening = "@";
+    const char* closing = "";
+    if (!fun->symbol) {
+        opening = closing = "";
     }
-    return snprintf(out, len, "func(%d/%d-%s)", bound, min, maxs);
+    if (min == max) {
+        return snprintf(out, len, "func%s%s%s(%d/%s)",
+                opening, fun->symbol, closing, bound, maxs);
+    } else {
+        return snprintf(out, len, "func%s%s%s(%d/%d-%s)",
+                opening, fun->symbol, closing, bound, min, maxs);
+    }
 }
 
 static int lfunc_check_guards(

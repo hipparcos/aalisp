@@ -52,7 +52,7 @@ typedef int (*lbuiltin)(
 
 /** lfunc describes a builtin function. */
 struct lfunc {
-    const char* symbol;
+    char* symbol;
     /** lfunc.max_argc is the maximum number of arguments. */
     int max_argc;
     /** lfunc.min_argc is the minimum number of arguments. */
@@ -81,6 +81,8 @@ struct lfunc {
 struct lfunc* lfunc_alloc(void);
 /** lfunc_init ensures that dynamically allocated components of lfunc are allocated. */
 void lfunc_init(struct lfunc*);
+/** lfunc_set_symbol copies symbol to lfunc->symbol. */
+void lfunc_set_symbol(struct lfunc* fun, const char* symbol);
 /** lfunc_free frees fun.
  ** fun must not be used afterwards. */
 void lfunc_free(struct lfunc* fun);

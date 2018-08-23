@@ -179,6 +179,41 @@ const struct lfunc lbuiltin_op_lte = {
     .func         = lbi_op_lte,
 };
 
+static const struct lguard guards_boolean[] = {
+    {.argn= 0, .condition= use_condition(must_be_of_type),
+        .param= inline_ptr(enum ltype, LVAL_BOOL)},
+};
+const struct lfunc lbuiltin_op_and = {
+    .symbol       = "and",
+    .accumulator  = true,
+    .neutral      = &lnil,
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = &guards_boolean[0],
+    .guardc       = LENGTH(guards_boolean),
+    .func         = lbi_op_and,
+};
+const struct lfunc lbuiltin_op_or = {
+    .symbol       = "or",
+    .accumulator  = true,
+    .neutral      = &lnil,
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = &guards_boolean[0],
+    .guardc       = LENGTH(guards_boolean),
+    .func         = lbi_op_or,
+};
+const struct lfunc lbuiltin_op_not = {
+    .symbol       = "not",
+    .accumulator  = true,
+    .neutral      = &lnil,
+    .min_argc     =  1,
+    .max_argc     =  1,
+    .guards       = &guards_boolean[0],
+    .guardc       = LENGTH(guards_boolean),
+    .func         = lbi_op_not,
+};
+
 static const struct lguard guards_if[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_BOOL)},

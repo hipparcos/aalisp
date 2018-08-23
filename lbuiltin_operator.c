@@ -346,3 +346,21 @@ int lbi_op_lte(struct lenv* env, const struct lval* arg, struct lval* acc) {
     lval_mut_bool(acc, 0 >= lbuiltin_compare(acc, arg));
     return 0;
 }
+
+int lbi_op_and(struct lenv* env, const struct lval* arg, struct lval* acc) {
+    UNUSED(env);
+    lval_mut_bool(acc, lval_as_bool(acc) && lval_as_bool(arg));
+    return 0;
+}
+
+int lbi_op_or(struct lenv* env, const struct lval* arg, struct lval* acc) {
+    UNUSED(env);
+    lval_mut_bool(acc, lval_as_bool(acc) || lval_as_bool(arg));
+    return 0;
+}
+
+int lbi_op_not(struct lenv* env, const struct lval* arg, struct lval* acc) {
+    UNUSED(env);
+    lval_mut_bool(acc, !lval_as_bool(arg));
+    return 0;
+}

@@ -309,6 +309,9 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, ">=", &lbuiltin_op_gte);
     lenv_put_builtin(env, "<", &lbuiltin_op_lt);
     lenv_put_builtin(env, "<=", &lbuiltin_op_lte);
+    lenv_put_builtin(env, "and", &lbuiltin_op_and);
+    lenv_put_builtin(env, "or", &lbuiltin_op_or);
+    lenv_put_builtin(env, "not", &lbuiltin_op_not);
     /* Control flow functions. */
     lenv_put_builtin(env, "if", &lbuiltin_if);
     /* List manipulation functions. */

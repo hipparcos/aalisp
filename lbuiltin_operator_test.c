@@ -392,6 +392,67 @@ describe(builtin, {
         });
     });
 
+    subdesc(op_and, {
+        test_pass(&lbuiltin_op_and, "true && false", {
+            push_bool(args, true);
+            push_bool(args, true);
+            lval_mut_bool(expected, true);
+        });
+        test_pass(&lbuiltin_op_and, "true && false", {
+            push_bool(args, true);
+            push_bool(args, false);
+            lval_mut_bool(expected, false);
+        });
+        test_pass(&lbuiltin_op_and, "false && false", {
+            push_bool(args, false);
+            push_bool(args, false);
+            lval_mut_bool(expected, false);
+        });
+        test_fail(&lbuiltin_op_and, "true && 42", {
+            push_bool(args, true);
+            push_num(args, 42);
+            lval_mut_err_code(expected, LERR_BAD_OPERAND);
+        });
+    });
+
+    subdesc(op_or, {
+        test_pass(&lbuiltin_op_or, "true || false", {
+            push_bool(args, true);
+            push_bool(args, true);
+            lval_mut_bool(expected, true);
+        });
+        test_pass(&lbuiltin_op_or, "true || false", {
+            push_bool(args, true);
+            push_bool(args, false);
+            lval_mut_bool(expected, true);
+        });
+        test_pass(&lbuiltin_op_or, "false || false", {
+            push_bool(args, false);
+            push_bool(args, false);
+            lval_mut_bool(expected, false);
+        });
+        test_fail(&lbuiltin_op_or, "true || 42", {
+            push_bool(args, true);
+            push_num(args, 42);
+            lval_mut_err_code(expected, LERR_BAD_OPERAND);
+        });
+    });
+
+    subdesc(op_not, {
+        test_pass(&lbuiltin_op_not, "! true", {
+            push_bool(args, true);
+            lval_mut_bool(expected, false);
+        });
+        test_pass(&lbuiltin_op_not, "! false", {
+            push_bool(args, false);
+            lval_mut_bool(expected, true);
+        });
+        test_fail(&lbuiltin_op_not, "! 42", {
+            push_num(args, 42);
+            lval_mut_err_code(expected, LERR_BAD_OPERAND);
+        });
+    });
+
 });
 
 snow_main();

@@ -82,6 +82,11 @@ List operations:
 > map (\ {x} {* x x}) {1 2 3 4}
 {1 4 9 16}
 ```
+String manipulations:
+```lisp
+> join "join" " also operates " "on strings"
+"join also operate on strings"
+```
 Functions definition:
 ```lisp
 > (\ {x} {* x x}) 9
@@ -101,31 +106,28 @@ Environment operations:
 
 ## TODO
 
-- [x] Rewrite the parser myself (see llexer & lparser);
-- [x] Implement S-Expressions (chapter 9);
-- [x] Implement Q-Expressions (chapter 10);
-- [x] Implement variables (chapter 11);
-- [x] Add tests for lenv;
-- [x] Add tests for lambda builtin;
-- [x] Implement partial function application;
-- [x] Implement functions (chapter 12);
-- [ ] Improve error reporting;
-- [x] Implement conditionals (chapter 13);
-- [ ] Implement strings (chapter 14);
-- [ ] Implemnt elem, take, map, filter, fold, reverse;
+- [x] Implement strings (chapter 14);
+- [ ] Implement !!, elem, take, filter, fold, reverse;
+- [ ] Delete unused builtins;
+- [ ] Define aliases in stdlib;
 - [ ] Implement standard library (chapter 15);
-- [x] Add comments support;
+- [ ] Add tests;
+- [ ] Improve error reporting;
+- [ ] Implement pool allocation for lval;
+- [ ] Reduce the number of lval copy;
+- [ ] Support UTF-8;
 - [ ] Implement user defined types;
 - [ ] Implement list literal;
 - [ ] Implement OS interaction;
-- [ ] Implement pool allocation for lval;
 - [ ] Implement variables hashtable;
 - [ ] Implement garbage collection;
 - [ ] Implement tail call optimisation;
 - [ ] Implement lexical scoping;
 - [ ] Implement static typing;
 - [ ] Support bigdouble;
-- [ ] Support rational numbers.
+- [ ] Support rational numbers;
+- [ ] Support complex numbers;
+- [ ] Support matrices.
 
 ## License
 

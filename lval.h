@@ -129,11 +129,11 @@ bool lval_as_num(const struct lval* v, long* r);
 bool lval_as_bignum(const struct lval* v, mpz_t r);
 /** lval_type returns v as a double. Its type must be LVAL_DBL. */
 bool lval_as_dbl(const struct lval* v, double* r);
-/** lval_type returns v as a string. All types are supported.
- ** str is a copy of the string.
- ** str must be allocated by the caller (see lval_printlen).
- ** len is the maximum number of bytes to copy (0 = no limit). */
-bool lval_as_str(const struct lval* v, char* r, size_t len);
+/** lval_type returns v as a string.
+ ** v must be of type LVAL_STR.
+ ** The pointed value is NOT a copy of the string.
+ ** The pointer stays valid while v is alive. */
+const char* lval_as_str(const struct lval* v);
 /** lval_as_sym returns v as a string. Its type must be LVAL_SYM.
  ** The pointed value is NOT a copy of the symbol.
  ** The pointer stays valid while v is alive. */
@@ -163,24 +163,18 @@ bool lval_are_equal(const struct lval* x, const struct lval* y);
  **   =0 if x == y
  **   >0 if x > y */
 int lval_compare(const struct lval* x, const struct lval* y);
-/** lval_printlen returns the minimum size in bytes required to print v. */
-size_t lval_printlen(const struct lval* v);
-/** lval_printlen_debug is equivalent to lval_printlen but adds the length of the debug header. */
-size_t lval_printlen_debug(const struct lval* v, bool recursive);
 
 /* Printer */
-/** lval_to_string prints v to out.
- ** out must be allocated by the caller (see lval_printlen_debug). */
-void lval_debug(const struct lval* v, char* out, bool recursive);
 /** lval_debug_print_to prints debug infos of v to out (FILE*). */
 void lval_debug_print_to(const struct lval* v, FILE* out);
+void lval_debug_print_all_to(const struct lval* v, FILE* out);
 /** lval_debug_print prints debug infos of v to stdout. */
 #define lval_debug_print(v) lval_debug_print_to(v, stdout)
+#define lval_debug_print_all(v) lval_debug_print_all_to(v, stdout)
 /** lval_print_to prints v to out (FILE*). */
 void lval_print_to(const struct lval* v, FILE* out);
 /** lval_print prints v to stdout. */
 #define lval_print(v) lval_print_to(v, stdout)
-/** lval_print prints v to stdout. A newline is added. */
-#define lval_println(v) lval_print_to(v, stdout); putchar('\n');
+#define lval_println(v) (lval_print_to(v, stdout), fputc('\n', stdout))
 
 #endif

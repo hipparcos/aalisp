@@ -3,6 +3,7 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 #include "lval.h"
 #include "lenv.h"
@@ -91,9 +92,6 @@ void lfunc_free(struct lfunc* fun);
 bool lfunc_copy(struct lfunc* dest, const struct lfunc* src);
 /** lfunc_are_equal tells if two func are equal. */
 bool lfunc_are_equal(const struct lfunc*, const struct lfunc*);
-/** lfunc_type_string returns a string describing the function (number of args,
- ** number of bound args...) or the length of the string if out is NULL. */
-size_t lfunc_type_string(const struct lfunc* fun, char* out, size_t len);
 
 /** lfunc_exec is a lbuiltin.
  ** lfunc_exec returns:
@@ -104,5 +102,11 @@ int lfunc_exec(
         const struct lfunc* fun, struct lenv* env, const struct lval* args, struct lval* acc);
 /** lfunc_push_args does partial application of fun on args. */
 void lfunc_push_args(const struct lfunc* fun, const struct lval* args);
+
+/** lfunc_print_to prints a string describing the function (number of args,
+ ** number of bound args...) or the length of the string if out is NULL. */
+size_t lfunc_print_to(const struct lfunc* fun, FILE* out);
+/** lfunc_print prints lfunc type string to stdout. */
+#define lfunc_print(fun) lfunc_print_to(func, stdout)
 
 #endif

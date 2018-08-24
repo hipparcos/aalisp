@@ -75,13 +75,11 @@ void lerr_wrap(struct lerr* outer, struct lerr* inner);
  ** Returned pointer stays valid until lerr_free is called on the outermost error. */
 struct lerr* lerr_cause(struct lerr* err);
 
-/** lerr_printlen returns the length of the error when printed as string. */
-size_t lerr_printlen(struct lerr* err);
-/** lerr_as_string returns the error as string printed in out. */
-void lerr_as_string(struct lerr* err, char* out, size_t len);
 /** lerr_print_to prints err to  the file out. */
 void lerr_print_to(struct lerr* err, FILE* out);
 /** lerr_print prints err to stdout. */
 #define lerr_print(err) lerr_print_to(err, stdout)
+/** lerr_print_cause_to prints only the innermost error. */
+void lerr_print_cause_to(struct lerr* err, FILE* out);
 
 #endif

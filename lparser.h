@@ -49,7 +49,7 @@ bool last_are_all_equal(const struct last* left, const struct last* right);
 const char* last_tag_string(enum ltag tag);
 /** last_print_to prints the ast node to the file out. */
 void last_print_to(const struct last* ast, FILE* out);
-/** last_println prints the ast node to stdout. */
+/** last_print prints the ast node to stdout. */
 #define last_print(ast) last_print_to(ast, stdout)
 /** last_print_all_to prints the ast to the file out. */
 void last_print_all_to(const struct last* ast, FILE* out);

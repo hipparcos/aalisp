@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -646,6 +647,7 @@ enum ltype lval_type(const struct lval* v) {
 const char* lval_type_string(enum ltype type) {
     switch (type) {
     case LVAL_NIL:    return "nil";
+    case LVAL_BOOL:   return "bool";
     case LVAL_NUM:    return "num";
     case LVAL_BIGNUM: return "bignum";
     case LVAL_DBL:    return "double";
@@ -655,8 +657,8 @@ const char* lval_type_string(enum ltype type) {
     case LVAL_FUNC:   return "function";
     case LVAL_SEXPR:  return "sexpr";
     case LVAL_QEXPR:  return "qexpr";
-    default:          return "";
     }
+    return "";
 }
 
 bool lval_as_err_code(const struct lval* v, enum lerr_code* r) {
@@ -722,74 +724,11 @@ bool lval_as_dbl(const struct lval* v, double* r) {
     return true;
 }
 
-static size_t lval_list_as_str(
-        const struct lval* v, char* out, size_t len,
-        char opening, char closing) {
-    if (!lval_is_list(v)) {
-        return 0;
+const char* lval_as_str(const struct lval* v) {
+    if (!lval_is_alive(v) || lval_type(v) != LVAL_STR) {
+        return NULL;
     }
-    if (len < 3) {
-        return 0;
-    }
-    char* s = out;
-    *s++ = opening;
-    struct ldata* data = v->data;
-    for (size_t c = 0; c < data->len; c++) {
-        if (c > 0) *s++ = ' ';
-        size_t clen = lval_printlen(data->payload.cell[c]);
-        if (clen > len-2) clen = len;
-        lval_as_str(data->payload.cell[c], s, clen);
-        s += clen-1; // - '\0'.
-        len -= clen;
-        if (len < 2) {
-            break;
-        }
-    }
-    *s++ = closing;
-    *s   = '\0';
-    return strlen(s);
-}
-
-bool lval_as_str(const struct lval* v, char* r, size_t len) {
-    if (!lval_is_alive(v)) {
-        r = NULL;
-        return false;
-    }
-    switch (v->data->type) {
-    case LVAL_NIL:
-        snprintf(r, len, "nil");
-        break;
-    case LVAL_BOOL:
-        snprintf(r, len, (v->data->payload.boolean) ? "true" : "false");
-        break;
-    case LVAL_NUM:
-        snprintf(r, len, "%li", v->data->payload.num);
-        break;
-    case LVAL_BIGNUM:
-        mpz_get_str(r, 10, v->data->payload.bignum);
-        break;
-    case LVAL_DBL:
-        snprintf(r, len, "%g", v->data->payload.dbl);
-        break;
-    case LVAL_SYM:
-    case LVAL_STR:
-        strncpy(r, v->data->payload.str,
-                (len > v->data->len) ? v->data->len : len);
-        break;
-    case LVAL_QEXPR:
-        lval_list_as_str(v, r, len, '{', '}');
-        break;
-    case LVAL_SEXPR:
-        lval_list_as_str(v, r, len, '(', ')');
-        break;
-    case LVAL_ERR:
-        lerr_as_string(v->data->payload.err, r, len);
-        break;
-    case LVAL_FUNC:
-        lfunc_type_string(v->data->payload.func, r, len);
-        break;
-    }
-    return true;
+    return v->data->payload.str;
 }
 
 const char* lval_as_sym(const struct lval* v) {
@@ -927,141 +866,109 @@ int lval_compare(const struct lval* x, const struct lval* y) {
     return -1;
 }
 
-static size_t length_of_long(long l) {
-    if (l == 0) {
-        return 1;
-    }
-    size_t len = 0;
-    len = (size_t)floor(log10(labs(l))) + 1;
-    if (l < 0) {
-        len++;
-    }
-    return len;
-}
-
-size_t lval_printlen(const struct lval* v) {
-    if (!lval_is_alive(v)) {
-        return 0;
-    }
-    size_t len = 0;
-    switch (v->data->type) {
-    case LVAL_NIL:    len = 3; break;
-    case LVAL_BOOL:   len = 5; break;
-    case LVAL_ERR:
-        len = lerr_printlen(v->data->payload.err);
-        break;
-    case LVAL_NUM:
-        len = length_of_long(v->data->payload.num);
-        break;
-    case LVAL_BIGNUM: len = mpz_sizeinbase(v->data->payload.bignum, 10); break;
-    case LVAL_DBL:
-        {
-        char dummy[2]; // minimum output size is 2 to suppress compiler warning.
-        len = snprintf(dummy, sizeof(dummy), "%g", v->data->payload.dbl);
-        }
-        break;
-    case LVAL_SYM:
-    case LVAL_STR:    len = v->data->len; break;
-    case LVAL_SEXPR:
-    case LVAL_QEXPR:
-        len = 1 + 1; // ( )
-        if (v->data->len > 0) {
-            len += v->data->len - 1; // ' '.
-        }
-        for (size_t c = 0; c < v->data->len; c++) {
-            len += lval_printlen(v->data->payload.cell[c]);
-            len--; // - '\0'.
-        }
-        break;
-    case LVAL_FUNC:
-        len = lfunc_type_string(v->data->payload.func, NULL, 0);
-        break;
-    }
-    return len + 1; // + '\0'
-}
-
-static size_t _lval_printlen_debug(const struct lval* v, bool recursive, int indent) {
-    size_t len = 256 + lval_printlen(v);
-    if (recursive && lval_type(v) == LVAL_SEXPR) {
-        for (size_t c = 0; c < v->data->len; c++) {
-            len += 8 * indent;
-            len += _lval_printlen_debug(v->data->payload.cell[c], recursive, --indent);
-        }
-    }
-    return len;
-}
-size_t lval_printlen_debug(const struct lval* v, bool recursive) {
-    return _lval_printlen_debug(v, recursive, 0);
-}
-
 #define INDENT(out, indent) \
-    do { int i = indent; while (i-- > 0) { *out++ = ' '; *out++ = ' '; } } while (0);
+    do { int i = indent; while (i-- > 0) { fputs("  ", out); } } while (0);
 
-static void _lval_debug(const struct lval* v, char* out, bool recursive, int indent) {
-    if (lval_is_alive(v)) {
-        size_t lenpl = lval_printlen(v);
-        char* payload = NULL;
-        if (lenpl > 0) {
-            payload = calloc(lenpl, sizeof(char));
-            lval_as_str(v, payload, lenpl);
-        }
-        INDENT(out, indent);
-        sprintf(out,
-                "lval{data: %p, alive: 0x%x}->\n",
-                v->data, v->alive);
-        out += strlen(out);
-        INDENT(out, indent);
-        sprintf(out,
-                "  ldata{type: %s, len: %ld, alive: 0x%x, refc: %d, mutable: %s,\n",
-                lval_type_string(lval_type(v)), v->data->len, v->data->alive, v->data->refc,
-                v->data->mutable ? "true" : "false");
-        out += strlen(out);
-        INDENT(out, indent);
-        sprintf(out,
-                "    payload as string: '%s'\n",
-                payload);
-        out += strlen(out);
-        INDENT(out, indent);
-        sprintf(out, "  }\n");
-        out += strlen(out);
-        if (payload) {
-            free(payload);
-        }
-        if (recursive && lval_type(v) == LVAL_SEXPR) {
-            for (size_t c = 0; c < v->data->len; c++) {
-                size_t len = strlen(out);
-                _lval_debug(v->data->payload.cell[c], out+len, recursive, indent+1);
-            }
-        }
-    } else {
-        sprintf(out,
+static void lval_debug(const struct lval* v, FILE* out, bool recursive, int indent) {
+    if (!lval_is_alive(v)) {
+        fprintf(out,
                 "lval{data: %p, alive: 0x%x} DEAD REF\n",
                 v->data, v->alive);
+        return;
     }
-}
-
-void lval_debug(const struct lval* v, char* out, bool recursive) {
-    _lval_debug(v, out, recursive, 0);
+    INDENT(out, indent);
+    fprintf(out,
+            "lval{data: %p, alive: 0x%x}->\n",
+            v->data, v->alive);
+    INDENT(out, indent);
+    fprintf(out,
+            "  ldata{type: %s, len: %ld, alive: 0x%x, refc: %d, mutable: %s,\n",
+            lval_type_string(lval_type(v)), v->data->len, v->data->alive, v->data->refc,
+            v->data->mutable ? "true" : "false");
+    INDENT(out, indent);
+    fputs("    payload as string: '", out);
+    lval_print_to(v, out);
+    fputs("'\n", out);
+    INDENT(out, indent);
+    fputs("  }\n", out);
+    if (recursive && lval_type(v) == LVAL_SEXPR) {
+        for (size_t c = 0; c < v->data->len; c++) {
+            lval_debug(v->data->payload.cell[c], out, true, indent);
+        }
+    }
 }
 
 void lval_debug_print_to(const struct lval* v, FILE* out) {
-    size_t len = lval_printlen_debug(v, true);
-    if (len == 0) {
+    if (!v) {
         return;
     }
-    char* str = calloc(len, sizeof(char));
-    lval_debug(v, str, true);
-    fputs(str, out);
-    free(str);
+    lval_debug(v, out, false, 0);
+}
+
+void lval_debug_print_all_to(const struct lval* v, FILE* out) {
+    if (!v) {
+        return;
+    }
+    lval_debug(v, out, true, 0);
+}
+
+static void lval_print_list(const struct lval* v, FILE* out, char opening, char closing) {
+    fputc(opening, out);
+    struct ldata* data = v->data;
+    for (size_t c = 0; c < data->len; c++) {
+        if (c > 0) {
+            fputc(' ', out);
+        }
+        lval_print_to(data->payload.cell[c], out);
+    }
+    fputc(closing, out);
 }
 
 void lval_print_to(const struct lval* v, FILE* out) {
-    size_t len = lval_printlen(v);
-    if (len == 0) {
+    if (!lval_is_alive(v)) {
         return;
     }
-    char* str = calloc(len, sizeof(char));
-    lval_as_str(v, str, len);
-    fputs(str, out);
-    free(str);
+    switch (v->data->type) {
+    case LVAL_NIL:
+        fprintf(out, "nil");
+        break;
+    case LVAL_BOOL:
+        fprintf(out, (v->data->payload.boolean) ? "true" : "false");
+        break;
+    case LVAL_NUM:
+        fprintf(out, "%li", v->data->payload.num);
+        break;
+    case LVAL_BIGNUM:
+        {
+        size_t len = mpz_sizeinbase(v->data->payload.bignum, 10);
+        char* buffer = malloc(len+1);
+        mpz_get_str(buffer, 10, v->data->payload.bignum);
+        fputs(buffer, out);
+        free(buffer);
+        break;
+        }
+    case LVAL_DBL:
+        fprintf(out, "%g", v->data->payload.dbl);
+        break;
+    case LVAL_SYM:
+        fputs(v->data->payload.str, out);
+        break;
+    case LVAL_STR:
+        fputc('"', out);
+        fputs(v->data->payload.str, out);
+        fputc('"', out);
+        break;
+    case LVAL_QEXPR:
+        lval_print_list(v, out, '{', '}');
+        break;
+    case LVAL_SEXPR:
+        lval_print_list(v, out, '(', ')');
+        break;
+    case LVAL_ERR:
+        lerr_print_cause_to(v->data->payload.err, out);
+        break;
+    case LVAL_FUNC:
+        lfunc_print_to(v->data->payload.func, out);
+        break;
+    }
 }

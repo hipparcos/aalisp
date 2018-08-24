@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L /* For fmemopen. */
+
 #include "lval.h"
 
 #include <math.h>
@@ -9,6 +11,14 @@
 #include "vendor/snow/snow/snow.h"
 
 #define LENGTH(array) sizeof(array)/sizeof(array[0])
+
+#define to_string(val,out) \
+    do { \
+        FILE* fm = fmemopen(out, sizeof(out), "w+"); \
+        defer(fclose(fm)); \
+        lval_print_to(val, fm); \
+        fseek(fm, 0, SEEK_SET); \
+    } while (0);
 
 describe(lval, {
 
@@ -67,25 +77,6 @@ describe(lval, {
             assert(lval_mut_sym(v, input));
             assert(lval_type(v) == LVAL_SYM);
             assert(lval_free(v));
-        });
-
-        it("mutates a lval to a num", {
-            long input = 10;
-            struct lval* v = lval_alloc();
-            assert(lval_mut_num(v, input));
-            assert(lval_type(v) == LVAL_NUM);
-            assert(lval_free(v));
-        });
-
-        it("mutates a lval to a bignum", {
-            mpz_t input; /** = 10^20 */
-            mpz_init_set_si(input, 10);
-            mpz_pow_ui(input, input, 20u);
-            struct lval* v = lval_alloc();
-            assert(lval_mut_bignum(v, input));
-            assert(lval_type(v) == LVAL_BIGNUM);
-            assert(lval_free(v));
-            mpz_clear(input);
         });
 
         it("mutates the same value to a num, a bignum and finally to a str (no leakages)", {
@@ -167,164 +158,24 @@ describe(lval, {
 
         it("mutates a lval to a string and read it back", {
             const char* expected = "expected";
-            size_t len = 0;
+            const char* got = NULL;
             struct lval* v = lval_alloc();
             assert(lval_mut_str(v, expected));
             assert(lval_type(v) == LVAL_STR);
-            assert(len = lval_printlen(v));
-            char* got = calloc(sizeof(char), len);
-            assert(lval_as_str(v, got, len));
+            assert(got = lval_as_str(v));
             assert(strcmp(got, expected) == 0);
-            free(got);
             assert(lval_free(v));
         });
 
         it("mutates a lval to a symbol and read it back", {
             const char* expected = "expected";
-            const char* got;
+            const char* got = NULL;
             struct lval* v = lval_alloc();
             assert(lval_mut_sym(v, expected));
             assert(lval_type(v) == LVAL_SYM);
             assert(got = lval_as_sym(v));
             assert(strcmp(got, expected) == 0);
             assert(lval_free(v));
-        });
-
-        it("mutates a lval to a num and read it back as a string", {
-            size_t len = 0;
-            char* got = NULL;
-            defer(if (got) free(got));
-            struct lval* v = lval_alloc();
-            defer(lval_free(v));
-            assert(lval_mut_bool(v, true));
-            assert(len = lval_printlen(v));
-            got = calloc(sizeof(char), len);
-            assert(lval_as_str(v, got, len));
-            assert(strcmp(got, "true") == 0);
-            assert(lval_mut_bool(v, false));
-            assert(lval_as_str(v, got, len));
-            assert(strcmp(got, "false") == 0);
-        });
-
-        it("mutates a lval to a num and read it back as a string", {
-            long input = 10;
-            const char* expected = "10";
-            struct lval* v = lval_alloc();
-            assert(lval_mut_num(v, input));
-            assert(lval_type(v) == LVAL_NUM);
-            size_t len = 0;
-            assert(len = lval_printlen(v));
-            char* got = calloc(sizeof(char), len);
-            assert(lval_as_str(v, got, len));
-            assert(strcmp(got, expected) == 0);
-            free(got);
-            assert(lval_free(v));
-        });
-
-        it("mutates a lval to a bignum and read it back as a string", {
-            const char* expected = "100000000000000000000";
-            mpz_t input; /** = 10^20 */
-            mpz_init_set_si(input, 10);
-            mpz_pow_ui(input, input, 20u);
-            struct lval* v = lval_alloc();
-            assert(lval_mut_bignum(v, input));
-            assert(lval_type(v) == LVAL_BIGNUM);
-            size_t len = 0;
-            assert(len = lval_printlen(v));
-            char* got = calloc(sizeof(char), len);
-            assert(lval_as_str(v, got, len));
-            assert(strcmp(got, expected) == 0);
-            free(got);
-            assert(lval_free(v));
-            mpz_clear(input);
-        });
-
-        it("mutates then reads back the same lval to a num, a bignum and finally to a str (no leakages)", {
-            long inum = 10;
-            mpz_t ibn; /** = 10^20 */
-            mpz_init_set_si(ibn, 10);
-            mpz_pow_ui(ibn, ibn, 20u);
-            const char* istr = "input";
-            struct lval* v = lval_alloc();
-            assert(lval_mut_num(v, inum));
-            assert(lval_type(v) == LVAL_NUM);
-            long gl = 0;
-            assert(lval_as_num(v, &gl));
-            assert(gl = inum);
-            assert(lval_mut_bignum(v, ibn));
-            assert(lval_type(v) == LVAL_BIGNUM);
-            mpz_t gbn;
-            mpz_init(gbn);
-            assert(lval_as_bignum(v, gbn));
-            assert(mpz_cmp(gbn, ibn) == 0 && gbn != ibn);
-            mpz_clear(gbn);
-            assert(lval_mut_str(v, istr));
-            assert(lval_type(v) == LVAL_STR);
-            size_t len = 0;
-            assert(len = lval_printlen(v));
-            char* gstr = calloc(sizeof(char), len);
-            assert(lval_as_str(v, gstr, len));
-            assert(strcmp(gstr, istr) == 0 && gstr != istr);
-            free(gstr);
-            assert(lval_free(v));
-            mpz_clear(ibn);
-        });
-
-        it("works for nested s-expr (+ 1 (+ 1)) as string", {
-            const char* expected = "(+ 1 (+ 1))";
-            /* Input lval construction. */
-            struct lval *input, *sexpr2, *sym, *opr;
-            input = lval_alloc();
-            sexpr2 = lval_alloc();
-            sym = lval_alloc();
-            opr = lval_alloc();
-            defer(lval_free(opr));
-            defer(lval_free(sym));
-            defer(lval_free(sexpr2));
-            defer(lval_free(input));
-            lval_mut_num(opr, 1);
-            lval_mut_sym(sym, "+");
-            lval_mut_sexpr(sexpr2);
-            lval_mut_sexpr(input);
-            lval_push(sexpr2, sym);
-            lval_push(sexpr2, opr);
-            lval_push(input, sym);
-            lval_push(input, opr);
-            lval_push(input, sexpr2);
-            /* Test */
-            size_t len = lval_printlen(input);
-            assert(len-1 == strlen(expected)); // - '\0'.
-            char* got = malloc(len);
-            defer(free(got));
-            lval_as_str(input, got, len);
-            assert(strcmp(got, expected) == 0);
-        });
-
-        it("works for nested q-expr {1 2 {3 4}} as string", {
-            const char* expected = "{1 1 {1 1}}";
-            /* Input lval construction. */
-            struct lval *qexpr1, *qexpr2, *opr;
-            qexpr1 = lval_alloc();
-            qexpr2 = lval_alloc();
-            opr = lval_alloc();
-            defer(lval_free(opr));
-            defer(lval_free(qexpr2));
-            defer(lval_free(qexpr1));
-            lval_mut_num(opr, 1);
-            lval_mut_qexpr(qexpr2);
-            lval_mut_qexpr(qexpr1);
-            lval_push(qexpr2, opr);
-            lval_push(qexpr2, opr);
-            lval_push(qexpr1, opr);
-            lval_push(qexpr1, opr);
-            lval_push(qexpr1, qexpr2);
-            /* Test */
-            size_t len = lval_printlen(qexpr1);
-            assert(len-1 == strlen(expected)); // - '\0'.
-            char* got = malloc(len);
-            defer(free(got));
-            lval_as_str(qexpr1, got, len);
-            assert(strcmp(got, expected) == 0);
         });
     });
 
@@ -399,20 +250,16 @@ describe(lval, {
 
         it("copies a LVAL_STR", {
             const char* expected = "expected";
+            const char* got = NULL;
             struct lval* v = lval_alloc();
             struct lval* cpy = lval_alloc();
             assert(lval_mut_str(v, expected));
             assert(lval_type(v) == LVAL_STR);
             assert(lval_copy(cpy, v));
-            assert(lval_type(cpy) == LVAL_STR);
-            size_t len = 0;
-            assert(len = lval_printlen(v));
-            char* got = calloc(sizeof(char), len);
-            assert(lval_as_str(cpy, got, len));
-            assert(strcmp(got, expected) == 0);
-            assert(got != expected); // Not the same pointed data.
-            free(got);
             assert(lval_free(v));
+            assert(lval_type(cpy) == LVAL_STR);
+            assert(got = lval_as_str(cpy));
+            assert(strcmp(got, expected) == 0);
             assert(lval_free(cpy));
         });
     });
@@ -773,11 +620,10 @@ describe(lval, {
             assert(lval_push(sexpr, sym));
             assert(lval_push(sexpr, a));
             assert(lval_push(sexpr, b));
-            size_t len = lval_printlen(sexpr);
-            char* s = calloc(len, sizeof(char));
-            lval_as_str(sexpr, s, len);
-            defer(free(s));
-            assert(strcmp(s, "(+ 1 2)") == 0);
+            /* Check. */
+            char got[256];
+            to_string(sexpr, got);
+            assert(strcmp(got, "(+ 1 2)") == 0);
         });
 
         it("lval_pop works", {
@@ -799,11 +645,11 @@ describe(lval, {
             struct lval* val;
             assert(val = lval_pop(sexpr, 1));
             defer(lval_free(val));
-            size_t len = lval_printlen(val);
-            char* s = calloc(len, sizeof(char));
-            lval_as_str(val, s, len);
-            defer(free(s));
-            assert(strcmp(s, "1") == 0);
+            /* Check. */
+            char got[256];
+            to_string(sexpr, got);
+            assert(strcmp(got, "(+ 2)") == 0);
+            assert(lval_are_equal(val, a));
         });
 
         it("lval_index works", {
@@ -825,11 +671,7 @@ describe(lval, {
             struct lval* got = lval_alloc();
             defer(lval_free(got));
             assert(lval_index(sexpr, 1, got));
-            size_t len = lval_printlen(got);
-            char* s = calloc(len, sizeof(char));
-            lval_as_str(got, s, len);
-            defer(free(s));
-            assert(strcmp(s, "1") == 0);
+            assert(lval_are_equal(got, a));
         });
 
         it("lval_len works", {
@@ -869,12 +711,10 @@ describe(lval, {
             assert(lval_cons(qexpr, c));
             assert(lval_cons(qexpr, b));
             assert(lval_cons(qexpr, a));
-            size_t len = lval_printlen(qexpr);
-            char* s = calloc(len, sizeof(char));
-            lval_as_str(qexpr, s, len);
-            fputs(s,stdout);
-            defer(free(s));
-            assert(strcmp(s, "{1 2 3}") == 0);
+            /* Check. */
+            char got[256];
+            to_string(qexpr, got);
+            assert(strcmp(got, "{1 2 3}") == 0);
         });
 
         it("lval_push works", {
@@ -893,11 +733,10 @@ describe(lval, {
             assert(lval_push(qexpr, sym));
             assert(lval_push(qexpr, a));
             assert(lval_push(qexpr, b));
-            size_t len = lval_printlen(qexpr);
-            char* s = calloc(len, sizeof(char));
-            lval_as_str(qexpr, s, len);
-            defer(free(s));
-            assert(strcmp(s, "{+ 1 2}") == 0);
+            /* Check. */
+            char got[256];
+            to_string(qexpr, got);
+            assert(strcmp(got, "{+ 1 2}") == 0);
         });
 
         it("lval_pop works", {
@@ -919,11 +758,11 @@ describe(lval, {
             struct lval* val;
             assert(val = lval_pop(qexpr, 1));
             defer(lval_free(val));
-            size_t len = lval_printlen(val);
-            char* s = calloc(len, sizeof(char));
-            lval_as_str(val, s, len);
-            defer(free(s));
-            assert(strcmp(s, "1") == 0);
+            /* Check. */
+            char got[256];
+            to_string(qexpr, got);
+            assert(strcmp(got, "{+ 2}") == 0);
+            assert(lval_are_equal(val, a));
         });
 
         it("lval_index works", {
@@ -945,11 +784,7 @@ describe(lval, {
             struct lval* got = lval_alloc();
             defer(lval_free(got));
             assert(lval_index(qexpr, 1, got));
-            size_t len = lval_printlen(got);
-            char* s = calloc(len, sizeof(char));
-            lval_as_str(got, s, len);
-            defer(free(s));
-            assert(strcmp(s, "1") == 0);
+            assert(lval_are_equal(got, a));
         });
 
         it("lval_len works", {
@@ -969,6 +804,121 @@ describe(lval, {
             assert(lval_push(qexpr, a));
             assert(lval_push(qexpr, b));
             assert(lval_len(qexpr) == 3);
+        });
+    });
+
+    subdesc(print_to, {
+        it("prints a num", {
+            long input = 10;
+            struct lval* v = lval_alloc();
+            assert(lval_mut_num(v, input));
+            assert(lval_type(v) == LVAL_NUM);
+            defer(lval_free(v));
+            char got[256];
+            to_string(v, got);
+            assert(strcmp(got, "10") == 0);
+        });
+
+        it("prints a bignum", {
+            mpz_t input; /** = 10^20 */
+            mpz_init_set_si(input, 10);
+            mpz_pow_ui(input, input, 20u);
+            struct lval* v = lval_alloc();
+            assert(lval_mut_bignum(v, input));
+            assert(lval_type(v) == LVAL_BIGNUM);
+            defer(lval_free(v));
+            mpz_clear(input);
+            char got[256];
+            to_string(v, got);
+            assert(strcmp(got, "100000000000000000000") == 0);
+        });
+
+        it("prints a double", {
+            double input = 0.42;
+            struct lval* v = lval_alloc();
+            assert(lval_mut_dbl(v, input));
+            assert(lval_type(v) == LVAL_DBL);
+            defer(lval_free(v));
+            char got[256];
+            to_string(v, got);
+            assert(strcmp(got, "0.42") == 0);
+        });
+
+        it("prints an error", {
+            enum lerr_code input = LERR_EVAL;
+            struct lval* v = lval_alloc();
+            assert(lval_mut_err_code(v, input));
+            struct lerr* err = lval_as_err(v);
+            lerr_annotate(err, "error");
+            assert(lval_type(v) == LVAL_ERR);
+            defer(lval_free(v));
+            char got[256];
+            to_string(v, got);
+            assert(strcmp(got, "Error: error") == 0);
+        });
+
+        it("prints a string", {
+            const char* input = "string";
+            struct lval* v = lval_alloc();
+            assert(lval_mut_str(v, input));
+            assert(lval_type(v) == LVAL_STR);
+            defer(lval_free(v));
+            char got[256];
+            to_string(v, got);
+            assert(strcmp(got, "\"string\"") == 0);
+        });
+
+        it("prints a symbol", {
+            const char* input = "symbol";
+            struct lval* v = lval_alloc();
+            assert(lval_mut_sym(v, input));
+            assert(lval_type(v) == LVAL_SYM);
+            defer(lval_free(v));
+            char got[256];
+            to_string(v, got);
+            assert(strcmp(got, "symbol") == 0);
+        });
+
+        it("prints a S-Expression", {
+            struct lval* a = lval_alloc();
+            lval_mut_num(a, 1);
+            defer(lval_free(a));
+            struct lval* b = lval_alloc();
+            lval_mut_num(b, 2);
+            defer(lval_free(b));
+            struct lval* c = lval_alloc();
+            lval_mut_num(c, 3);
+            defer(lval_free(c));
+            struct lval* sexpr = lval_alloc();
+            defer(lval_free(sexpr));
+            assert(lval_mut_sexpr(sexpr));
+            assert(lval_push(sexpr, a));
+            assert(lval_push(sexpr, b));
+            assert(lval_push(sexpr, c));
+            char got[256];
+            to_string(sexpr, got);
+            assert(strcmp(got, "(1 2 3)") == 0);
+        });
+
+        it("prints a Q-Expression", {
+            struct lval* a = lval_alloc();
+            lval_mut_num(a, 1);
+            defer(lval_free(a));
+            struct lval* b = lval_alloc();
+            lval_mut_num(b, 2);
+            defer(lval_free(b));
+            struct lval* c = lval_alloc();
+            lval_mut_num(c, 3);
+            defer(lval_free(c));
+            struct lval* qexpr = lval_alloc();
+            defer(lval_free(qexpr));
+            assert(lval_mut_qexpr(qexpr));
+            assert(lval_push(qexpr, a));
+            assert(lval_push(qexpr, b));
+            assert(lval_push(qexpr, c));
+            char got[256];
+            to_string(qexpr, got);
+            assert(strcmp(got, "{1 2 3}") == 0);
         });
     });
 

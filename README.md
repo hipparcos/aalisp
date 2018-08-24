@@ -39,6 +39,8 @@ make
 make test
 ```
 
+Some tests use fmemopen which is not part of C11 standard.
+
 You can disable Valgrind when running tests:
 ```bash
 make test DO_MEMCHECK=false

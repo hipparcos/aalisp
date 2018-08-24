@@ -124,14 +124,9 @@ bool lfunc_are_equal(const struct lfunc* left, const struct lfunc* right) {
     return true;
 }
 
-size_t lfunc_type_string(const struct lfunc* fun, char* out, size_t len) {
+size_t lfunc_print_to(const struct lfunc* fun, FILE* out) {
     if (!fun) {
         return 0;
-    }
-    char dummy[2]; // To get length of generated string.
-    if (!out) {
-        out = &dummy[0];
-        len = sizeof(dummy);
     }
     int min = fun->min_argc;
     if (min < 0) {
@@ -154,10 +149,10 @@ size_t lfunc_type_string(const struct lfunc* fun, char* out, size_t len) {
         opening = closing = "";
     }
     if (min == max) {
-        return snprintf(out, len, "func%s%s%s(%d/%s)",
+        return fprintf(out, "func%s%s%s(%d/%s)",
                 opening, fun->symbol, closing, bound, maxs);
     } else {
-        return snprintf(out, len, "func%s%s%s(%d/%d-%s)",
+        return fprintf(out, "func%s%s%s(%d/%d-%s)",
                 opening, fun->symbol, closing, bound, min, maxs);
     }
 }

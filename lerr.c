@@ -145,28 +145,10 @@ void lerr_print_to(struct lerr* err, FILE* out) {
     fputs(".\n", out);
 }
 
-static size_t lerr_sprint(const struct lerr* err, char* out, size_t len) {
-    char dummy[2];
-    if (!out) {
-        out = &dummy[0];
-        len = sizeof(dummy);
-    }
-    return snprintf(out, len, "Error #%d: %s", err->code, err->message);
-}
-
-size_t lerr_printlen(struct lerr* err) {
-    if (!err) {
-        return 0;
-    }
-    err = lerr_cause(err);
-    return 1 + lerr_sprint(err, NULL, 0);
-}
-
-/* Needed because of lval way of printing. */
-void lerr_as_string(struct lerr* err, char* out, size_t len) {
+void lerr_print_cause_to(struct lerr* err, FILE* out) {
     if (!err) {
         return;
     }
-    err = lerr_cause(err);
-    lerr_sprint(err, out, len);
+    struct lerr* cause = lerr_cause(err);
+    fprintf(out, "Error: %s", cause->message);
 }

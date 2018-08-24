@@ -480,3 +480,16 @@ int lbi_func_load(struct lenv* env, const struct lval* args, struct lval* acc) {
     lval_free(filev);
     return 0;
 }
+
+int lbi_func_error(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1: error string. */
+    struct lval* errv = lval_alloc();
+    lval_index(args, 0, errv);
+    /* Error. */
+    struct lerr* err = lerr_throw(LERR_LISP_ERROR, "%s", lval_as_str(errv));
+    lval_mut_err_ptr(acc, err);
+    /* Cleanup. */
+    lval_free(errv);
+    return 1;
+}

@@ -29,6 +29,7 @@ enum lerr_code {
     LERR_BAD_OPERAND,
     LERR_TOO_MANY_ARGS,
     LERR_TOO_FEW_ARGS,
+    LERR_LISP_ERROR= 500,
 };
 
 /** lerr gathers informations about an error. */

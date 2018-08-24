@@ -484,3 +484,16 @@ const struct lfunc lbuiltin_load = {
     .guardc       = LENGTH(guards_load),
     .func         = lbi_func_load,
 };
+
+static const struct lguard guards_error[] = {
+    {.argn= 1, .condition= use_condition(must_be_of_type),
+        .param= inline_ptr(enum ltype, LVAL_STR)},
+};
+const struct lfunc lbuiltin_error = {
+    .symbol       = "error",
+    .min_argc     =  1,
+    .max_argc     =  1,
+    .guards       = &guards_error[0],
+    .guardc       = LENGTH(guards_error),
+    .func         = lbi_func_error,
+};

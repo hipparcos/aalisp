@@ -347,6 +347,8 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "::", &lbuiltin_partial);
     /* IO functions. */
     lenv_put_builtin(env, "print", &lbuiltin_print);
+    /* Error functions. */
+    lenv_put_builtin(env, "error", &lbuiltin_error);
     /* Environment variable. */
     lenv_put_lval(env, ".", NULL);
     struct lval* boolean = lval_alloc();

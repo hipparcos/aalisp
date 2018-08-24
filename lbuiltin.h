@@ -57,4 +57,7 @@ extern const struct lfunc lbuiltin_partial;
 /* IO functions. */
 extern const struct lfunc lbuiltin_print;
 
+/* Error functions. */
+extern const struct lfunc lbuiltin_error;
+
 #endif

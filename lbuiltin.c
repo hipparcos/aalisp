@@ -471,3 +471,16 @@ const struct lfunc lbuiltin_print = {
     .guardc       = 0,
     .func         = lbi_func_print,
 };
+
+static const struct lguard guards_load[] = {
+    {.argn= 0, .condition= use_condition(must_be_of_type),
+        .param= inline_ptr(enum ltype, LVAL_STR)},
+};
+const struct lfunc lbuiltin_load = {
+    .symbol       = "load",
+    .min_argc     =  1,
+    .max_argc     =  -1,
+    .guards       = &guards_load[0],
+    .guardc       = LENGTH(guards_load),
+    .func         = lbi_func_load,
+};

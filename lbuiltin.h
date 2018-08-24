@@ -45,9 +45,10 @@ extern const struct lfunc lbuiltin_map;
 extern const struct lfunc lbuiltin_def;
 extern const struct lfunc lbuiltin_override;
 extern const struct lfunc lbuiltin_put;
+extern const struct lfunc lbuiltin_fun;
+extern const struct lfunc lbuiltin_load;
 
 /* Functions manipulation functions. */
-extern const struct lfunc lbuiltin_fun;
 extern const struct lfunc lbuiltin_lambda;
 extern const struct lfunc lbuiltin_pack;
 extern const struct lfunc lbuiltin_unpack;

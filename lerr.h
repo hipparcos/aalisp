@@ -5,10 +5,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 /** lerr is an error code. */
 enum lerr_code {
     LERR_UNKNOWN = 0,
+    LERR_ENOENT = ENOENT,
     LERR_LEXER = 100,
     LERR_LEXER_MISSING_QUOTE,
     LERR_LEXER_UNKNOWN_CHAR,

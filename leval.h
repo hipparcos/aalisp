@@ -20,5 +20,7 @@ void lisp_eval_from_file(struct lenv* env, FILE* input);
  ** v    is the program to execute;
  ** r    is the result. */
 bool leval(struct lenv* env, const struct lval* v, struct lval* r);
+/** leval_from_file calls leval with the content of input as argument. */
+bool leval_from_file(struct lenv* env, FILE* input, struct lval* r);
 
 #endif

@@ -335,6 +335,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "put", &lbuiltin_put);
     lenv_put_builtin(env, "=",   &lbuiltin_put);
     lenv_put_builtin(env, "fun", &lbuiltin_fun);
+    lenv_put_builtin(env, "load", &lbuiltin_load);
     /* Functions manipulation functions. */
     lenv_put_builtin(env, "lambda", &lbuiltin_lambda);
     lenv_put_builtin(env, "\\",     &lbuiltin_lambda);

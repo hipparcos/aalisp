@@ -6,6 +6,7 @@
 #include <string.h>
 
 #include "lval.h"
+#include "lerr.h"
 #include "lenv.h"
 #include "leval.h"
 #include "lfunc.h"
@@ -455,5 +456,27 @@ int lbi_func_print(struct lenv* env, const struct lval* args, struct lval* acc) 
     fputc('\n', stdout);
     lval_free(arg);
     lval_mut_nil(acc);
+    return 0;
+}
+
+int lbi_func_load(struct lenv* env, const struct lval* args, struct lval* acc) {
+    struct lval* filev = lval_alloc();
+    /* Evaluates each file given as argument. */
+    size_t len = lval_len(args);
+    for (size_t a = 0; a < len; a++) {
+        lval_index(args, a, filev);
+        const char* filename = lval_as_str(filev);
+        FILE* f = fopen(filename, "r");
+        if (!f) {
+            struct lerr* err = lerr_throw(LERR_ENOENT,
+                    "file `%s` not found", filename);
+            lval_mut_err(acc, err);
+            lval_free(filev);
+            return a+1;
+        }
+        leval_from_file(env, f, acc);
+        fclose(f);
+    }
+    lval_free(filev);
     return 0;
 }

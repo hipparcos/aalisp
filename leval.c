@@ -225,12 +225,17 @@ static char* read_file(FILE* input) {
     return buffer;
 }
 
-void lisp_eval_from_file(struct lenv* env, FILE* input) {
+bool leval_from_file(struct lenv* env, FILE* input, struct lval* r) {
     char* content = read_file(input);
+    bool s = lisp_eval(env, content, r, 0);
+    free(content);
+    return s;
+}
+
+void lisp_eval_from_file(struct lenv* env, FILE* input) {
     struct lval* r = lval_alloc();
-    if (lisp_eval(env, content, r, 0)) {
+    if (leval_from_file(env, input, r)) {
         lval_println(r);
     } // Error already printed.
     lval_free(r);
-    free(content);
 }

@@ -102,7 +102,7 @@ bool lval_push(struct lval* v, const struct lval* cell);
  ** Caller is responsible for calling free on returned value. */
 struct lval* lval_pop(struct lval* v, size_t c);
 /** lval_drop pops cell c from v then discards it. */
-void lval_drop(struct lval* v, size_t c);
+bool lval_drop(struct lval* v, size_t c);
 /** lval_index returns the c-th child of a {s,q}expr in dest. */
 bool lval_index(const struct lval* v, size_t c, struct lval* dest);
 /** lval_len returns the length of an {s,q}expr. */

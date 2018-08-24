@@ -807,6 +807,96 @@ describe(lval, {
         });
     });
 
+    subdesc(str, {
+        it("lval_len works", {
+            const char* input = "init";
+            struct lval* a = lval_alloc();
+            defer(lval_free(a));
+            lval_mut_str(a, input);
+            assert(lval_len(a) == strlen(input));
+        });
+
+        it("lval_cons works", {
+            const char* input = "init";
+            const char* elem = "...";
+            const char* expected = "...init";
+            struct lval* a = lval_alloc();
+            defer(lval_free(a));
+            lval_mut_str(a, input);
+            struct lval* b = lval_alloc();
+            defer(lval_free(b));
+            lval_mut_str(b, elem);
+            /* Cons. */
+            assert(lval_cons(a, b));
+            /* Test. */
+            assert(lval_len(a) == strlen(expected));
+            assert(strcmp(expected, lval_as_str(a)) == 0);
+        });
+
+        it("lval_push works", {
+            const char* input = "init";
+            const char* elem = "...";
+            const char* expected = "init...";
+            struct lval* a = lval_alloc();
+            defer(lval_free(a));
+            lval_mut_str(a, input);
+            struct lval* b = lval_alloc();
+            defer(lval_free(b));
+            lval_mut_str(b, elem);
+            /* Cons. */
+            assert(lval_push(a, b));
+            /* Test. */
+            assert(lval_len(a) == strlen(expected));
+            assert(strcmp(expected, lval_as_str(a)) == 0);
+        });
+
+        it("lval_pop works", {
+            const char* input = "init";
+            const char* expected_a = "int";
+            const char* expected_b = "i";
+            struct lval* a = lval_alloc();
+            defer(lval_free(a));
+            lval_mut_str(a, input);
+            /* Cons. */
+            struct lval* b = NULL;
+            assert(b = lval_pop(a, 2));
+            defer(if (b) lval_free(b));
+            /* Test. */
+            assert(strcmp(expected_b, lval_as_str(b)) == 0);
+            assert(lval_len(a) == strlen(expected_a));
+            assert(strcmp(expected_a, lval_as_str(a)) == 0);
+        });
+
+        it("lval_drop works for the last element", {
+            const char* input = "i";
+            struct lval* a = lval_alloc();
+            defer(lval_free(a));
+            lval_mut_str(a, input);
+            /* Cons. */
+            lval_drop(a, 0);
+            /* Test. */
+            assert(lval_len(a) == 0);
+            assert(lval_as_str(a) == NULL);
+        });
+
+        it("lval_index works", {
+            const char* input = "init";
+            const char* expected_a = "init";
+            const char* expected_b = "i";
+            struct lval* a = lval_alloc();
+            defer(lval_free(a));
+            lval_mut_str(a, input);
+            struct lval* b = lval_alloc();
+            defer(lval_free(b));
+            /* Cons. */
+            assert(lval_index(a, 2, b));
+            /* Test. */
+            assert(strcmp(expected_b, lval_as_str(b)) == 0);
+            assert(lval_len(a) == strlen(expected_a));
+            assert(strcmp(expected_a, lval_as_str(a)) == 0);
+        });
+    });
+
     subdesc(print_to, {
         it("prints a num", {
             long input = 10;

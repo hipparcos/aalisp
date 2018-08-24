@@ -332,6 +332,19 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
     return true;
 }
 
+static void lval_copy_data(struct lval* v) {
+    struct ldata* data = ldata_alloc();
+    ldata_copy(data, v->data);
+    lval_disconnect(v, false);
+    lval_connect(v, data);
+}
+
+static void lval_ensure_data_ownership(struct lval* v) {
+    if (v->data->refc > 1) {
+        lval_copy_data(v);
+    }
+}
+
 bool lval_copy(struct lval* dest, const struct lval* src) {
     if (!lval_is_alive(src)) {
         return false;
@@ -558,14 +571,31 @@ bool lval_mut_qexpr(struct lval* v) {
     return true;
 }
 
-bool lval_cons(struct lval* v, const struct lval* cell) {
-    if (!lval_is_list(v) || !lval_is_alive(cell)) {
+bool lval_cons(struct lval* v, const struct lval* c) {
+    if (!lval_is_list(v) || !lval_is_alive(c)) {
         return false;
+    }
+    /* Duplicate if multiple lval reference this data. */
+    lval_ensure_data_ownership(v);
+    /* Special case for strings. */
+    if (v->data->type == LVAL_STR) {
+        if (c->data->type != LVAL_STR) {
+            return false;
+        }
+        size_t len_v = v->data->len;
+        size_t len_c = c->data->len;
+        char** payload = &v->data->payload.str;
+        *payload = realloc(*payload, len_v+len_c+1);
+        memmove((*payload)+len_c, *payload, len_v);
+        memcpy(*payload, c->data->payload.str, len_c);
+        v->data->len += len_c;
+        *((*payload)+v->data->len) = '\0';
+        return true;
     }
     /* Create a new handle. */
     struct lval* handle = lval_alloc_handle();
-    lval_connect(handle, cell->data);
-    handle->ast = cell->ast;
+    lval_connect(handle, c->data);
+    handle->ast = c->ast;
     /* Add it to the list. */
     v->data->payload.cell = realloc(v->data->payload.cell,
             sizeof(struct lval*) * (v->data->len+1));
@@ -576,14 +606,30 @@ bool lval_cons(struct lval* v, const struct lval* cell) {
     return true;
 }
 
-bool lval_push(struct lval* v, const struct lval* cell) {
-    if (!lval_is_list(v) || !lval_is_alive(cell)) {
+bool lval_push(struct lval* v, const struct lval* c) {
+    if (!lval_is_list(v) || !lval_is_alive(c)) {
         return false;
+    }
+    /* Duplicate if multiple lval reference this data. */
+    lval_ensure_data_ownership(v);
+    /* Special case for strings. */
+    if (v->data->type == LVAL_STR) {
+        if (c->data->type != LVAL_STR) {
+            return false;
+        }
+        size_t len_v = v->data->len;
+        size_t len_c = c->data->len;
+        char** payload = &v->data->payload.str;
+        *payload = realloc(*payload, len_v+len_c+1);
+        memcpy((*payload)+len_v, c->data->payload.str, len_c);
+        v->data->len += len_c;
+        *((*payload)+v->data->len) = '\0';
+        return true;
     }
     /* Create a new handle. */
     struct lval* handle = lval_alloc_handle();
-    lval_connect(handle, cell->data);
-    handle->ast = cell->ast;
+    lval_connect(handle, c->data);
+    handle->ast = c->ast;
     /* Add it to the list. */
     v->data->payload.cell = realloc(v->data->payload.cell,
             sizeof(struct lval*) * (v->data->len+1));
@@ -599,18 +645,54 @@ struct lval* lval_pop(struct lval* v, size_t c) {
     if (c >= v->data->len) {
         return NULL;
     }
+    /* Duplicate if multiple lval reference this data. */
+    lval_ensure_data_ownership(v);
+    /* Special case for strings. */
+    if (v->data->type == LVAL_STR) {
+        size_t len = v->data->len;
+        char** payload = &v->data->payload.str;
+        char popped = *(*payload + c);
+        memmove(*payload+c, *payload+c+1, len-1 - c);
+        if (len > 1) {
+            *payload = realloc(*payload, len-1);
+            *((*payload)+len-1) = '\0';
+        } else {
+            free(*payload);
+            *payload = NULL;
+        }
+        v->data->len--;
+        /* Create lval. */
+        char str[2] = {0};
+        str[0] = popped; str[1] = '\0';
+        struct lval* val = lval_alloc();
+        lval_mut_str(val, &str[0]);
+        return val;
+    }
+    /* Pop the cell and return it. */
     struct lval* val = v->data->payload.cell[c];
     memmove(&v->data->payload.cell[c], &v->data->payload.cell[c+1],
             sizeof(struct lval*) * (v->data->len-1 - c));
-    v->data->payload.cell = realloc(v->data->payload.cell,
-            sizeof(struct lval*) * (v->data->len-1));
+    if (v->data->len > 1) {
+        v->data->payload.cell = realloc(v->data->payload.cell,
+                sizeof(struct lval*) * (v->data->len-1));
+    } else {
+        free(v->data->payload.cell);
+        v->data->payload.cell = NULL;
+    }
     v->data->len--;
     return val;
 }
 
-void lval_drop(struct lval* v, size_t c) {
+bool lval_drop(struct lval* v, size_t c) {
+    if (!lval_is_list(v)) {
+        return false;
+    }
+    /* Duplicate if multiple lval reference this data. */
+    lval_ensure_data_ownership(v);
+    /* Drop. */
     struct lval* discarded = lval_pop(v, c);
     lval_free(discarded);
+    return discarded != NULL;
 }
 
 bool lval_index(const struct lval* v, size_t c, struct lval* dest) {
@@ -622,6 +704,16 @@ bool lval_index(const struct lval* v, size_t c, struct lval* dest) {
     }
     if (c >= v->data->len) {
         return false;
+    }
+    /* Special case for strings. */
+    if (v->data->type == LVAL_STR) {
+        char str[2];
+        str[0] = *(v->data->payload.str+c);
+        str[1] = '\0';
+        struct ldata* data = lval_disconnect(dest, true);
+        lval_connect(dest, data);
+        lval_mut_str(dest, &str[0]);
+        return true;
     }
     lval_disconnect(dest, false);
     struct lval* e = v->data->payload.cell[c];
@@ -785,7 +877,8 @@ int lval_sign(const struct lval* v) {
 }
 
 bool lval_is_list(const struct lval* v) {
-    return lval_type(v) == LVAL_SEXPR || lval_type(v) == LVAL_QEXPR;
+    enum ltype type = lval_type(v);
+    return type == LVAL_SEXPR || type == LVAL_QEXPR || type == LVAL_STR;
 }
 
 bool lval_are_equal(const struct lval* x, const struct lval* y) {

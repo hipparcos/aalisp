@@ -126,6 +126,25 @@ define_condition(must_be_of_type) {
     return 0;
 }
 
+define_condition(must_all_be_of_same_type) {
+    unused(fun); unused(param);
+    size_t len = lval_len(arg);
+    struct lval* child = lval_alloc();
+    lval_index(arg, 0, child);
+    enum ltype first_type = lval_type(child);
+    for (size_t c = 1; c < len; c++) {
+        lval_index(arg, c, child);
+        if (lval_type(child) != first_type) {
+            *err = lerr_throw(LERR_BAD_OPERAND,
+                    "must be a list of %s", lval_type_string(first_type));
+            lval_free(child);
+            return c+1;
+        }
+    }
+    lval_free(child);
+    return 0;
+}
+
 define_condition(must_have_min_len) {
     unused(fun);
     size_t min = *((size_t*)param);
@@ -178,15 +197,16 @@ define_condition(must_be_list_of) {
         return 1;
     }
     size_t len = lval_len(arg);
+    struct lval* child = lval_alloc();
     for (size_t c = 0; c < len; c++) {
-        struct lval* child = lval_alloc();
         lval_index(arg, c, child);
         if (lval_type(child) != type) {
             *err = lerr_throw(LERR_BAD_OPERAND,
                     "must be a list of %s", lval_type_string(type));
-            return 1;
+            lval_free(child);
+            return c+1;
         }
-        lval_free(child);
     }
+    lval_free(child);
     return 0;
 }

@@ -17,6 +17,7 @@ define_condition(must_be_unsigned_long);
 
 /* List conditions. */
 define_condition(must_be_of_type);
+define_condition(must_all_be_of_same_type);
 define_condition(must_have_min_len);
 define_condition(must_be_of_equal_len);
 define_condition(must_be_list_of);

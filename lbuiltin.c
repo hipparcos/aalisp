@@ -241,8 +241,7 @@ const struct lfunc lbuiltin_loop = {
 };
 
 static const struct lguard guards_list_op[] = {
-    {.argn= 1, .condition= use_condition(must_be_of_type),
-        .param= inline_ptr(enum ltype, LVAL_QEXPR)},
+    {.argn= 1, .condition= use_condition(must_be_a_list)}
 };
 const struct lfunc lbuiltin_head = {
     .symbol       = "head",
@@ -291,8 +290,7 @@ const struct lfunc lbuiltin_cons = {
 };
 
 static const struct lguard guards_len[] = {
-    {.argn= 1, .condition= use_condition(must_be_of_type),
-        .param= inline_ptr(enum ltype, LVAL_QEXPR)},
+    {.argn= 1, .condition= use_condition(must_be_a_list)}
 };
 const struct lfunc lbuiltin_len = {
     .symbol       = "len",
@@ -304,8 +302,8 @@ const struct lfunc lbuiltin_len = {
 };
 
 static const struct lguard guards_join[] = {
-    {.argn= 0, .condition= use_condition(must_be_of_type),
-        .param= inline_ptr(enum ltype, LVAL_QEXPR)},
+    {.argn= 0, .condition= use_condition(must_be_a_list)},
+    {.argn= -1, .condition= use_condition(must_all_be_of_same_type)},
 };
 const struct lfunc lbuiltin_join = {
     .symbol       = "join",

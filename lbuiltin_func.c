@@ -145,6 +145,14 @@ int lbi_func_len(struct lenv* env, const struct lval* args, struct lval* acc) {
 
 int lbi_func_join(struct lenv* env, const struct lval* args, struct lval* acc) {
     UNUSED(env);
+    /* Init with correct type (for strings). */
+    if (lval_len(acc) == 0) {
+        switch (lval_type(args)) {
+        case LVAL_STR:   lval_mut_str(acc, ""); break;
+        case LVAL_SEXPR: lval_mut_sexpr(acc);   break;
+        default:         lval_mut_qexpr(acc);   break;
+        }
+    }
     size_t len = lval_len(args);
     struct lval* child = lval_alloc();
     for (size_t c = 0; c < len; c++) {

@@ -327,7 +327,7 @@ int lbi_func_lambda(struct lenv* env, const struct lval* args, struct lval* acc)
     int min_argc = argc;
     int max_argc = argc;
     /* Special case when & is the argument right before last one. */
-    if (argc >= 3) {
+    if (argc >= 2) {
         struct lval* bef_last = lval_alloc();
         lval_index(formals, argc - 2, bef_last);
         if (strcmp("&", lval_as_sym(bef_last)) == 0) {

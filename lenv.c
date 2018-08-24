@@ -228,6 +228,11 @@ bool lenv_put(struct lenv* env,
     /* Insert into AVL. */
     bool insertion = false;
     struct env_payload* payload = env_payload_alloc(symbol, val);
+    /* Special case for function definition. */
+    if (lval_type(val) == LVAL_FUNC) {
+        struct lfunc* fun = lval_as_func(payload->val);
+        lfunc_set_symbol(fun, symbol);
+    }
     struct avl_node* node = avl_alloc(payload);
     env->tree = avl_insert(env->tree, node, env_payload_cmp, env_payload_free, &insertion);
     if (insertion) {

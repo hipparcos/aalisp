@@ -352,6 +352,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "error", &lbuiltin_error);
     /* Environment variable. */
     lenv_put_lval(env, ".", NULL);
+    lenv_put_lval(env, "nil", (struct lval*)&lnil);
     struct lval* boolean = lval_alloc();
     lval_mut_bool(boolean, true);
     lenv_put_lval(env, "true", boolean);

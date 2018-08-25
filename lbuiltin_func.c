@@ -116,6 +116,28 @@ int lbi_func_last(struct lenv* env, const struct lval* args, struct lval* acc) {
     return 0;
 }
 
+int lbi_func_index(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1: index. */
+    struct lval* idx = lval_alloc();
+    lval_index(args, 0, idx);
+    /* Retrieve arg 2: list. */
+    struct lval* list = lval_alloc();
+    lval_index(args, 1, list);
+    /* Last. */
+    long i = 0;
+    lval_as_num(idx, &i);
+    if (i < 0) {
+        i *= -1;
+        i = lval_len(list) - i;
+    }
+    lval_index(list, i, acc);
+    /* Cleanup. */
+    lval_free(idx);
+    lval_free(list);
+    return 0;
+}
+
 int lbi_func_cons(struct lenv* env, const struct lval* args, struct lval* acc) {
     UNUSED(env);
     /* Retrieve arg 1. */

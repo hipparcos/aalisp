@@ -276,6 +276,20 @@ const struct lfunc lbuiltin_last = {
     .func         = lbi_func_last,
 };
 
+static const struct lguard guards_index[] = {
+    {.argn= 1, .condition= use_condition(must_be_of_type),
+        .param= inline_ptr(enum ltype, LVAL_NUM)},
+    {.argn= 2, .condition= use_condition(must_be_a_list)}
+};
+const struct lfunc lbuiltin_index = {
+    .symbol       = "index",
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = &guards_index[0],
+    .guardc       = LENGTH(guards_index),
+    .func         = lbi_func_index,
+};
+
 static const struct lguard guards_cons[] = {
     {.argn= 2, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_QEXPR)},

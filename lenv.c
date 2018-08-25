@@ -328,6 +328,8 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "tail", &lbuiltin_tail);
     lenv_put_builtin(env, "init", &lbuiltin_init);
     lenv_put_builtin(env, "last", &lbuiltin_last);
+    lenv_put_builtin(env, "index", &lbuiltin_index);
+    lenv_put_builtin(env, "!!", &lbuiltin_index);
     lenv_put_builtin(env, "cons", &lbuiltin_cons);
     lenv_put_builtin(env, "len",  &lbuiltin_len);
     lenv_put_builtin(env, "join", &lbuiltin_join);

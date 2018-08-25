@@ -164,6 +164,46 @@ int lbi_func_elem(struct lenv* env, const struct lval* args, struct lval* acc) {
     return 0;
 }
 
+int lbi_func_take(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1: index. */
+    struct lval* idx = lval_alloc();
+    lval_index(args, 0, idx);
+    /* Retrieve arg 2: list. */
+    struct lval* list = lval_alloc();
+    lval_index(args, 1, list);
+    enum ltype type = lval_type(list);
+    /* Take. */
+    switch (type) {
+    case LVAL_STR:   lval_mut_str(acc, ""); break;
+    case LVAL_SEXPR: lval_mut_sexpr(acc);   break;
+    default:         lval_mut_qexpr(acc);   break;
+    }
+    long i = 0;
+    bool from_last = false;
+    lval_as_num(idx, &i);
+    if (i < 0) {
+        i *= -1;
+        from_last = true;
+    }
+    size_t len = lval_len(list);
+    size_t len_tak = (size_t) i;
+    if (len_tak > len) {
+        len_tak = len;
+    }
+    struct lval* child = lval_alloc();
+    size_t start = (from_last) ? len - len_tak : 0;
+    size_t end   = (from_last) ? len : len_tak;
+    for (size_t e = start; e < end; e++) {
+        lval_index(list, e, child);
+        lval_push(acc, child);
+    }
+    lval_free(child);
+    /* Cleanup. */
+    lval_free(idx);
+    lval_free(list);
+    return 0;
+}
 
 int lbi_func_drop(struct lenv* env, const struct lval* args, struct lval* acc) {
     UNUSED(env);

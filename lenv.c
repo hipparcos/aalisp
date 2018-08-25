@@ -331,6 +331,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "index", &lbuiltin_index);
     lenv_put_builtin(env, "!!", &lbuiltin_index);
     lenv_put_builtin(env, "elem", &lbuiltin_elem);
+    lenv_put_builtin(env, "take", &lbuiltin_take);
     lenv_put_builtin(env, "drop", &lbuiltin_drop);
     lenv_put_builtin(env, "cons", &lbuiltin_cons);
     lenv_put_builtin(env, "len",  &lbuiltin_len);

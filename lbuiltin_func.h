@@ -21,6 +21,8 @@ int lbi_func_last(struct lenv* env, const struct lval* args, struct lval* acc);
 int lbi_func_index(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_elem tells if an element is present in the list. */
 int lbi_func_elem(struct lenv* env, const struct lval* args, struct lval* acc);
+/** lbi_func_take creates a list with the first/last nth elements of a list. */
+int lbi_func_take(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_drop drops the first/last ith element of a list. */
 int lbi_func_drop(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_cons adds an element x at the beginning of acc. */

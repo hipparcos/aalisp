@@ -111,6 +111,79 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_take, {
+        test_pass(&lbuiltin_take, "happy path", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            push_num(args, 2);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 2);
+        });
+        test_pass(&lbuiltin_take, "len take < 0; take from last", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            push_num(args, -2);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_qexpr(expected);
+            push_num(expected, 2);
+            push_num(expected, 3);
+        });
+        test_pass(&lbuiltin_take, "take > len", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            push_num(args, 4);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 2);
+            push_num(expected, 3);
+        });
+        test_pass(&lbuiltin_take, "take < 0 && abs(take) > len", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            push_num(args, -4);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 2);
+            push_num(expected, 3);
+        });
+        test_pass(&lbuiltin_take, "take 0", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            push_num(args, 0);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_qexpr(expected);
+        });
+        test_pass(&lbuiltin_take, "take for strings", {
+            push_num(args, 2);
+            push_str(args, "abcd");
+            lval_mut_str(expected, "ab");
+        });
+    });
+
     subdesc(func_elem, {
         test_pass(&lbuiltin_elem, "elem in list", {
             struct lval* qexpr = lval_alloc();

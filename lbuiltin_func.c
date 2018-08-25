@@ -138,6 +138,33 @@ int lbi_func_index(struct lenv* env, const struct lval* args, struct lval* acc) 
     return 0;
 }
 
+int lbi_func_elem(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1: elem. */
+    struct lval* elem = lval_alloc();
+    lval_index(args, 0, elem);
+    /* Retrieve arg 2: list. */
+    struct lval* list = lval_alloc();
+    lval_index(args, 1, list);
+    /* Elem. */
+    size_t len = lval_len(list);
+    struct lval* child = lval_alloc();
+    lval_mut_bool(acc, false);
+    for (size_t e = 0; e < len; e++) {
+        lval_index(list, e, child);
+        if (lval_are_equal(elem, child)) {
+            lval_mut_bool(acc, true);
+            break;
+        }
+    }
+    lval_free(child);
+    /* Cleanup. */
+    lval_free(elem);
+    lval_free(list);
+    return 0;
+}
+
+
 int lbi_func_drop(struct lenv* env, const struct lval* args, struct lval* acc) {
     UNUSED(env);
     /* Retrieve arg 1: index. */

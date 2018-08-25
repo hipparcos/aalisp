@@ -43,6 +43,14 @@
         lval_free(x); \
     } while (0);
 
+#define push_str(args, str) \
+    do { \
+        struct lval* x = lval_alloc(); \
+        lval_mut_str(x, str); \
+        lval_push(args, x); \
+        lval_free(x); \
+    } while (0);
+
 #define push_func(args, fun) \
     do { \
         struct lval* x = lval_alloc(); \

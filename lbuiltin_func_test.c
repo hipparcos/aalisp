@@ -111,6 +111,41 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_elem, {
+        test_pass(&lbuiltin_elem, "elem in list", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            push_num(args, 2);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_bool(expected, true);
+        });
+        test_pass(&lbuiltin_elem, "elem not in list", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            push_num(args, 4);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_bool(expected, false);
+        });
+        test_pass(&lbuiltin_elem, "elem in string", {
+            push_str(args, "d");
+            push_str(args, "abcd");
+            lval_mut_bool(expected, true);
+        });
+        test_pass(&lbuiltin_elem, "elem not in string", {
+            push_str(args, "x");
+            push_str(args, "abcd");
+            lval_mut_bool(expected, false);
+        });
+    });
+
     subdesc(func_drop, {
         test_pass(&lbuiltin_drop, "happy path", {
             struct lval* qexpr = lval_alloc();

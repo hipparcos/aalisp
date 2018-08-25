@@ -107,7 +107,7 @@ Environment operations:
 ## TODO
 
 - [x] Implement strings (chapter 14);
-- [ ] Implement elem, take, filter, fold, reverse;
+- [ ] Implement take, filter, fold, reverse;
 - [ ] Delete unused builtins;
 - [ ] Define aliases in stdlib;
 - [ ] Implement standard library (chapter 15);

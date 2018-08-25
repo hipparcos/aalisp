@@ -124,7 +124,7 @@ int lbi_func_index(struct lenv* env, const struct lval* args, struct lval* acc) 
     /* Retrieve arg 2: list. */
     struct lval* list = lval_alloc();
     lval_index(args, 1, list);
-    /* Last. */
+    /* Index. */
     long i = 0;
     lval_as_num(idx, &i);
     if (i < 0) {
@@ -132,6 +132,33 @@ int lbi_func_index(struct lenv* env, const struct lval* args, struct lval* acc) 
         i = lval_len(list) - i;
     }
     lval_index(list, i, acc);
+    /* Cleanup. */
+    lval_free(idx);
+    lval_free(list);
+    return 0;
+}
+
+int lbi_func_drop(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1: index. */
+    struct lval* idx = lval_alloc();
+    lval_index(args, 0, idx);
+    /* Retrieve arg 2: list. */
+    struct lval* list = lval_alloc();
+    lval_index(args, 1, list);
+    /* Drop. */
+    long i = 0;
+    bool from_last = false;
+    lval_as_num(idx, &i);
+    if (i < 0) {
+        i *= -1;
+        from_last = true;
+    }
+    size_t len = lval_len(list);
+    while (i-- > 0 && len--) {
+        lval_drop(list, (from_last) ? len : 0);
+    }
+    lval_dup(acc, list);
     /* Cleanup. */
     lval_free(idx);
     lval_free(list);

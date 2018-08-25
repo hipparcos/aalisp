@@ -35,6 +35,7 @@ extern const struct lfunc lbuiltin_tail;
 extern const struct lfunc lbuiltin_init;
 extern const struct lfunc lbuiltin_last;
 extern const struct lfunc lbuiltin_index;
+extern const struct lfunc lbuiltin_drop;
 extern const struct lfunc lbuiltin_cons;
 extern const struct lfunc lbuiltin_len;
 extern const struct lfunc lbuiltin_join;

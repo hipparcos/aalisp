@@ -289,6 +289,14 @@ const struct lfunc lbuiltin_index = {
     .guardc       = LENGTH(guards_index),
     .func         = lbi_func_index,
 };
+const struct lfunc lbuiltin_drop = {
+    .symbol       = "drop",
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = &guards_index[0],
+    .guardc       = LENGTH(guards_index),
+    .func         = lbi_func_drop,
+};
 
 static const struct lguard guards_cons[] = {
     {.argn= 2, .condition= use_condition(must_be_of_type),

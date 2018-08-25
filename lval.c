@@ -1048,7 +1048,9 @@ void lval_print_to(const struct lval* v, FILE* out) {
         break;
     case LVAL_STR:
         fputc('"', out);
-        fputs(v->data->payload.str, out);
+        if (v->data->payload.str) {
+            fputs(v->data->payload.str, out);
+        }
         fputc('"', out);
         break;
     case LVAL_QEXPR:

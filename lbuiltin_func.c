@@ -172,33 +172,21 @@ int lbi_func_take(struct lenv* env, const struct lval* args, struct lval* acc) {
     /* Retrieve arg 2: list. */
     struct lval* list = lval_alloc();
     lval_index(args, 1, list);
-    enum ltype type = lval_type(list);
     /* Take. */
-    switch (type) {
-    case LVAL_STR:   lval_mut_str(acc, ""); break;
-    case LVAL_SEXPR: lval_mut_sexpr(acc);   break;
-    default:         lval_mut_qexpr(acc);   break;
-    }
     long i = 0;
-    bool from_last = false;
     lval_as_num(idx, &i);
+    size_t first = 0;
+    size_t last = 0;
+    size_t len = lval_len(list);
     if (i < 0) {
         i *= -1;
-        from_last = true;
+        first = ((size_t)i > len) ? 0 : len - i;
+        last = len;
+    } else {
+        first = 0;
+        last = i;
     }
-    size_t len = lval_len(list);
-    size_t len_tak = (size_t) i;
-    if (len_tak > len) {
-        len_tak = len;
-    }
-    struct lval* child = lval_alloc();
-    size_t start = (from_last) ? len - len_tak : 0;
-    size_t end   = (from_last) ? len : len_tak;
-    for (size_t e = start; e < end; e++) {
-        lval_index(list, e, child);
-        lval_push(acc, child);
-    }
-    lval_free(child);
+    lval_copy_range(acc, list, first, last);
     /* Cleanup. */
     lval_free(idx);
     lval_free(list);

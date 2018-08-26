@@ -232,6 +232,32 @@ describe(builtin, {
             lval_mut_qexpr(expected);
             push_num(expected, 3);
         });
+        test_pass(&lbuiltin_drop, "drop from last element for index < 0", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            push_num(args, -2);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+        });
+        test_pass(&lbuiltin_drop, "drop 0", {
+            struct lval* qexpr = lval_alloc();
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            push_num(args, 0);
+            lval_push(args, qexpr);
+            lval_free(qexpr);
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 2);
+            push_num(expected, 3);
+        });
         test_pass(&lbuiltin_drop, "got nil for index > len", {
             struct lval* qexpr = lval_alloc();
             lval_mut_qexpr(qexpr);
@@ -243,17 +269,16 @@ describe(builtin, {
             lval_free(qexpr);
             lval_mut_qexpr(expected);
         });
-        test_pass(&lbuiltin_drop, "indexed from last element for index < 0", {
+        test_pass(&lbuiltin_drop, "got nil for -index > len", {
             struct lval* qexpr = lval_alloc();
             lval_mut_qexpr(qexpr);
             push_num(qexpr, 1);
             push_num(qexpr, 2);
             push_num(qexpr, 3);
-            push_num(args, -2);
+            push_num(args, -4);
             lval_push(args, qexpr);
             lval_free(qexpr);
             lval_mut_qexpr(expected);
-            push_num(expected, 1);
         });
     });
 

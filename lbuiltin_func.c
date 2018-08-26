@@ -203,17 +203,19 @@ int lbi_func_drop(struct lenv* env, const struct lval* args, struct lval* acc) {
     lval_index(args, 1, list);
     /* Drop. */
     long i = 0;
-    bool from_last = false;
     lval_as_num(idx, &i);
+    size_t first = 0;
+    size_t last = 0;
+    size_t len = lval_len(list);
     if (i < 0) {
         i *= -1;
-        from_last = true;
+        first = 0;
+        last = ((size_t)i > len) ? 0 : len - i;
+    } else {
+        first = i;
+        last = len;
     }
-    size_t len = lval_len(list);
-    while (i-- > 0 && len--) {
-        lval_drop(list, (from_last) ? len : 0);
-    }
-    lval_dup(acc, list);
+    lval_copy_range(acc, list, first, last);
     /* Cleanup. */
     lval_free(idx);
     lval_free(list);

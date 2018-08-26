@@ -105,6 +105,8 @@ struct lval* lval_pop(struct lval* v, size_t c);
 bool lval_drop(struct lval* v, size_t c);
 /** lval_index returns the c-th child of a {s,q}expr in dest. */
 bool lval_index(const struct lval* v, size_t c, struct lval* dest);
+/** lval_copy_range copies a range from src to dest. */
+bool lval_copy_range(struct lval* dest, const struct lval* src, size_t first, size_t last);
 /** lval_len returns the length of an {s,q}expr. */
 size_t lval_len(const struct lval* v);
 

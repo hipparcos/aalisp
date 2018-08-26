@@ -722,6 +722,41 @@ bool lval_index(const struct lval* v, size_t c, struct lval* dest) {
     return true;
 }
 
+bool lval_copy_range(struct lval* dest, const struct lval* src, size_t first, size_t last) {
+    if (!lval_is_list(src) || !lval_is_alive(dest)) {
+        return false;
+    }
+    enum ltype type = lval_type(src);
+    switch (type) {
+        case LVAL_STR:   lval_mut_str(dest, ""); break;
+        case LVAL_SEXPR: lval_mut_sexpr(dest);   break;
+        default:         lval_mut_qexpr(dest);   break;
+    }
+    size_t len_src = lval_len(src);
+    if (len_src == 0) {
+        return true;
+    }
+    if (first > len_src || last < first) {
+        return true;
+    }
+    if (last > len_src) {
+        last = len_src;
+    }
+    size_t len_dest = last - first;
+    dest->data->len = len_dest;
+    if (type == LVAL_STR) {
+        dest->data->payload.str = calloc(len_dest+1, 1);
+        strncpy(dest->data->payload.str, src->data->payload.str+first, len_dest);
+        return true;
+    }
+    dest->data->payload.cell = malloc(len_dest * sizeof(struct lval*));
+    for (size_t c = 0; c < len_dest; c++) {
+        dest->data->payload.cell[c] = lval_alloc();
+        lval_dup(dest->data->payload.cell[c], src->data->payload.cell[first+c]);
+    }
+    return true;
+}
+
 size_t lval_len(const struct lval* v) {
     if (!lval_is_list(v)) {
         return 0;

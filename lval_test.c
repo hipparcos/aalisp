@@ -7,6 +7,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "lbuiltin_test.h"
+
 #include "vendor/mini-gmp/mini-gmp.h"
 #include "vendor/snow/snow/snow.h"
 
@@ -894,6 +896,68 @@ describe(lval, {
             assert(strcmp(expected_b, lval_as_str(b)) == 0);
             assert(lval_len(a) == strlen(expected_a));
             assert(strcmp(expected_a, lval_as_str(a)) == 0);
+        });
+    });
+
+    subdesc(copy_range, {
+        it("passes for Q-Expressing", {
+            struct lval* a = lval_alloc();
+            defer(lval_free(a));
+            assert(lval_mut_qexpr(a));
+            push_num(a, 1);
+            push_num(a, 2);
+            push_num(a, 3);
+            push_num(a, 4);
+            struct lval* b = lval_alloc();
+            defer(lval_free(b));
+            /* Copy. */
+            assert(lval_copy_range(b, a, 1, 3));
+            /* Test. */
+            struct lval* expected = lval_alloc();
+            defer(lval_free(expected));
+            lval_mut_qexpr(expected);
+            push_num(expected, 2);
+            push_num(expected, 3);
+            assert(lval_are_equal(expected, b));
+        });
+        it("passes for strings", {
+            const char* input = "alongstring";
+            const char* expected = "long";
+            struct lval* a = lval_alloc();
+            defer(lval_free(a));
+            lval_mut_str(a, input);
+            struct lval* b = lval_alloc();
+            defer(lval_free(b));
+            /* Copy. */
+            assert(lval_copy_range(b, a, 1, 5));
+            /* Test. */
+            assert(strcmp(expected, lval_as_str(b)) == 0);
+        });
+        it("passes for strings; first > len", {
+            const char* input = "alongstring";
+            const char* expected = "";
+            struct lval* a = lval_alloc();
+            defer(lval_free(a));
+            lval_mut_str(a, input);
+            struct lval* b = lval_alloc();
+            defer(lval_free(b));
+            /* Copy. */
+            assert(lval_copy_range(b, a, 100, 5));
+            /* Test. */
+            assert(strcmp(expected, lval_as_str(b)) == 0);
+        });
+        it("passes for strings; last > len", {
+            const char* input = "alongstring";
+            const char* expected = input;
+            struct lval* a = lval_alloc();
+            defer(lval_free(a));
+            lval_mut_str(a, input);
+            struct lval* b = lval_alloc();
+            defer(lval_free(b));
+            /* Copy. */
+            assert(lval_copy_range(b, a, 0, strlen(input) + 100));
+            /* Test. */
+            assert(strcmp(expected, lval_as_str(b)) == 0);
         });
     });
 

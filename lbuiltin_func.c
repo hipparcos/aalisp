@@ -305,14 +305,13 @@ int lbi_func_map(struct lenv* env, const struct lval* args, struct lval* acc) {
     struct lval* func = lval_alloc();
     lval_index(args, 0, func);
     const struct lfunc* func_ptr = lval_as_func(func);
-    lval_free(func);
     /* Retrieve arg 2: list. */
     struct lval* list = lval_alloc();
     lval_index(args, 1, list);
-    if (lval_type(list) == LVAL_SEXPR) {
-        lval_mut_sexpr(acc);
-    } else {
-        lval_mut_qexpr(acc);
+    switch (lval_type(list)) {
+        case LVAL_STR:   lval_mut_str(acc, ""); break;
+        case LVAL_SEXPR: lval_mut_sexpr(acc);   break;
+        default:         lval_mut_qexpr(acc);   break;
     }
     /* Map. */
     int s = 0;
@@ -331,6 +330,7 @@ int lbi_func_map(struct lenv* env, const struct lval* args, struct lval* acc) {
         s = lfunc_exec(func_ptr, env, wrap, res);
         if (s != 0) {
             lval_dup(acc, res);
+            s = e+1;
             break;
         }
         /* Drop last argument. */
@@ -341,6 +341,55 @@ int lbi_func_map(struct lenv* env, const struct lval* args, struct lval* acc) {
     lval_free(res);
     lval_free(wrap);
     /* Cleanup. */
+    lval_free(func);
+    lval_free(list);
+    return s;
+}
+
+int lbi_func_filter(struct lenv* env, const struct lval* args, struct lval* acc) {
+    /* Retrieve arg 1: function. */
+    struct lval* func = lval_alloc();
+    lval_index(args, 0, func);
+    const struct lfunc* func_ptr = lval_as_func(func);
+    /* Retrieve arg 2: list. */
+    struct lval* list = lval_alloc();
+    lval_index(args, 1, list);
+    switch (lval_type(list)) {
+        case LVAL_STR:   lval_mut_str(acc, ""); break;
+        case LVAL_SEXPR: lval_mut_sexpr(acc);   break;
+        default:         lval_mut_qexpr(acc);   break;
+    }
+    /* Filter. */
+    int s = 0;
+    size_t len = lval_len(list);
+    size_t len_bound = lval_len(func_ptr->args);
+    struct lval* elem = lval_alloc();
+    struct lval* res = lval_alloc();
+    struct lval* wrap = lval_alloc();
+    for (size_t e = 0; e < len; e++) {
+        lval_index(list, e, elem);
+        lval_clear(res);
+        lval_clear(wrap);
+        lval_mut_qexpr(wrap);
+        lval_push(wrap, elem);
+        /* Elem is added to func_ptr->args. */
+        s = lfunc_exec(func_ptr, env, wrap, res);
+        if (s != 0) {
+            lval_dup(acc, res);
+            s = e+1;
+            break;
+        }
+        /* Drop last argument. */
+        lval_drop(func_ptr->args, len_bound);
+        if (lval_as_bool(res)) {
+            lval_push(acc, elem);
+        }
+    }
+    lval_free(elem);
+    lval_free(res);
+    lval_free(wrap);
+    /* Cleanup. */
+    lval_free(func);
     lval_free(list);
     return s;
 }

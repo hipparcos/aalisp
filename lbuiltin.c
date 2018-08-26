@@ -397,6 +397,14 @@ const struct lfunc lbuiltin_map = {
     .guardc       = LENGTH(guards_map),
     .func         = lbi_func_map,
 };
+const struct lfunc lbuiltin_filter = {
+    .symbol       = "filter",
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = &guards_map[0],
+    .guardc       = LENGTH(guards_map),
+    .func         = lbi_func_filter,
+};
 
 static const struct lguard guards_def[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),

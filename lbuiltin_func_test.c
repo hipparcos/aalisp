@@ -422,6 +422,37 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_reverse, {
+        test_pass(&lbuiltin_reverse, "happy path Q-Expression", {
+            /* List. */
+            struct lval* qexpr = lval_alloc();
+            defer(lval_free(qexpr));
+            lval_mut_qexpr(qexpr);
+            push_num(qexpr, 1);
+            push_num(qexpr, 2);
+            push_num(qexpr, 3);
+            push_num(qexpr, 4);
+            /* Args. */
+            lval_push(args, qexpr);
+            /* Expected. */
+            lval_mut_qexpr(expected);
+            push_num(expected, 4);
+            push_num(expected, 3);
+            push_num(expected, 2);
+            push_num(expected, 1);
+        });
+        test_pass(&lbuiltin_reverse, "happy path string", {
+            /* List. */
+            struct lval* str = lval_alloc();
+            defer(lval_free(str));
+            lval_mut_str(str, "input");
+            /* Args. */
+            lval_push(args, str);
+            /* Expected. */
+            lval_mut_str(expected, "tupni");
+        });
+    });
+
     subdesc(func_eval, {
         test_pass(&lbuiltin_eval, "happy path", {
             struct lval* sexpr = lval_alloc();

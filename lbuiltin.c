@@ -420,6 +420,18 @@ const struct lfunc lbuiltin_fold = {
     .func         = lbi_func_fold,
 };
 
+static const struct lguard guards_reverse[] = {
+    {.argn= 1, .condition= use_condition(must_be_a_list)}
+};
+const struct lfunc lbuiltin_reverse = {
+    .symbol       = "reverse",
+    .min_argc     =  1,
+    .max_argc     =  1,
+    .guards       = &guards_reverse[0],
+    .guardc       = LENGTH(guards_reverse),
+    .func         = lbi_func_reverse,
+};
+
 static const struct lguard guards_def[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_QEXPR)},

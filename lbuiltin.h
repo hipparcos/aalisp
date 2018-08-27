@@ -46,6 +46,7 @@ extern const struct lfunc lbuiltin_eval;
 extern const struct lfunc lbuiltin_map;
 extern const struct lfunc lbuiltin_filter;
 extern const struct lfunc lbuiltin_fold;
+extern const struct lfunc lbuiltin_reverse;
 
 /* Environment manipulation functions. */
 extern const struct lfunc lbuiltin_def;

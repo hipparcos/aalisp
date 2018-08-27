@@ -1,4 +1,5 @@
 **.[od]
+vgcore.*
 /build/
 tags
 version.h

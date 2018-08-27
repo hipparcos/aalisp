@@ -330,14 +330,17 @@ void llex_free(struct ltok* tokens) {
         return;
     }
     struct ltok *curr, *next = tokens;
-    while ((curr = next) && curr->type != LTOK_EOF) {
+    while ((curr = next)) {
         next = curr->next;
         if (curr->content) {
             free(curr->content);
         }
+        if (curr->type == LTOK_EOF) {
+            free(curr);
+            break;
+        }
         free(curr);
     }
-    free(curr); // free LTOK_EOS.
 }
 
 bool llex_are_equal(struct ltok* left, struct ltok* right) {

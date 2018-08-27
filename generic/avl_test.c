@@ -54,7 +54,6 @@ describe(avl, {
 
 #define init_avl(tree) \
     do { \
-        tree = avl_alloc(NULL); \
         int list[] = {3, 72, 54, 42, 90, 1, 23, 99, 18, 65}; \
         defer(if (tree) avl_free(tree, payload_free)); \
         for (size_t i = 0; i < LENGTH(list); i++) { \

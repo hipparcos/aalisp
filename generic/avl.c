@@ -14,6 +14,9 @@ struct avl_node {
 static struct avl_node avl_nil = {0};
 
 struct avl_node* avl_alloc(void* payload) {
+    if (!payload) {
+        return NULL;
+    }
     struct avl_node* node = calloc(1, sizeof(struct avl_node));
     node->left = &avl_nil;
     node->right = &avl_nil;
@@ -22,7 +25,7 @@ struct avl_node* avl_alloc(void* payload) {
 };
 
 bool avl_is_nil(const struct avl_node* tree) {
-    return tree == NULL || tree->payload == NULL || tree == &avl_nil;
+    return tree == NULL || tree == &avl_nil;
 }
 
 void avl_free(struct avl_node* tree, avl_pl_destructor destructor) {
@@ -39,7 +42,7 @@ struct avl_node* avl_duplicate(const struct avl_node* src, avl_pl_duplicator cop
     if (avl_is_nil(src)) {
         return &avl_nil;
     }
-    struct avl_node* dest = avl_alloc(NULL);
+    struct avl_node* dest = avl_alloc(src->payload);
     dest->left = avl_duplicate(src->left, copy);
     dest->right = avl_duplicate(src->right, copy);
     dest->payload = copy(src->payload);
@@ -123,8 +126,8 @@ struct avl_node* avl_insert(struct avl_node* tree, struct avl_node* node,
     if (s == 0) {
         node->left = tree->left;
         node->right = tree->right;
-        tree->left = NULL;
-        tree->right = NULL;
+        tree->left = &avl_nil;
+        tree->right = &avl_nil;
         avl_free(tree, destructor);
         return node;
     }

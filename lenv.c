@@ -117,6 +117,7 @@ bool lenv_are_equal(const struct lenv* left, const struct lenv* right) {
             lval_mut_sym(sym, syms[k]);
             if (!lenv_lookup(right, sym, NULL)) {
                 lval_free(sym);
+                free(syms);
                 return false;
             }
         }

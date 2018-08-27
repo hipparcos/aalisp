@@ -746,6 +746,9 @@ bool lval_copy_range(struct lval* dest, const struct lval* src, size_t first, si
     size_t len_dest = last - first;
     dest->data->len = len_dest;
     if (type == LVAL_STR) {
+        if (dest->data->payload.str) {
+            free(dest->data->payload.str);
+        }
         dest->data->payload.str = calloc(len_dest+1, 1);
         strncpy(dest->data->payload.str, src->data->payload.str+first, len_dest);
         return true;

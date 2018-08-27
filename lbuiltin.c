@@ -520,6 +520,15 @@ const struct lfunc lbuiltin_print = {
     .func         = lbi_func_print,
 };
 
+const struct lfunc lbuiltin_debug_env = {
+    .symbol       = "debug-env",
+    .min_argc     =  0,
+    .max_argc     =  0,
+    .guards       = NULL,
+    .guardc       = 0,
+    .func         = lbi_func_debug_env,
+};
+
 static const struct lguard guards_load[] = {
     {.argn= 0, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_STR)},

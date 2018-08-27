@@ -62,6 +62,9 @@ extern const struct lfunc lbuiltin_partial;
 /* IO functions. */
 extern const struct lfunc lbuiltin_print;
 
+/* Debug functions. */
+extern const struct lfunc lbuiltin_debug_env;
+
 /* Error functions. */
 extern const struct lfunc lbuiltin_error;
 

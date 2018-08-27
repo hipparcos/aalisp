@@ -63,6 +63,9 @@ int lbi_func_partial(struct lenv* env, const struct lval* args, struct lval* acc
 /** lbi_func_print prints all its arguments. */
 int lbi_func_print(struct lenv* env, const struct lval* args, struct lval* acc);
 
+/** lbi_func_debug_env returns the current environment as a Q-Expression. */
+int lbi_func_debug_env(struct lenv* env, const struct lval* args, struct lval* acc);
+
 /** lbi_func_error throws an error from lisp. */
 int lbi_func_error(struct lenv* env, const struct lval* args, struct lval* acc);
 

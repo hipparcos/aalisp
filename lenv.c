@@ -135,6 +135,32 @@ size_t lenv_len(const struct lenv* env) {
     return len;
 }
 
+bool lenv_as_list(const struct lenv* env, struct lval* dest) {
+    if (!dest) {
+        return false;
+    }
+    lval_mut_qexpr(dest);
+    /* Given env. */
+    size_t len = 0;
+    const char** syms = avl_keys(env->tree, env_payload_key, &len);
+    if (syms) {
+        struct lval* key = lval_alloc();
+        for (size_t k = 0; k < len; k++) {
+            lval_mut_sym(key, syms[k]);
+            lval_push(dest, key);
+        }
+        lval_free(key);
+    }
+    /* Parent env. */
+    if (env->par) {
+        struct lval* par_keys = lval_alloc();
+        lenv_as_list(env->par, par_keys);
+        lval_push(dest, par_keys);
+        lval_free(par_keys);
+    }
+    return true;
+}
+
 #define indent(indent, width, out) \
     do { \
         size_t spaces = indent * 2; \
@@ -359,6 +385,8 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "::", &lbuiltin_partial);
     /* IO functions. */
     lenv_put_builtin(env, "print", &lbuiltin_print);
+    /* Debug functions. */
+    lenv_put_builtin(env, "debug-env", &lbuiltin_debug_env);
     /* Error functions. */
     lenv_put_builtin(env, "error", &lbuiltin_error);
     /* Environment variable. */

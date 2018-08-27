@@ -656,3 +656,8 @@ int lbi_func_error(struct lenv* env, const struct lval* args, struct lval* acc) 
     lval_free(errv);
     return 1;
 }
+
+int lbi_func_debug_env(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(args);
+    return lenv_as_list(env, acc) == 0;
+}

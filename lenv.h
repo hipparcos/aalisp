@@ -38,6 +38,8 @@ bool lenv_def(struct lenv* env,
 /** lenv_default fills env with default builtin functions. */
 bool lenv_default(struct lenv* env);
 
+/** lenv_as_list returns the current environment as a Q-Expression. */
+bool lenv_as_list(const struct lenv* env, struct lval* dest);
 /** lenv_print_to prints the list of defined symbols to the out file. */
 void lenv_print_to(const struct lenv* env, FILE* out);
 /** lenv_print prints th elist of defined symbols to stdout. */

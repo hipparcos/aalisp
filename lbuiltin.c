@@ -542,6 +542,19 @@ const struct lfunc lbuiltin_debug_fun = {
     .func         = lbi_func_debug_fun,
 };
 
+static const struct lguard guards_debug_val[] = {
+    {.argn= 1, .condition= use_condition(must_be_of_type),
+        .param= inline_ptr(enum ltype, LVAL_QEXPR)},
+};
+const struct lfunc lbuiltin_debug_val = {
+    .symbol       = "debug-val",
+    .min_argc     =  1,
+    .max_argc     =  1,
+    .guards       = &guards_debug_val[0],
+    .guardc       = LENGTH(guards_debug_val),
+    .func         = lbi_func_debug_val,
+};
+
 static const struct lguard guards_load[] = {
     {.argn= 0, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_STR)},

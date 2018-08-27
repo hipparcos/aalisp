@@ -687,3 +687,49 @@ int lbi_func_debug_fun(struct lenv* env, const struct lval* args, struct lval* a
     lval_free(func);
     return 0;
 }
+
+int lbi_func_debug_val(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1: list of lval. */
+    struct lval* list = lval_alloc();
+    lval_index(args, 0, list);
+    /* Debug. */
+    lval_mut_qexpr(acc);
+    size_t len = lval_len(list);
+    struct lval* sym = lval_alloc();
+    struct lval* result = lval_alloc();
+    struct lval* type_sym = lval_alloc();
+    struct lval* type_result = lval_alloc();
+    struct lval* wrap = lval_alloc();
+    for (size_t s = 0; s < len; s++) {
+        lval_index(list, s, sym);
+        lval_clear(result);
+        lval_clear(wrap);
+        lval_mut_qexpr(wrap);
+        /* Eval. */
+        leval(env, sym, result);
+        /* Type as string. */
+        lval_mut_str(type_sym, lval_type_string(lval_type(sym)));
+        lval_mut_str(type_result, lval_type_string(lval_type(result)));
+        /* Result. */
+        struct lval* push_into = acc;
+        if (len > 1) {
+            push_into = wrap;
+        }
+        lval_push(push_into, type_sym);
+        lval_push(push_into, sym);
+        lval_push(push_into, type_result);
+        lval_push(push_into, result);
+        if (len > 1) {
+            lval_push(acc, result);
+        }
+    }
+    /* Cleanup. */
+    lval_free(sym);
+    lval_free(result);
+    lval_free(type_sym);
+    lval_free(type_result);
+    lval_free(wrap);
+    lval_free(list);
+    return 0;
+}

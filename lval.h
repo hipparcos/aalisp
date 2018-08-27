@@ -107,6 +107,8 @@ bool lval_drop(struct lval* v, size_t c);
 bool lval_index(const struct lval* v, size_t c, struct lval* dest);
 /** lval_copy_range copies a range from src to dest. */
 bool lval_copy_range(struct lval* dest, const struct lval* src, size_t first, size_t last);
+/** lval_reverse reverses a list or a string. */
+bool lval_reverse(struct lval* dest, const struct lval* src);
 /** lval_len returns the length of an {s,q}expr. */
 size_t lval_len(const struct lval* v);
 

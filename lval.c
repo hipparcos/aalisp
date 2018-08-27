@@ -723,16 +723,59 @@ bool lval_index(const struct lval* v, size_t c, struct lval* dest) {
     return true;
 }
 
+static bool lval_mut_as(struct lval* dest, const struct lval* src) {
+    switch (lval_type(src)) {
+    case LVAL_NIL:
+    case LVAL_BOOL:
+    case LVAL_NUM:
+    case LVAL_BIGNUM:
+    case LVAL_DBL:
+    case LVAL_SYM:
+    case LVAL_FUNC:
+    case LVAL_ERR:
+        lval_copy(dest, src);
+        return true;
+    case LVAL_STR:
+        lval_mut_str(dest, "");
+        return true;
+    case LVAL_SEXPR:
+        lval_mut_sexpr(dest);
+        return true;
+    case LVAL_QEXPR:
+        lval_mut_qexpr(dest);
+        return true;
+    default:
+        return false;
+    }
+}
+
+static bool lval_alloc_range(struct lval* dest, size_t len) {
+    switch (lval_type(dest)) {
+    case LVAL_STR:
+        if (dest->data->payload.str) {
+            free(dest->data->payload.str);
+        }
+        dest->data->payload.str = calloc(len+1, 1); // + '\0'.
+        dest->data->len = len;
+        return true;
+    case LVAL_SEXPR:
+    case LVAL_QEXPR:
+        dest->data->payload.cell = malloc(len * sizeof(struct lval*));
+        for (size_t c = 0; c < len; c++) {
+            dest->data->payload.cell[c] = lval_alloc();
+        }
+        dest->data->len = len;
+        return true;
+    default:
+        return false;
+    }
+}
+
 bool lval_copy_range(struct lval* dest, const struct lval* src, size_t first, size_t last) {
     if (!lval_is_list(src) || !lval_is_alive(dest)) {
         return false;
     }
-    enum ltype type = lval_type(src);
-    switch (type) {
-        case LVAL_STR:   lval_mut_str(dest, ""); break;
-        case LVAL_SEXPR: lval_mut_sexpr(dest);   break;
-        default:         lval_mut_qexpr(dest);   break;
-    }
+    lval_mut_as(dest, src);
     size_t len_src = lval_len(src);
     if (len_src == 0) {
         return true;
@@ -744,19 +787,37 @@ bool lval_copy_range(struct lval* dest, const struct lval* src, size_t first, si
         last = len_src;
     }
     size_t len_dest = last - first;
-    dest->data->len = len_dest;
-    if (type == LVAL_STR) {
-        if (dest->data->payload.str) {
-            free(dest->data->payload.str);
-        }
-        dest->data->payload.str = calloc(len_dest+1, 1);
+    lval_alloc_range(dest, len_dest);
+    if (lval_type(src) == LVAL_STR) {
         strncpy(dest->data->payload.str, src->data->payload.str+first, len_dest);
         return true;
     }
-    dest->data->payload.cell = malloc(len_dest * sizeof(struct lval*));
     for (size_t c = 0; c < len_dest; c++) {
-        dest->data->payload.cell[c] = lval_alloc();
         lval_dup(dest->data->payload.cell[c], src->data->payload.cell[first+c]);
+    }
+    return true;
+}
+
+bool lval_reverse(struct lval* dest, const struct lval* src) {
+    if (!lval_is_list(src) || !lval_is_alive(dest)) {
+        return false;
+    }
+    lval_mut_as(dest, src);
+    size_t len = lval_len(src);
+    if (len == 0) {
+        return true;
+    }
+    lval_alloc_range(dest, len);
+    if (lval_type(src) == LVAL_STR) {
+        size_t s = len, d = 0;
+        while (s > 0) {
+            dest->data->payload.str[d++] = src->data->payload.str[--s];
+        }
+        return true;
+    }
+    size_t s = len, d = 0;
+    while (s > 0) {
+        lval_dup(dest->data->payload.cell[d++], src->data->payload.cell[--s]);
     }
     return true;
 }

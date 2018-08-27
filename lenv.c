@@ -367,6 +367,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "eval", &lbuiltin_eval);
     lenv_put_builtin(env, "map", &lbuiltin_map);
     lenv_put_builtin(env, "filter", &lbuiltin_filter);
+    lenv_put_builtin(env, "fold", &lbuiltin_fold);
     /* Environment manipulation functions. */
     lenv_put_builtin(env, "def", &lbuiltin_def);
     lenv_put_builtin(env, "ovr", &lbuiltin_override);

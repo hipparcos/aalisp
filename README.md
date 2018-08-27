@@ -106,7 +106,7 @@ Environment operations:
 
 ## TODO
 
-- [ ] Implement fold, reverse, any, all, zip, min, max as builtins;
+- [ ] Implement reverse, any, all, zip, min, max as builtins;
 - [ ] Add debug functions (print-env, print-func, ...);
 - [ ] Delete unused builtins;
 - [ ] Define aliases in stdlib;

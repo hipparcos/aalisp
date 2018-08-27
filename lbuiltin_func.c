@@ -394,6 +394,49 @@ int lbi_func_filter(struct lenv* env, const struct lval* args, struct lval* acc)
     return s;
 }
 
+int lbi_func_fold(struct lenv* env, const struct lval* args, struct lval* acc) {
+    /* Retrieve arg 1: function. */
+    struct lval* func = lval_alloc();
+    lval_index(args, 0, func);
+    const struct lfunc* func_ptr = lval_as_func(func);
+    /* Retrieve arg 2: initial value. */
+    struct lval* init = lval_alloc();
+    lval_index(args, 1, init);
+    /* Retrieve arg 3: list. */
+    struct lval* list = lval_alloc();
+    lval_index(args, 2, list);
+    /* Fold. */
+    int s = 0;
+    size_t len = lval_len(list);
+    size_t len_bound = lval_len(func_ptr->args);
+    struct lval* elem = lval_alloc();
+    struct lval* wrap = lval_alloc();
+    lval_dup(acc, init);
+    for (size_t e = 0; e < len; e++) {
+        lval_index(list, e, elem);
+        lval_clear(wrap);
+        lval_mut_qexpr(wrap);
+        lval_push(wrap, acc);
+        lval_push(wrap, elem);
+        /* Elem is added to func_ptr->args. */
+        s = lfunc_exec(func_ptr, env, wrap, acc);
+        if (s != 0) {
+            s = e+1;
+            break;
+        }
+        /* Drop last argument. */
+        lval_drop(func_ptr->args, len_bound); // arg.
+        lval_drop(func_ptr->args, len_bound); // acc.
+    }
+    lval_free(elem);
+    lval_free(wrap);
+    /* Cleanup. */
+    lval_free(func);
+    lval_free(init);
+    lval_free(list);
+    return s;
+}
+
 static int lbi_def(struct lenv* env,
         bool (*def)(struct lenv*, const struct lval*, const struct lval*),
         const struct lval* symbols, const struct lval* values,

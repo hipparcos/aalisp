@@ -406,6 +406,20 @@ const struct lfunc lbuiltin_filter = {
     .func         = lbi_func_filter,
 };
 
+static const struct lguard guards_fold[] = {
+    {.argn= 1, .condition= use_condition(must_be_of_type),
+        .param= inline_ptr(enum ltype, LVAL_FUNC)},
+    {.argn= 3, .condition= use_condition(must_be_a_list)}
+};
+const struct lfunc lbuiltin_fold = {
+    .symbol       = "fold",
+    .min_argc     =  3,
+    .max_argc     =  3,
+    .guards       = &guards_fold[0],
+    .guardc       = LENGTH(guards_fold),
+    .func         = lbi_func_fold,
+};
+
 static const struct lguard guards_def[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_QEXPR)},

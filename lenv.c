@@ -228,9 +228,13 @@ static bool lenv_local_lookup(const struct lenv* env,
         return true;
     }
     /* Fail. */
-    struct lerr* err = lerr_throw(LERR_BAD_SYMBOL,
-            "symbol %s not defined in environment", symbol);
-    lval_mut_err_ptr(result, err);
+    if (result) {
+        struct lerr* err = lerr_throw(LERR_BAD_SYMBOL,
+                "symbol %s not defined in environment", symbol);
+        if (!lval_mut_err_ptr(result, err)) {
+            lerr_free(err);
+        }
+    }
     return false;
 }
 

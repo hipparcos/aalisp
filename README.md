@@ -85,7 +85,7 @@ List operations:
 String manipulations:
 ```lisp
 > join "join" " also operates " "on strings"
-"join also operate on strings"
+"join also operates on strings"
 ```
 Functions definition:
 ```lisp
@@ -106,8 +106,8 @@ Environment operations:
 
 ## TODO
 
-- [x] Implement strings (chapter 14);
-- [ ] Implement fold, reverse;
+- [ ] Implement fold, reverse, any, all, zip, min, max as builtins;
+- [ ] Add debug functions (print-env, print-func, ...);
 - [ ] Delete unused builtins;
 - [ ] Define aliases in stdlib;
 - [ ] Implement standard library (chapter 15);
@@ -115,6 +115,8 @@ Environment operations:
 - [ ] Improve error reporting;
 - [ ] Implement pool allocation for lval;
 - [ ] Reduce the number of lval copy;
+- [ ] Add cast functions;
+- [ ] Add string functions (+ character type?);
 - [ ] Support UTF-8;
 - [ ] Implement user defined types;
 - [ ] Implement list literal;

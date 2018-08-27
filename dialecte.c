@@ -5,6 +5,7 @@
 #include <getopt.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <signal.h>
 
 #include "version.h"
 #include "leval.h"
@@ -14,11 +15,24 @@
 static char* prompt = "> ";
 static char* filenm = NULL;
 
+/* Global dialecte environment. */
+static struct lenv* env = NULL;
+
+/** handler_SIGINT exits on Ctrl+C. */
+void handler_SIGINT(int sig) {
+    (void)sig;
+    lenv_free(env);
+    fputc('\n', stdout);
+    exit(EXIT_SUCCESS);
+}
+
 /**
  * Alisp is a small lisp interpreter.
  * http://www.buildyourownlisp.com/contents
  */
 int main(int argc, char** argv) {
+    signal(SIGINT, handler_SIGINT);
+
     /* Command line arguments */
     int c;
     while ((c = getopt(argc, argv, "p:f:")) != -1) {
@@ -32,7 +46,7 @@ int main(int argc, char** argv) {
         }
     }
 
-    struct lenv* env = lenv_alloc();
+    env = lenv_alloc();
     lenv_default(env);
 
     /* A file is provided, execute it then exit. */

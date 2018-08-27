@@ -387,6 +387,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "print", &lbuiltin_print);
     /* Debug functions. */
     lenv_put_builtin(env, "debug-env", &lbuiltin_debug_env);
+    lenv_put_builtin(env, "debug-fun", &lbuiltin_debug_fun);
     /* Error functions. */
     lenv_put_builtin(env, "error", &lbuiltin_error);
     /* Environment variable. */

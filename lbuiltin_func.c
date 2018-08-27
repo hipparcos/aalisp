@@ -661,3 +661,29 @@ int lbi_func_debug_env(struct lenv* env, const struct lval* args, struct lval* a
     UNUSED(args);
     return lenv_as_list(env, acc) == 0;
 }
+
+int lbi_func_debug_fun(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1: function. */
+    struct lval* func = lval_alloc();
+    lval_index(args, 0, func);
+    const struct lfunc* func_ptr = lval_as_func(func);
+    /* Debug. */
+    lval_mut_qexpr(acc);
+    lval_push(acc, func_ptr->formals);
+    lval_push(acc, func_ptr->args);
+    if (func_ptr->lisp_func) {
+        lval_push(acc, func_ptr->body);
+    } else {
+        struct lval* builtin = lval_alloc();
+        lval_mut_func(builtin, func_ptr);
+        struct lfunc* builtin_ptr = lval_as_func(builtin);
+        lval_clear(builtin_ptr->args);
+        lval_mut_qexpr(builtin_ptr->args);
+        lval_push(acc, builtin);
+        lval_free(builtin);
+    }
+    /* Cleanup. */
+    lval_free(func);
+    return 0;
+}

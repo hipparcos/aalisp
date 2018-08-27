@@ -82,6 +82,8 @@ struct lfunc {
 struct lfunc* lfunc_alloc(void);
 /** lfunc_init ensures that dynamically allocated components of lfunc are allocated. */
 void lfunc_init(struct lfunc*);
+/** lfunc_clear clears lvals from fun. */
+void lfunc_clear(struct lfunc* fun);
 /** lfunc_set_symbol copies symbol to lfunc->symbol. */
 void lfunc_set_symbol(struct lfunc* fun, const char* symbol);
 /** lfunc_free frees fun.

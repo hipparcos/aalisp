@@ -46,7 +46,7 @@ void lfunc_set_symbol(struct lfunc* fun, const char* symbol) {
     }
 }
 
-static void lfunc_clear(struct lfunc* fun) {
+void lfunc_clear(struct lfunc* fun) {
     lenv_free(fun->scope);
     fun->scope = NULL;
     lval_free(fun->formals);

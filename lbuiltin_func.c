@@ -504,6 +504,7 @@ int lbi_func_lambda(struct lenv* env, const struct lval* args, struct lval* acc)
     /* Put lambda in acc. */
     lval_mut_func(acc, &func);
     /* Cleanup. */
+    lfunc_clear(&func);
     lval_free(formals);
     lval_free(body);
     return 0;

@@ -174,7 +174,7 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
         return expr;
     }
     /* Operands. */
-    while (curr->type != LTOK_CPAR && curr->type != LTOK_EOF) {
+    while (curr->type != LTOK_CPAR && curr->type != LTOK_CBRC && curr->type != LTOK_EOF) {
         struct last* operand = NULL;
         if (!(operand = lparse_atom(curr, &curr)) &&
             !(operand = lparse_list(curr, &curr))) {
@@ -214,7 +214,7 @@ static struct last* lparse_sexpr(struct ltok* first, struct ltok** last, bool sk
         return expr;
     }
     // ) or error.
-    if (curr->type != LTOK_CPAR) {
+    if (skip_par && curr->type != LTOK_CPAR) {
         sexpr = last_error(LERR_PARSER_MISSING_CPAR, curr);
     } else {
         sexpr = last_alloc(LTAG_SEXPR, "", curr);

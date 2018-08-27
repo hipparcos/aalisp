@@ -654,13 +654,14 @@ struct lval* lval_pop(struct lval* v, size_t c) {
         char popped = *(*payload + c);
         memmove(*payload+c, *payload+c+1, len-1 - c);
         if (len > 1) {
-            *payload = realloc(*payload, len-1);
+            v->data->len--;
+            *payload = realloc(*payload, len);
             *((*payload)+len-1) = '\0';
         } else {
+            v->data->len = 0;
             free(*payload);
             *payload = NULL;
         }
-        v->data->len--;
         /* Create lval. */
         char str[2] = {0};
         str[0] = popped; str[1] = '\0';

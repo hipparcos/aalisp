@@ -53,10 +53,14 @@ int main(int argc, char** argv) {
     if (filenm) {
         FILE* file = fopen(filenm, "r");
         if (file) {
-            lisp_eval_from_file(env, file);
+            bool s = lisp_eval_from_file(env, file);
             lenv_free(env);
             fclose(file);
-            return EXIT_SUCCESS;
+            if (s) {
+                return EXIT_SUCCESS;
+            } else {
+                return EXIT_FAILURE;
+            }
         } else {
             perror("lisp file opening error");
             return EXIT_FAILURE;

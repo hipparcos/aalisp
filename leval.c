@@ -198,13 +198,15 @@ bool lisp_eval(struct lenv* env,
     return s;
 }
 
-void lisp_eval_from_string(struct lenv* env,
+bool lisp_eval_from_string(struct lenv* env,
         const char* restrict input, int prompt_len) {
+    bool s;
     struct lval* r = lval_alloc();
-    if (lisp_eval(env, input, r, prompt_len)) {
+    if ((s = lisp_eval(env, input, r, prompt_len))) {
         lval_println(r);
     } // Error already printed.
     lval_free(r);
+    return s;
 }
 
 /** read_file reads all content of filename at once.
@@ -237,10 +239,12 @@ bool leval_from_file(struct lenv* env, FILE* input, struct lval* r) {
     return s;
 }
 
-void lisp_eval_from_file(struct lenv* env, FILE* input) {
+bool lisp_eval_from_file(struct lenv* env, FILE* input) {
+    bool s;
     struct lval* r = lval_alloc();
-    if (leval_from_file(env, input, r)) {
+    if ((s = leval_from_file(env, input, r))) {
         lval_println(r);
     } // Error already printed.
     lval_free(r);
+    return s;
 }

@@ -432,6 +432,20 @@ const struct lfunc lbuiltin_reverse = {
     .func         = lbi_func_reverse,
 };
 
+static const struct lguard guards_all[] = {
+    {.argn= 1, .condition= use_condition(must_be_of_type),
+        .param= inline_ptr(enum ltype, LVAL_FUNC)},
+    {.argn= 2, .condition= use_condition(must_be_a_list)}
+};
+const struct lfunc lbuiltin_all = {
+    .symbol       = "all",
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = &guards_all[0],
+    .guardc       = LENGTH(guards_all),
+    .func         = lbi_func_all,
+};
+
 static const struct lguard guards_def[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_QEXPR)},

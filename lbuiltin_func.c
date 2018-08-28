@@ -449,6 +449,43 @@ int lbi_func_reverse(struct lenv* env, const struct lval* args, struct lval* acc
     return 0;
 }
 
+int lbi_func_all(struct lenv* env, const struct lval* args, struct lval* acc) {
+    /* Retrieve arg 1: condition function. */
+    struct lval* func = lval_alloc();
+    lval_index(args, 0, func);
+    const struct lfunc* func_ptr = lval_as_func(func);
+    /* Retrieve arg 2: list. */
+    struct lval* list = lval_alloc();
+    lval_index(args, 1, list);
+    /* All. */
+    int s = 0;
+    size_t len = lval_len(list);
+    size_t len_bound = lval_len(func_ptr->args);
+    struct lval* elem = lval_alloc();
+    struct lval* wrap = lval_alloc();
+    for (size_t e = 0; e < len; e++) {
+        lval_index(list, e, elem);
+        lval_clear(wrap);
+        lval_mut_qexpr(wrap);
+        lval_push(wrap, elem);
+        s = lfunc_exec(func_ptr, env, wrap, acc);
+        if (s != 0) {
+            s = e+1;
+            break;
+        }
+        if (!lval_as_bool(acc)) {
+            break;
+        }
+        lval_drop(func_ptr->args, len_bound); // arg.
+    }
+    lval_free(elem);
+    lval_free(wrap);
+    /* Cleanup. */
+    lval_free(func);
+    lval_free(list);
+    return s;
+}
+
 static int lbi_def(struct lenv* env,
         bool (*def)(struct lenv*, const struct lval*, const struct lval*),
         const struct lval* symbols, const struct lval* values,

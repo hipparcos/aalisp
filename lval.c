@@ -832,6 +832,31 @@ bool lval_reverse(struct lval* dest, const struct lval* src) {
     return true;
 }
 
+bool lval_swap(struct lval* v, size_t i, size_t j) {
+    if (!lval_is_list(v)) {
+        return false;
+    }
+    size_t len = v->data->len;
+    if (i >= len) { i = len-1; }
+    if (j >= len) { j = len-1; }
+    if (i == j) {
+        return true;
+    }
+    /* Duplicate if multiple lval reference this data. */
+    lval_ensure_data_ownership(v);
+    /* Swap. */
+    if (v->data->type == LVAL_STR) {
+        char tmp = v->data->payload.str[i];
+        v->data->payload.str[i] = v->data->payload.str[j];
+        v->data->payload.str[j] = tmp;
+        return true;
+    }
+    struct lval* tmp = v->data->payload.cell[i];
+    v->data->payload.cell[i] = v->data->payload.cell[j];
+    v->data->payload.cell[j] = tmp;
+    return true;
+}
+
 size_t lval_len(const struct lval* v) {
     if (!lval_is_list(v)) {
         return 0;

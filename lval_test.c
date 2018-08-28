@@ -972,7 +972,7 @@ describe(lval, {
             push_num(a, 4);
             struct lval* b = lval_alloc();
             defer(lval_free(b));
-            /* Copy. */
+            /* Reverse. */
             assert(lval_reverse(b, a));
             /* Test. */
             struct lval* expected = lval_alloc();
@@ -990,7 +990,7 @@ describe(lval, {
             assert(lval_mut_qexpr(a));
             struct lval* b = lval_alloc();
             defer(lval_free(b));
-            /* Copy. */
+            /* Reverse. */
             assert(lval_reverse(b, a));
             /* Test. */
             struct lval* expected = lval_alloc();
@@ -1006,7 +1006,7 @@ describe(lval, {
             lval_mut_str(a, input);
             struct lval* b = lval_alloc();
             defer(lval_free(b));
-            /* Copy. */
+            /* Reverse. */
             assert(lval_reverse(b, a));
             /* Test. */
             assert(strcmp(expected, lval_as_str(b)) == 0);
@@ -1019,10 +1019,33 @@ describe(lval, {
             lval_mut_str(a, input);
             struct lval* b = lval_alloc();
             defer(lval_free(b));
-            /* Copy. */
+            /* Reverse. */
             assert(lval_reverse(b, a));
             /* Test. */
             assert(strcmp(expected, lval_as_str(b)) == 0);
+        });
+    });
+
+    subdesc(swap, {
+        it("passes for Q-Expressing", {
+            struct lval* a = lval_alloc();
+            defer(lval_free(a));
+            assert(lval_mut_qexpr(a));
+            push_num(a, 1);
+            push_num(a, 2);
+            push_num(a, 3);
+            push_num(a, 4);
+            /* Swap. */
+            assert(lval_swap(a, 0, 3));
+            /* Test. */
+            struct lval* expected = lval_alloc();
+            defer(lval_free(expected));
+            lval_mut_qexpr(expected);
+            push_num(expected, 4);
+            push_num(expected, 2);
+            push_num(expected, 3);
+            push_num(expected, 1);
+            assert(lval_are_equal(expected, a));
         });
     });
 

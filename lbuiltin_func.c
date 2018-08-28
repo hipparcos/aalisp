@@ -495,6 +495,39 @@ int lbi_func_any(struct lenv* env, const struct lval* args, struct lval* acc) {
     return lbuiltin_test(env, args, acc, true);
 }
 
+int lbi_func_zip(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1: list. */
+    struct lval* list0 = lval_alloc();
+    lval_index(args, 0, list0);
+    size_t len0 = lval_len(list0);
+    /* Retrieve arg 2: list. */
+    struct lval* list1 = lval_alloc();
+    lval_index(args, 1, list1);
+    size_t len1 = lval_len(list1);
+    /* Zip. */
+    size_t len = (len0 < len1) ? len0 : len1;
+    lval_mut_qexpr(acc);
+    struct lval* elem0 = lval_alloc();
+    struct lval* elem1 = lval_alloc();
+    for (size_t e = 0; e < len; e++) {
+        struct lval* zipped = lval_alloc();
+        lval_mut_qexpr(zipped);
+        lval_index(list0, e, elem0);
+        lval_index(list1, e, elem1);
+        lval_push(zipped, elem0);
+        lval_push(zipped, elem1);
+        lval_push(acc, zipped);
+        lval_free(zipped);
+    }
+    lval_free(elem0);
+    lval_free(elem1);
+    /* Cleanup. */
+    lval_free(list0);
+    lval_free(list1);
+    return 0;
+}
+
 static int lbi_def(struct lenv* env,
         bool (*def)(struct lenv*, const struct lval*, const struct lval*),
         const struct lval* symbols, const struct lval* values,

@@ -49,6 +49,7 @@ extern const struct lfunc lbuiltin_fold;
 extern const struct lfunc lbuiltin_reverse;
 extern const struct lfunc lbuiltin_all;
 extern const struct lfunc lbuiltin_any;
+extern const struct lfunc lbuiltin_zip;
 
 /* Environment manipulation functions. */
 extern const struct lfunc lbuiltin_def;

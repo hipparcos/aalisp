@@ -454,6 +454,18 @@ const struct lfunc lbuiltin_any = {
     .func         = lbi_func_any,
 };
 
+static const struct lguard guards_zip[] = {
+    {.argn= 0, .condition= use_condition(must_be_a_list)}
+};
+const struct lfunc lbuiltin_zip = {
+    .symbol       = "all",
+    .min_argc     =  2,
+    .max_argc     =  -1,
+    .guards       = &guards_zip[0],
+    .guardc       = LENGTH(guards_zip),
+    .func         = lbi_func_zip,
+};
+
 static const struct lguard guards_def[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_QEXPR)},

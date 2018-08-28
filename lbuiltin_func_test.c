@@ -539,6 +539,39 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_zip, {
+        test_pass(&lbuiltin_zip, "Q-Expression len0 == len1", {
+            /* List. */
+            struct lval* list0 = lval_alloc();
+            defer(lval_free(list0));
+            lval_mut_qexpr(list0);
+            push_num(list0, 1);
+            push_num(list0, 2);
+            push_num(list0, 3);
+            struct lval* list1 = lval_alloc();
+            defer(lval_free(list1));
+            lval_mut_qexpr(list1);
+            push_str(list1, "a");
+            push_str(list1, "b");
+            push_str(list1, "c");
+            /* Args. */
+            lval_push(args, list0);
+            lval_push(args, list1);
+            /* Expected. */
+            lval_mut_qexpr(expected);
+            long key[3] = {1, 2, 3};
+            char val[3][2] = {"a", "b", "c"};
+            for (size_t e = 0; e < 3; e++) {
+                struct lval* zipped = lval_alloc();
+                lval_mut_qexpr(zipped);
+                push_num(zipped, key[e]);
+                push_str(zipped, val[e]);
+                lval_push(expected, zipped);
+                lval_free(zipped);
+            }
+        });
+    });
+
     subdesc(func_eval, {
         test_pass(&lbuiltin_eval, "happy path", {
             struct lval* sexpr = lval_alloc();

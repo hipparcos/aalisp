@@ -723,6 +723,16 @@ bool lval_index(const struct lval* v, size_t c, struct lval* dest) {
     return true;
 }
 
+const struct lval* lval_index_ptr(const struct lval* v, size_t c) {
+    if (lval_type(v) != LVAL_QEXPR) {
+        return NULL;
+    }
+    if (c >= v->data->len) {
+        return NULL;
+    }
+    return v->data->payload.cell[c];
+}
+
 static bool lval_mut_as(struct lval* dest, const struct lval* src) {
     switch (lval_type(src)) {
     case LVAL_NIL:

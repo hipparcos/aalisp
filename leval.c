@@ -213,14 +213,19 @@ static char* read_file(FILE* input) {
     if (!input) {
         return NULL;
     }
-    char* buffer = 0;
-    long length;
-    fseek(input, 0, SEEK_END);
-    length = ftell (input);
-    fseek(input, 0, SEEK_SET);
-    buffer = malloc(length);
+    fseek(input, 0L, SEEK_END);
+    long length = ftell(input);
+    if (length < 0) {
+        return NULL;
+    }
+    fseek(input, 0L, SEEK_SET);
+    char* buffer = malloc(length+1);
     if (buffer) {
-        fread(buffer, 1, length, input);
+        if (fread(buffer, 1, length, input) < 0) {
+            free(buffer);
+            return NULL;
+        }
+        buffer[length] = '\0';
     }
     return buffer;
 }

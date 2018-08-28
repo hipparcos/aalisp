@@ -22,6 +22,7 @@ void test_marker(const char* restrict input, size_t expected) {
     lenv_default(env);
     struct lerr* err = lisp_eval_from_string(env, input);
     if (err) {
+        lerr_set_file(err, "test");
         lerr_print_marker_to(err, 0, stderr);
         lerr_print_to(err, stderr);
         lerr_free(err);

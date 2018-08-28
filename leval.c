@@ -33,7 +33,7 @@ static bool leval_expr(
         }
         struct lerr* cause = lerr_cause(lval_as_err(r));
         if (r->ast) {
-            lerr_file_info(cause, NULL, r->ast->line, r->ast->col);
+            lerr_set_location(cause, r->ast->line, r->ast->col);
         }
     }
     return lval_type(r) != LVAL_ERR;
@@ -71,7 +71,7 @@ static bool leval_sexpr(struct lenv* env,
             lval_free(expr);
             struct lerr* cause = lerr_cause(lval_as_err(r));
             if (r->ast) {
-                lerr_file_info(cause, NULL, r->ast->line, r->ast->col);
+                lerr_set_location(cause, r->ast->line, r->ast->col);
             }
             return false;
         }

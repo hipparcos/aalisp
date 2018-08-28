@@ -70,8 +70,10 @@ const char* lerr_describe(enum lerr_code code);
 /** lerr_annotate annotates err 'à la' printf. */
 void lerr_annotate(struct lerr* err, const char* fmt, ...);
 void lerr_annotate_va(struct lerr* err, const char* fmt, va_list va);
-/** lerr_file_info adds file infos to err. */
-void lerr_file_info(struct lerr* err, const char* file, int line, int col);
+/** lerr_set_file adds file to err. */
+void lerr_set_file(struct lerr* err, const char* file);
+/** lerr_set_location adds line and col to err. */
+void lerr_set_location(struct lerr* err, int line, int col);
 /** lerr_wrap encapsulates an error into an other. */
 void lerr_wrap(struct lerr* outer, struct lerr* inner);
 /** lerr_cause returns the innermost error.

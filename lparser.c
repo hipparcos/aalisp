@@ -311,7 +311,7 @@ struct last* lisp_parse(struct ltok* tokens, struct lerr** err) {
             *err = lerr_throw(LERR_PARSER, "unknown error");
             break;
         }
-        lerr_file_info(*err, "", ast_error->line, ast_error->col);
+        lerr_set_location(*err, ast_error->line, ast_error->col);
     }
     return ast;
 }

@@ -31,7 +31,7 @@ static struct lval* lmut_dbl(const struct last* ast, struct lerr** error) {
     struct lval* v = lval_alloc();
     if (errno == ERANGE) {
         *error = lerr_throw(LERR_BAD_OPERAND, "double number out of range");
-        lerr_file_info(*error, "", ast->line, ast->col);
+        lerr_set_location(*error, ast->line, ast->col);
         lval_mut_err_ptr(v, *error);
         v->ast = ast;
         return v;
@@ -73,7 +73,7 @@ void lmut_fill_list(struct lval* list, const struct last* ast, struct lerr** err
         default:
             o = lval_alloc();
             *error = lerr_throw(LERR_AST, "can't read AST");
-            lerr_file_info(*error, "", ast->line, ast->col);
+            lerr_set_location(*error, ast->line, ast->col);
             lval_mut_err_ptr(o, *error);
             o->ast = ast;
             break;
@@ -129,7 +129,7 @@ struct lval* lisp_mut(const struct last* ast, struct lerr** error) {
         } else {
             s = lval_alloc();
             *error = lerr_throw(LERR_AST, "can't read AST");
-            lerr_file_info(*error, "", ast->line, ast->col);
+            lerr_set_location(*error, ast->line, ast->col);
             lval_mut_err_ptr(s, *error);
             s->ast = ast->children[c];
         }

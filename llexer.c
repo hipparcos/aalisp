@@ -312,7 +312,7 @@ static struct ltok* llex(const char* input, struct lerr** err, bool surround) {
             *err = lerr_throw(scanner.err, "unknown error");
             break;
         }
-        lerr_file_info(*err, "", scanner.line, scanner.col);
+        lerr_set_location(*err, scanner.line, scanner.col);
     }
     return head;
 }

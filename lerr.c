@@ -44,7 +44,8 @@ bool lerr_copy(struct lerr* dest, const struct lerr* src) {
     }
     dest->code = src->code;
     lerr_annotate(dest, src->message);
-    lerr_file_info(dest, src->file, src->line, src->col);
+    lerr_set_file(dest, src->file);
+    lerr_set_location(dest, src->line, src->col);
     if (src->inner) {
         dest->inner = lerr_alloc();
         lerr_copy(dest->inner, src->inner);
@@ -95,21 +96,29 @@ void lerr_annotate_va(struct lerr* err, const char* fmt, va_list va) {
     vsnprintf(err->message, sizeof(err->message), fmt, va);
 }
 
-void lerr_file_info(struct lerr* err, const char* file, int line, int col) {
+void lerr_set_file(struct lerr* err, const char* file) {
     if (!err) {
         return;
     }
-    if (err->file) {
-        free(err->file);
-        err->file = NULL;
+    struct lerr* cause = lerr_cause(err);
+    if (cause->file) {
+        free(cause->file);
+        cause->file = NULL;
     }
     if (file) {
         size_t len = strlen(file);
-        err->file = calloc(len+1, 1);
-        strncpy(err->file, file, len);
+        cause->file = calloc(len+1, 1);
+        strncpy(cause->file, file, len);
     }
-    err->line = line;
-    err->col = col;
+}
+
+void lerr_set_location(struct lerr* err, int line, int col) {
+    if (!err) {
+        return;
+    }
+    struct lerr* cause = lerr_cause(err);
+    cause->line = line;
+    cause->col = col;
 }
 
 void lerr_wrap(struct lerr* outer, struct lerr* inner) {

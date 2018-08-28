@@ -56,6 +56,7 @@ int main(int argc, char** argv) {
             int s = EXIT_SUCCESS;
             struct lerr* err = lisp_eval_from_file(env, file);
             if (err) {
+                lerr_set_file(err, filename);
                 lerr_print_to(err, stderr);
                 lerr_free(err);
                 s = EXIT_FAILURE;
@@ -88,6 +89,7 @@ int main(int argc, char** argv) {
         add_history(input);
         struct lerr* err = lisp_eval_from_string(env, input);
         if (err) {
+            lerr_set_file(err, "interactive");
             lerr_print_marker_to(err, prompt_len, stderr);
             lerr_print_to(err, stderr);
             lerr_free(err);

@@ -43,8 +43,10 @@ int lbi_func_filter(struct lenv* env, const struct lval* args, struct lval* acc)
 int lbi_func_fold(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_reverse reverses a list. */
 int lbi_func_reverse(struct lenv* env, const struct lval* args, struct lval* acc);
-/** lbi_func_all tests a condition on all members of a list. */
+/** lbi_func_all checks that all members of a list pass a given test. */
 int lbi_func_all(struct lenv* env, const struct lval* args, struct lval* acc);
+/** lbi_func_any checks that any members of a list passes a given test. */
+int lbi_func_any(struct lenv* env, const struct lval* args, struct lval* acc);
 
 /** lbi_func_def defines a symbol in the global environment. */
 int lbi_func_def(struct lenv* env, const struct lval* args, struct lval* acc);

@@ -449,7 +449,7 @@ int lbi_func_reverse(struct lenv* env, const struct lval* args, struct lval* acc
     return 0;
 }
 
-int lbi_func_all(struct lenv* env, const struct lval* args, struct lval* acc) {
+static int lbuiltin_test(struct lenv* env, const struct lval* args, struct lval* acc, bool break_on) {
     /* Retrieve arg 1: condition function. */
     struct lval* func = lval_alloc();
     lval_index(args, 0, func);
@@ -473,7 +473,8 @@ int lbi_func_all(struct lenv* env, const struct lval* args, struct lval* acc) {
             s = e+1;
             break;
         }
-        if (!lval_as_bool(acc)) {
+        if ((break_on == false && !lval_as_bool(acc))
+         || (break_on == true  &&  lval_as_bool(acc))) {
             break;
         }
         lval_drop(func_ptr->args, len_bound); // arg.
@@ -484,6 +485,14 @@ int lbi_func_all(struct lenv* env, const struct lval* args, struct lval* acc) {
     lval_free(func);
     lval_free(list);
     return s;
+}
+
+int lbi_func_all(struct lenv* env, const struct lval* args, struct lval* acc) {
+    return lbuiltin_test(env, args, acc, false);
+}
+
+int lbi_func_any(struct lenv* env, const struct lval* args, struct lval* acc) {
+    return lbuiltin_test(env, args, acc, true);
 }
 
 static int lbi_def(struct lenv* env,

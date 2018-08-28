@@ -1049,6 +1049,40 @@ describe(lval, {
         });
     });
 
+    subdesc(sort, {
+        it("passes for Q-Expressing", {
+            struct lval* a = lval_alloc();
+            defer(lval_free(a));
+            assert(lval_mut_qexpr(a));
+            push_num(a, 4);
+            push_num(a, 2);
+            push_num(a, 5);
+            push_num(a, 3);
+            push_num(a, 1);
+            /* Swap. */
+            assert(lval_sort(a));
+            /* Test. */
+            struct lval* expected = lval_alloc();
+            defer(lval_free(expected));
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 2);
+            push_num(expected, 3);
+            push_num(expected, 4);
+            push_num(expected, 5);
+            assert(lval_are_equal(expected, a));
+        });
+        it("passes for strings", {
+            struct lval* a = lval_alloc();
+            defer(lval_free(a));
+            lval_mut_str(a, "fedcba");
+            /* Swap. */
+            assert(lval_sort(a));
+            /* Test. */
+            assert(strcmp(lval_as_str(a), "abcdef") == 0);
+        });
+    });
+
     subdesc(print_to, {
         it("prints a num", {
             long input = 10;

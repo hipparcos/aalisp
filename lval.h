@@ -114,6 +114,8 @@ bool lval_copy_range(struct lval* dest, const struct lval* src, size_t first, si
 bool lval_reverse(struct lval* dest, const struct lval* src);
 /** lval_swap swaps two elements of v. */
 bool lval_swap(struct lval* v, size_t i, size_t j);
+/** lval_sort sorts v using the standard C qsort function. */
+bool lval_sort(struct lval* v);
 /** lval_len returns the length of an {s,q}expr. */
 size_t lval_len(const struct lval* v);
 

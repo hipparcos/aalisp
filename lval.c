@@ -857,6 +857,31 @@ bool lval_swap(struct lval* v, size_t i, size_t j) {
     return true;
 }
 
+static int qsort_compare_char(const void* p1, const void* p2) {
+    char c1 = *(char*)p1;
+    char c2 = *(char*)p2;
+    return (c1 > c2) - (c1 < c2);
+}
+static int qsort_compare_lval(const void* p1, const void* p2) {
+    return lval_compare(*(const struct lval**)p1, *(const struct lval**)p2);
+}
+
+bool lval_sort(struct lval* v) {
+    if (!lval_is_list(v)) {
+        return false;
+    }
+    /* Duplicate if multiple lval reference this data. */
+    lval_ensure_data_ownership(v);
+    /* Sort. */
+    if (lval_type(v) == LVAL_STR) {
+        qsort(v->data->payload.str, v->data->len, 1, qsort_compare_char);
+        return true;
+    }
+    qsort(&v->data->payload.cell[0], v->data->len, sizeof(struct lval*),
+            qsort_compare_lval);
+    return true;
+}
+
 size_t lval_len(const struct lval* v) {
     if (!lval_is_list(v)) {
         return 0;

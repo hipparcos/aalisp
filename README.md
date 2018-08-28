@@ -106,7 +106,6 @@ Environment operations:
 
 ## TODO
 
-- [ ] Implement min, max as builtins;
 - [ ] Add debug functions (print-env, print-func, ...);
 - [ ] Delete unused builtins;
 - [ ] Define aliases in stdlib;

@@ -3,22 +3,29 @@
 #include <string.h>
 
 #include "leval.h"
+#include "lerr.h"
 #include "lenv.h"
 
 #define PROMPT_STR ">>>>>>>> "
 #define EXPEC_STR  "expected "
 #define GOT_STR    "got      "
 
-extern void print_error_marker(FILE* out, int indent, int col);
-
 void test_marker(const char* restrict input, size_t expected) {
     fprintf(stderr, "%s%s\n", PROMPT_STR, input);
     fprintf(stderr, "%s", EXPEC_STR);
-    print_error_marker(stdout, 0, expected);
+    struct lerr* err_expec = lerr_alloc();
+    err_expec->col = expected;
+    lerr_print_marker_to(err_expec, 0, stderr);
+    lerr_free(err_expec);
     fprintf(stderr, "%s", GOT_STR);
     struct lenv* env = lenv_alloc();
     lenv_default(env);
-    lisp_eval_from_string(env, input, 0);
+    struct lerr* err = lisp_eval_from_string(env, input);
+    if (err) {
+        lerr_print_marker_to(err, 0, stderr);
+        lerr_print_to(err, stderr);
+        lerr_free(err);
+    }
     lenv_free(env);
 }
 

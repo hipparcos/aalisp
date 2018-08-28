@@ -13,7 +13,7 @@
 
 /* Configurable variables */
 static char* prompt = "> ";
-static char* filenm = NULL;
+static char* filename = NULL;
 
 /* Global dialecte environment. */
 static struct lenv* env = NULL;
@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
             prompt = optarg;
             break;
         case 'f':
-            filenm = optarg;
+            filename = optarg;
             break;
         }
     }
@@ -50,17 +50,19 @@ int main(int argc, char** argv) {
     lenv_default(env);
 
     /* A file is provided, execute it then exit. */
-    if (filenm) {
-        FILE* file = fopen(filenm, "r");
+    if (filename) {
+        FILE* file = fopen(filename, "r");
         if (file) {
-            bool s = lisp_eval_from_file(env, file);
+            int s = EXIT_SUCCESS;
+            struct lerr* err = lisp_eval_from_file(env, file);
+            if (err) {
+                lerr_print_to(err, stderr);
+                lerr_free(err);
+                s = EXIT_FAILURE;
+            }
             lenv_free(env);
             fclose(file);
-            if (s) {
-                return EXIT_SUCCESS;
-            } else {
-                return EXIT_FAILURE;
-            }
+            return s;
         } else {
             perror("lisp file opening error");
             return EXIT_FAILURE;
@@ -84,7 +86,12 @@ int main(int argc, char** argv) {
             break;
         }
         add_history(input);
-        lisp_eval_from_string(env, input, prompt_len);
+        struct lerr* err = lisp_eval_from_string(env, input);
+        if (err) {
+            lerr_print_marker_to(err, prompt_len, stderr);
+            lerr_print_to(err, stderr);
+            lerr_free(err);
+        }
         free(input);
     }
 

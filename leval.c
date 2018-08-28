@@ -135,16 +135,8 @@ bool leval(struct lenv* env, const struct lval* v, struct lval* r) {
     return leval_lval(env, v, r, true);
 }
 
-void print_error_marker(FILE* out, int indent, int col) {
-    col--; // col starts at 0 in this function.
-    for (int i = -indent; i < col; i++)
-        fputc(' ', out);
-    fputc('^', out);
-    fputc('\n', out);
-}
-
-bool lisp_eval(struct lenv* env,
-        const char* restrict input, struct lval* r, int prompt_len) {
+struct lerr* leval_from_string(struct lenv* env,
+        const char* restrict input, struct lval* r) {
     struct ltok* tokens = NULL;
     struct last* ast = NULL;
     struct lval* program = NULL;
@@ -179,34 +171,22 @@ bool lisp_eval(struct lenv* env,
             break;
         }
     } while (0); // Allow to break.
-    /* Error handling. */
-    bool s = true;
-    if (error) {
-        struct lerr* cause = lerr_cause(error);
-        lerr_file_info(cause, "interactive", cause->line, cause->col);
-        if (prompt_len >= 0) {
-            print_error_marker(stderr, prompt_len, cause->col);
-            lerr_print_to(error, stderr);
-        }
-        lerr_free(error);
-        s = false;
-    }
     /* Cleanup. */
     if (tokens)  llex_free(tokens);
     if (ast)     last_free(ast);
     if (program) lval_free(program);
-    return s;
+    return error;
 }
 
-bool lisp_eval_from_string(struct lenv* env,
-        const char* restrict input, int prompt_len) {
-    bool s;
+struct lerr* lisp_eval_from_string(struct lenv* env,
+        const char* restrict input) {
     struct lval* r = lval_alloc();
-    if ((s = lisp_eval(env, input, r, prompt_len))) {
+    struct lerr* err = leval_from_string(env, input, r);
+    if (!err) {
         lval_println(r);
-    } // Error already printed.
+    }
     lval_free(r);
-    return s;
+    return err;
 }
 
 /** read_file reads all content of filename at once.
@@ -232,19 +212,16 @@ static char* read_file(FILE* input) {
     return buffer;
 }
 
-bool leval_from_file(struct lenv* env, FILE* input, struct lval* r) {
+struct lerr* leval_from_file(struct lenv* env, FILE* input, struct lval* r) {
     char* content = read_file(input);
-    bool s = lisp_eval(env, content, r, 0);
+    struct lerr* err = leval_from_string(env, content, r);
     free(content);
-    return s;
+    return err;
 }
 
-bool lisp_eval_from_file(struct lenv* env, FILE* input) {
-    bool s;
-    struct lval* r = lval_alloc();
-    if ((s = leval_from_file(env, input, r))) {
-        lval_println(r);
-    } // Error already printed.
-    lval_free(r);
-    return s;
+struct lerr* lisp_eval_from_file(struct lenv* env, FILE* input) {
+    char* content = read_file(input);
+    struct lerr* err = lisp_eval_from_string(env, content);
+    free(content);
+    return err;
 }

@@ -20,8 +20,10 @@
         struct lenv* env = lenv_alloc(); \
         defer(lenv_free(env)); \
         lenv_default(env); \
-        assert( lisp_eval(env, input, result, -1)); \
-        assert( lval_are_equal(result, expected)); \
+        struct lerr* err = leval_from_string(env, input, result); \
+        assert(err == NULL); \
+        defer(lerr_free(err)); \
+        assert(lval_are_equal(result, expected)); \
     })
 
 #define test_fail(input, err) \
@@ -34,8 +36,10 @@
         struct lenv* env = lenv_alloc(); \
         defer(lenv_free(env)); \
         lenv_default(env); \
-        assert(!lisp_eval(env, input, result, -1)); \
-        assert( lval_are_equal(result, expected)); \
+        struct lerr* err = leval_from_string(env, input, result); \
+        assert(err != NULL); \
+        defer(lerr_free(err)); \
+        assert(lval_are_equal(result, expected)); \
     })
 
 #define push_num(args, num) \

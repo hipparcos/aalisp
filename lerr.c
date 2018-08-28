@@ -127,6 +127,18 @@ struct lerr* lerr_cause(struct lerr* err) {
     return err;
 }
 
+void lerr_print_marker_to(struct lerr* err, int indent, FILE* out) {
+    struct lerr* cause = lerr_cause(err);
+    int col = cause->col;
+    if (col) {
+        for (int i = -indent+1; i < col; i++) {
+            fputc(' ', out);
+        }
+        fputc('^', out);
+        fputc('\n', out);
+    }
+}
+
 void lerr_print_to(struct lerr* err, FILE* out) {
     if (!err) {
         return;

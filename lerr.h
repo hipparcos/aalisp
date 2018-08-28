@@ -53,7 +53,7 @@ struct lerr {
 struct lerr* lerr_alloc(void);
 /** lerr_free frees err.
  ** err must not be used afterwards.
- ** lerr_free_all must be called on the outermost error. */
+ ** lerr_free must be called on the outermost error. */
 void lerr_free(struct lerr* err);
 /** lerr_copy copies src into dest (and inner errors). */
 bool lerr_copy(struct lerr* dest, const struct lerr* src);
@@ -78,6 +78,8 @@ void lerr_wrap(struct lerr* outer, struct lerr* inner);
  ** Returned pointer stays valid until lerr_free is called on the outermost error. */
 struct lerr* lerr_cause(struct lerr* err);
 
+/** lerr_print_marker prints a ^ at col location. */
+void lerr_print_marker_to(struct lerr* err, int indent, FILE* out);
 /** lerr_print_to prints err to  the file out. */
 void lerr_print_to(struct lerr* err, FILE* out);
 /** lerr_print prints err to stdout. */

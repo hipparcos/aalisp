@@ -48,60 +48,13 @@ make test DO_MEMCHECK=false
 
 ## Features
 
-Comments:
+See [DOC.md](https://github.com/hipparcos/dialecte/blob/master/DOC.md).
+
 ```lisp
-> ; I'm a comment up to the end of line.
-nil
-```
-Arithmetic:
-```lisp
-> + 1 2 3 4
-10
-> / (! 21) (! 20)
-21
-> ^ 2 16
-65536
-> - 618.5 572.5 4
-42
-```
-Control flow:
-```lisp
-> if (> 42 0) {+ 21 21} {0}
-42
-```
-List operations:
-```lisp
-> list 1 2 3 4
-{1 2 3 4}
-> join {1 2} {3 4}
-{1 2 3 4}
-> head (list 1 2 3)
-1
-> eval (head {(+ 1 1) (+ 2 2)})
-2
-> map (\ {x} {* x x}) {1 2 3 4}
-{1 4 9 16}
-```
-String manipulations:
-```lisp
-> join "join" " also operates " "on strings"
-"join also operates on strings"
-```
-Functions definition:
-```lisp
-> (\ {x} {* x x}) 9
-81
-```
-Environment operations:
-```lisp
-> (def {x y} 1 2)(+ x y)
-3
-> (def {sq} (\ {x} {* x x})) (sq 9)
-81
-> (fun {sq x} {* x x}) (sq 9)
-81
-> (* 4 21)(/ . 2) ; `.` is equal to the last computed value.
-42
+> (fun {max xs} { fold (\ {x y} {if (> x y) {x} {y}}) (head xs) xs })
+{max}
+> max $ list 4 5 1 9 8 3 0
+9
 ```
 
 ## TODO

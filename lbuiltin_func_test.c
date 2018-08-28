@@ -572,6 +572,39 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_sort, {
+        test_pass(&lbuiltin_sort, "Q-Expression", {
+            /* List. */
+            struct lval* list = lval_alloc();
+            defer(lval_free(list));
+            lval_mut_qexpr(list);
+            push_num(list, 5);
+            push_num(list, 3);
+            push_num(list, 2);
+            push_num(list, 4);
+            push_num(list, 1);
+            /* Args. */
+            lval_push(args, list);
+            /* Expected. */
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 2);
+            push_num(expected, 3);
+            push_num(expected, 4);
+            push_num(expected, 5);
+        });
+        test_pass(&lbuiltin_sort, "empty list", {
+            /* List. */
+            struct lval* list = lval_alloc();
+            defer(lval_free(list));
+            lval_mut_qexpr(list);
+            /* Args. */
+            lval_push(args, list);
+            /* Expected. */
+            lval_mut_qexpr(expected);
+        });
+    });
+
     subdesc(func_eval, {
         test_pass(&lbuiltin_eval, "happy path", {
             struct lval* sexpr = lval_alloc();

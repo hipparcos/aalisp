@@ -528,6 +528,19 @@ int lbi_func_zip(struct lenv* env, const struct lval* args, struct lval* acc) {
     return 0;
 }
 
+int lbi_func_sort(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1: list. */
+    struct lval* list = lval_alloc();
+    lval_index(args, 0, list);
+    /* Sort. */
+    lval_sort(list);
+    lval_dup(acc, list);
+    /* Cleanup. */
+    lval_free(list);
+    return 0;
+}
+
 static int lbi_def(struct lenv* env,
         bool (*def)(struct lenv*, const struct lval*, const struct lval*),
         const struct lval* symbols, const struct lval* values,

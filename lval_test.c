@@ -911,7 +911,8 @@ describe(lval, {
             struct lval* b = lval_alloc();
             defer(lval_free(b));
             /* Copy. */
-            assert(lval_copy_range(b, a, 1, 3));
+            assert(lval_mut_as(b, a));
+            assert(lval_copy_range(b, 0, a, 1, 3));
             /* Test. */
             struct lval* expected = lval_alloc();
             defer(lval_free(expected));
@@ -929,7 +930,8 @@ describe(lval, {
             struct lval* b = lval_alloc();
             defer(lval_free(b));
             /* Copy. */
-            assert(lval_copy_range(b, a, 1, 5));
+            assert(lval_mut_as(b, a));
+            assert(lval_copy_range(b, 0, a, 1, 5));
             /* Test. */
             assert(strcmp(expected, lval_as_str(b)) == 0);
         });
@@ -942,7 +944,8 @@ describe(lval, {
             struct lval* b = lval_alloc();
             defer(lval_free(b));
             /* Copy. */
-            assert(lval_copy_range(b, a, 100, 5));
+            assert(lval_mut_as(b, a));
+            assert(!lval_copy_range(b, 0, a, 100, 5));
             /* Test. */
             assert(strcmp(expected, lval_as_str(b)) == 0);
         });
@@ -955,7 +958,8 @@ describe(lval, {
             struct lval* b = lval_alloc();
             defer(lval_free(b));
             /* Copy. */
-            assert(lval_copy_range(b, a, 0, strlen(input) + 100));
+            assert(lval_mut_as(b, a));
+            assert(lval_copy_range(b, 0, a, 0, strlen(input) + 100));
             /* Test. */
             assert(strcmp(expected, lval_as_str(b)) == 0);
         });

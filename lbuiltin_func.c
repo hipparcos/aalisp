@@ -187,7 +187,8 @@ int lbi_func_take(struct lenv* env, const struct lval* args, struct lval* acc) {
         first = 0;
         last = i;
     }
-    lval_copy_range(acc, list, first, last);
+    lval_mut_as(acc, list);
+    lval_copy_range(acc, 0, list, first, last);
     /* Cleanup. */
     lval_free(idx);
     lval_free(list);
@@ -216,7 +217,8 @@ int lbi_func_drop(struct lenv* env, const struct lval* args, struct lval* acc) {
         first = i;
         last = len;
     }
-    lval_copy_range(acc, list, first, last);
+    lval_mut_as(acc, list);
+    lval_copy_range(acc, 0, list, first, last);
     /* Cleanup. */
     lval_free(idx);
     lval_free(list);

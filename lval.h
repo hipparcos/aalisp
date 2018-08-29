@@ -92,6 +92,8 @@ bool lval_mut_func(struct lval* v, const struct lfunc* func);
 bool lval_mut_sexpr(struct lval* v);
 /** lval_mut_qexpr mutates v to LVAL_QEXPR type. */
 bool lval_mut_qexpr(struct lval* v);
+/** lval_mut_as mutates dest to the same type as src. */
+bool lval_mut_as(struct lval* dest, const struct lval* src);
 /** lval_cons add cell at the beginning of v.
  ** cell is safe to be freed by the caller after. */
 bool lval_cons(struct lval* v, const struct lval* cell);
@@ -108,8 +110,12 @@ bool lval_index(const struct lval* v, size_t c, struct lval* dest);
 /** lval_index_ptr returns a pointer to the c-th element of v. v must be a qexpr.
  ** The pointer stays valid until v is freed or mutated. */
 const struct lval* lval_index_ptr(const struct lval* v, size_t c);
+/** lval_alloc_range allocates a list of len len in dest. */
+bool lval_alloc_range(struct lval* dest, size_t len);
 /** lval_copy_range copies a range from src to dest. */
-bool lval_copy_range(struct lval* dest, const struct lval* src, size_t first, size_t last);
+bool lval_copy_range(
+        struct lval* dest, size_t dfirst,
+        const struct lval* src, size_t sfirst, size_t slast);
 /** lval_reverse reverses a list or a string. */
 bool lval_reverse(struct lval* dest, const struct lval* src);
 /** lval_swap swaps two elements of v. */

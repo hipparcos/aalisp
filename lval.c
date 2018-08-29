@@ -733,7 +733,10 @@ const struct lval* lval_index_ptr(const struct lval* v, size_t c) {
     return v->data->payload.cell[c];
 }
 
-static bool lval_mut_as(struct lval* dest, const struct lval* src) {
+bool lval_mut_as(struct lval* dest, const struct lval* src) {
+    if (!lval_is_alive(dest)) {
+        return false;
+    }
     switch (lval_type(src)) {
     case LVAL_NIL:
     case LVAL_BOOL:
@@ -759,7 +762,10 @@ static bool lval_mut_as(struct lval* dest, const struct lval* src) {
     }
 }
 
-static bool lval_alloc_range(struct lval* dest, size_t len) {
+bool lval_alloc_range(struct lval* dest, size_t len) {
+    if (!lval_is_alive(dest)) {
+        return false;
+    }
     switch (lval_type(dest)) {
     case LVAL_STR:
         if (dest->data->payload.str) {
@@ -781,29 +787,46 @@ static bool lval_alloc_range(struct lval* dest, size_t len) {
     }
 }
 
-bool lval_copy_range(struct lval* dest, const struct lval* src, size_t first, size_t last) {
-    if (!lval_is_list(src) || !lval_is_alive(dest)) {
+bool lval_copy_range(
+        struct lval* dest, size_t dfirst,
+        const struct lval* src, size_t sfirst, size_t slast) {
+    if (!lval_is_list(src) || !lval_is_list(dest)) {
         return false;
     }
-    lval_mut_as(dest, src);
+    if (lval_type(src) != lval_type(dest)) {
+        return false;
+    }
     size_t len_src = lval_len(src);
     if (len_src == 0) {
         return true;
     }
-    if (first > len_src || last < first) {
-        return true;
+    if (sfirst >= len_src || slast < sfirst) {
+        return false;
     }
-    if (last > len_src) {
-        last = len_src;
+    if (slast > len_src) {
+        slast = len_src;
     }
-    size_t len_dest = last - first;
-    lval_alloc_range(dest, len_dest);
+    size_t len_range = slast - sfirst;
+    size_t len_dest = lval_len(dest);
+    if (len_dest == 0) {
+        lval_alloc_range(dest, len_range);
+        len_dest = lval_len(dest);
+    }
+    if (dfirst >= len_dest) {
+        return false;
+    }
+    size_t dlast = len_dest;
+    if (len_dest - dfirst < len_range) {
+        len_range = len_dest - dfirst;
+    }
     if (lval_type(src) == LVAL_STR) {
-        strncpy(dest->data->payload.str, src->data->payload.str+first, len_dest);
+        strncpy(dest->data->payload.str+dfirst, src->data->payload.str+sfirst, len_range);
         return true;
     }
-    for (size_t c = 0; c < len_dest; c++) {
-        lval_dup(dest->data->payload.cell[c], src->data->payload.cell[first+c]);
+    size_t d = dfirst;
+    size_t s = sfirst;
+    while (d < dlast && s < slast) {
+        lval_dup(dest->data->payload.cell[d++], src->data->payload.cell[s++]);
     }
     return true;
 }

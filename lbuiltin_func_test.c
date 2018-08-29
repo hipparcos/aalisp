@@ -662,6 +662,35 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_repeat, {
+        test_pass(&lbuiltin_repeat, "repeat 3 {1}", {
+            /* List. */
+            struct lval* list = lval_alloc();
+            defer(lval_free(list));
+            lval_mut_qexpr(list);
+            push_num(list, 1);
+            /* Args. */
+            push_num(args, 3);
+            lval_push(args, list);
+            /* Expected. */
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 1);
+            push_num(expected, 1);
+        });
+        test_pass(&lbuiltin_repeat, "empty list", {
+            /* List. */
+            struct lval* list = lval_alloc();
+            defer(lval_free(list));
+            lval_mut_qexpr(list);
+            /* Args. */
+            push_num(args, 3);
+            lval_push(args, list);
+            /* Expected. */
+            lval_mut_qexpr(expected);
+        });
+    });
+
     subdesc(func_eval, {
         test_pass(&lbuiltin_eval, "happy path", {
             struct lval* sexpr = lval_alloc();

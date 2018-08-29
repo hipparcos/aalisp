@@ -499,6 +499,21 @@ const struct lfunc lbuiltin_mix = {
     .func         = lbi_func_mix,
 };
 
+static const struct lguard guards_repeat[] = {
+    {.argn= 1, .condition= use_condition(must_be_of_type),
+        .param= inline_ptr(enum ltype, LVAL_NUM)},
+    {.argn= 1, .condition= use_condition(must_be_positive)},
+    {.argn= 2, .condition= use_condition(must_be_a_list)}
+};
+const struct lfunc lbuiltin_repeat = {
+    .symbol       = "repeat",
+    .min_argc     =  2,
+    .max_argc     =  2,
+    .guards       = &guards_repeat[0],
+    .guardc       = LENGTH(guards_repeat),
+    .func         = lbi_func_repeat,
+};
+
 static const struct lguard guards_def[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),
         .param= inline_ptr(enum ltype, LVAL_QEXPR)},

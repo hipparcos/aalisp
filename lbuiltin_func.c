@@ -602,6 +602,29 @@ int lbi_func_mix(struct lenv* env, const struct lval* args, struct lval* acc) {
     return 0;
 }
 
+int lbi_func_repeat(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1: times. */
+    struct lval* vtimes = lval_alloc();
+    lval_index(args, 0, vtimes);
+    /* Retrieve arg 2: list. */
+    struct lval* list = lval_alloc();
+    lval_index(args, 1, list);
+    /* Repeat. */
+    long times;
+    lval_as_num(vtimes, &times);
+    size_t len = lval_len(list);
+    lval_mut_as(acc, list);
+    lval_alloc_range(acc, len * times);
+    for (long i = 0; i < times; i++) {
+        lval_copy_range(acc, i * len, list, 0, len);
+    }
+    /* Cleanup. */
+    lval_free(vtimes);
+    lval_free(list);
+    return 0;
+}
+
 static int lbi_def(struct lenv* env,
         bool (*def)(struct lenv*, const struct lval*, const struct lval*),
         const struct lval* symbols, const struct lval* values,

@@ -53,6 +53,7 @@ extern const struct lfunc lbuiltin_any;
 extern const struct lfunc lbuiltin_zip;
 extern const struct lfunc lbuiltin_sort;
 extern const struct lfunc lbuiltin_mix;
+extern const struct lfunc lbuiltin_repeat;
 
 /* Environment manipulation functions. */
 extern const struct lfunc lbuiltin_def;

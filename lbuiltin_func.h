@@ -55,6 +55,8 @@ int lbi_func_zip(struct lenv* env, const struct lval* args, struct lval* acc);
 int lbi_func_sort(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_mix mixes a list. */
 int lbi_func_mix(struct lenv* env, const struct lval* args, struct lval* acc);
+/** lbi_func_repeat creates a list by repeating argument n times. */
+int lbi_func_repeat(struct lenv* env, const struct lval* args, struct lval* acc);
 
 /** lbi_func_def defines a symbol in the global environment. */
 int lbi_func_def(struct lenv* env, const struct lval* args, struct lval* acc);

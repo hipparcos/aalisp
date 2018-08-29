@@ -184,6 +184,9 @@ Strings are considered as lists.
 - `mix` mixes a list:
     > mix {1 2 3 4 5}
     {1 3 5 2 4}
+- `repeat` creates a new list by repeating n times the given list:
+    > repeat 3 {1 2 3}
+    {1 2 3 1 2 3 1 2 3}
 
 ### Control flow functions
 

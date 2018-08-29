@@ -373,6 +373,53 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_seq, {
+        test_pass(&lbuiltin_seq, "seq 1 1", {
+            push_num(args, 1);
+            push_num(args, 1);
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+        });
+        test_pass(&lbuiltin_seq, "seq 1 5", {
+            push_num(args, 1);
+            push_num(args, 5);
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 2);
+            push_num(expected, 3);
+            push_num(expected, 4);
+            push_num(expected, 5);
+        });
+        test_pass(&lbuiltin_seq, "seq 1 5 2", {
+            push_num(args, 1);
+            push_num(args, 5);
+            push_num(args, 2);
+            lval_mut_qexpr(expected);
+            push_num(expected, 1);
+            push_num(expected, 3);
+            push_num(expected, 5);
+        });
+        test_pass(&lbuiltin_seq, "seq -1 -5", {
+            push_num(args, -1);
+            push_num(args, -5);
+            lval_mut_qexpr(expected);
+            push_num(expected, -1);
+            push_num(expected, -2);
+            push_num(expected, -3);
+            push_num(expected, -4);
+            push_num(expected, -5);
+        });
+        test_pass(&lbuiltin_seq, "seq -1 -5 -2", {
+            push_num(args, -1);
+            push_num(args, -5);
+            push_num(args, -2);
+            lval_mut_qexpr(expected);
+            push_num(expected, -1);
+            push_num(expected, -3);
+            push_num(expected, -5);
+        });
+    });
+
     subdesc(func_filter, {
         test_pass(&lbuiltin_filter, "happy path", {
             /* Function. */

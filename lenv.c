@@ -364,6 +364,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "join", &lbuiltin_join);
     lenv_put_builtin(env, "++", &lbuiltin_join);
     lenv_put_builtin(env, "list", &lbuiltin_list);
+    lenv_put_builtin(env, "seq", &lbuiltin_seq);
     lenv_put_builtin(env, "eval", &lbuiltin_eval);
     lenv_put_builtin(env, "map", &lbuiltin_map);
     lenv_put_builtin(env, "filter", &lbuiltin_filter);

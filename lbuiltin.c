@@ -373,6 +373,19 @@ const struct lfunc lbuiltin_list = {
     .func         = lbi_func_list,
 };
 
+static const struct lguard guards_seq[] = {
+    {.argn= 1, .condition= use_condition(must_be_of_type),
+        .param= inline_ptr(enum ltype, LVAL_NUM)},
+};
+const struct lfunc lbuiltin_seq = {
+    .symbol       = "seq",
+    .min_argc     =  2,
+    .max_argc     =  3,
+    .guards       = &guards_seq[0],
+    .guardc       = LENGTH(guards_seq),
+    .func         = lbi_func_seq,
+};
+
 static const struct lguard guards_eval[] = {
 };
 const struct lfunc lbuiltin_eval = {

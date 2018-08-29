@@ -169,6 +169,9 @@ Strings are considered as lists.
 - `len`;
 - `join` or `++`;
 - `list`;
+- `seq` creates a list of integers:
+    > seq 1 5 2
+    {1 3 5}
 - `eval`;
 - `map`;
 - `filter`;

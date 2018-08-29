@@ -33,6 +33,8 @@ int lbi_func_len(struct lenv* env, const struct lval* args, struct lval* acc);
 int lbi_func_join(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_list push x in to acc. acc is mutated into a qexpr. */
 int lbi_func_list(struct lenv* env, const struct lval* args, struct lval* acc);
+/** lbi_func_seq creates a list of integers. */
+int lbi_func_seq(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_eval evaluates x and put the result into acc. */
 int lbi_func_eval(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_map apply a function onto each element of a list. */

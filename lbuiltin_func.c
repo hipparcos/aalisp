@@ -278,6 +278,42 @@ int lbi_func_list(struct lenv* env, const struct lval* args, struct lval* acc) {
     return 0;
 }
 
+int lbi_func_seq(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1: first. */
+    struct lval* vfirst = lval_alloc();
+    lval_index(args, 0, vfirst);
+    /* Retrieve arg 2: last. */
+    struct lval* vlast = lval_alloc();
+    lval_index(args, 1, vlast);
+    /* Retrieve arg 3: step. */
+    struct lval* vstep = lval_alloc();
+    lval_index(args, 2, vstep);
+    /* Sequence. */
+    long first, last, step;
+    lval_as_num(vfirst, &first);
+    lval_as_num(vlast, &last);
+    lval_as_num(vstep, &step);
+    if (step == 0) {
+        step = 1;
+    }
+    lval_mut_qexpr(acc);
+    if (first > last && step > 0) {
+        step *= -1;
+    }
+    struct lval* vi = lval_alloc();
+    for (long i = first; (step > 0 && i <= last) || (step < 0 && i >= last); i += step) {
+        lval_mut_num(vi, i);
+        lval_push(acc, vi);
+    }
+    lval_free(vi);
+    /* Cleanup. */
+    lval_free(vfirst);
+    lval_free(vlast);
+    lval_free(vstep);
+    return 0;
+}
+
 int lbi_func_eval(struct lenv* env, const struct lval* args, struct lval* acc) {
     UNUSED(env);
     /* Retrieve arg 1. */

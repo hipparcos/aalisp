@@ -420,6 +420,16 @@ describe(builtin, {
         });
     });
 
+    subdesc(func_mix, {
+        test_pass(&lbuiltin_mix, "mix {}", {
+            struct lval* list = lval_alloc();
+            defer(lval_free(list));
+            lval_mut_qexpr(list);
+            lval_push(args, list);
+            lval_mut_qexpr(expected);
+        });
+    });
+
     subdesc(func_filter, {
         test_pass(&lbuiltin_filter, "happy path", {
             /* Function. */

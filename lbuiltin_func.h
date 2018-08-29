@@ -53,6 +53,8 @@ int lbi_func_any(struct lenv* env, const struct lval* args, struct lval* acc);
 int lbi_func_zip(struct lenv* env, const struct lval* args, struct lval* acc);
 /** lbi_func_sort sorts a list using quicksort. */
 int lbi_func_sort(struct lenv* env, const struct lval* args, struct lval* acc);
+/** lbi_func_mix mixes a list. */
+int lbi_func_mix(struct lenv* env, const struct lval* args, struct lval* acc);
 
 /** lbi_func_def defines a symbol in the global environment. */
 int lbi_func_def(struct lenv* env, const struct lval* args, struct lval* acc);

@@ -374,6 +374,7 @@ bool lenv_default(struct lenv* env) {
     lenv_put_builtin(env, "any", &lbuiltin_any);
     lenv_put_builtin(env, "zip", &lbuiltin_zip);
     lenv_put_builtin(env, "sort", &lbuiltin_sort);
+    lenv_put_builtin(env, "mix", &lbuiltin_mix);
     /* Environment manipulation functions. */
     lenv_put_builtin(env, "def", &lbuiltin_def);
     lenv_put_builtin(env, "ovr", &lbuiltin_override);

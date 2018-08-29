@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
 
 #include "lval.h"
 #include "lerr.h"
@@ -571,6 +572,28 @@ int lbi_func_sort(struct lenv* env, const struct lval* args, struct lval* acc) {
     lval_index(args, 0, list);
     /* Sort. */
     lval_sort(list);
+    lval_dup(acc, list);
+    /* Cleanup. */
+    lval_free(list);
+    return 0;
+}
+
+int lbi_func_mix(struct lenv* env, const struct lval* args, struct lval* acc) {
+    UNUSED(env);
+    /* Retrieve arg 1: list. */
+    struct lval* list = lval_alloc();
+    lval_index(args, 0, list);
+    /* Mix. */
+    static bool init = false;
+    if (!init) {
+        srand((unsigned int)time(NULL));
+        init = true;
+    }
+    size_t len = lval_len(list);
+    for (size_t i = 0; i < len; i++) {
+        size_t j = rand() % len;
+        lval_swap(list, i, j);
+    }
     lval_dup(acc, list);
     /* Cleanup. */
     lval_free(list);

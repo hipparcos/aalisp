@@ -490,6 +490,14 @@ const struct lfunc lbuiltin_sort = {
     .guardc       = LENGTH(guards_sort),
     .func         = lbi_func_sort,
 };
+const struct lfunc lbuiltin_mix = {
+    .symbol       = "mix",
+    .min_argc     =  1,
+    .max_argc     =  1,
+    .guards       = &guards_sort[0],
+    .guardc       = LENGTH(guards_sort),
+    .func         = lbi_func_mix,
+};
 
 static const struct lguard guards_def[] = {
     {.argn= 1, .condition= use_condition(must_be_of_type),

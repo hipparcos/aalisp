@@ -54,19 +54,12 @@ static const uint64_t mp_mask_init = 0x8000000000000000;
 
 /** mp_is_alive tells if the handle points to a valid block.
  ** The first 32 bits of the handle and of the header are compared. */
-static bool mp_is_alive(const struct mp_pool* pool, uint64_t handle) {
-    size_t index = handle & mp_mask_index;
-    uint64_t alive = handle & mp_mask_alive;
-    return pool->blockc > index
-        && alive && alive == (*mp_header_ptr(pool,index) & mp_mask_alive);
-}
+#define mp_is_alive(pool, idx, alv) \
+    (pool->blockc > idx && alv && alv == (*mp_header_ptr(pool,idx) & mp_mask_alive))
 
 /** mp_is_gettable tells if the handle points to a valid block and if it has been initialized. */
-static bool mp_is_gettable(const struct mp_pool* pool, uint64_t handle) {
-    size_t index = handle & mp_mask_index;
-    return mp_is_alive(pool, handle)
-        && (*mp_header_ptr(pool,index) & mp_mask_init);
-}
+#define mp_is_gettable(pool, idx, alv) \
+    (mp_is_alive(pool, idx, alv) && (*mp_header_ptr(pool,idx) & mp_mask_init))
 
 /** mp_print_handle is used for debugging purpose. */
 void mp_print_handle(uint64_t handle) {
@@ -138,10 +131,11 @@ bool mp_free(struct mp_pool* pool, uint64_t handle) {
     if (mp_pool_is_empty(pool)) {
         return false;
     }
-    if (!mp_is_alive(pool, handle)) {
+    uint64_t alive = handle & mp_mask_alive;
+    uint64_t index = handle & mp_mask_index;
+    if (!mp_is_alive(pool, index, alive)) {
         return false;
     }
-    size_t index = handle & mp_mask_index;
     *(mp_header_ptr(pool, index)) = (uint64_t)pool->next_free;
     pool->next_free = index;
     pool->blockc_in_use--;
@@ -152,10 +146,11 @@ const void* mp_get(struct mp_pool* pool, uint64_t handle) {
     if (!pool) {
         return NULL;
     }
-    if (!mp_is_gettable(pool, handle)) {
+    uint64_t alive = handle & mp_mask_alive;
+    uint64_t index = handle & mp_mask_index;
+    if (!mp_is_gettable(pool, index, alive)) {
         return NULL;
     }
-    size_t index = handle & mp_mask_index;
     return mp_payload_ptr(pool, index);
 }
 
@@ -163,10 +158,11 @@ bool mp_put(struct mp_pool* pool, uint64_t handle, const void* block) {
     if (!pool) {
         return false;
     }
-    if (!mp_is_alive(pool, handle)) {
+    uint64_t alive = handle & mp_mask_alive;
+    uint64_t index = handle & mp_mask_index;
+    if (!mp_is_alive(pool, index, alive)) {
         return false;
     }
-    size_t index = handle & mp_mask_index;
     *mp_header_ptr(pool, index) |= mp_mask_init; // Set init bit.
     memcpy(mp_payload_ptr(pool, index),
             block, pool->block_size);

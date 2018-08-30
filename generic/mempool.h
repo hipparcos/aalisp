@@ -24,6 +24,7 @@ bool mp_alloc(struct mp_pool*, uint64_t* handle);
 bool mp_free(struct mp_pool*, uint64_t handle);
 /** mp_get returns a pointer to the content of the block designated by handle.
  ** If the handle is not valid, mp_get returns NULL.
+ ** A newly allocated block could not be get if put has not been called first.
  ** The returned pointer gives direct read-only access to memory. */
 const void* mp_get(struct mp_pool*, uint64_t handle);
 /** mp_put set the memory of the block at handle.

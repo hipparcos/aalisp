@@ -24,19 +24,6 @@ describe(mempool, {
         assert(mp_free(pool, idx1));
     });
 
-    it("fails to get from not allocated blocks", {
-        struct mp_pool* pool = mp_pool_alloc(2, sizeof(int));
-        defer(mp_pool_free(&pool));
-        uint64_t idx1 = 1, idx2 = 2;
-        assert(NULL == mp_get(pool, idx1));
-        assert(NULL == mp_get(pool, idx2));
-        assert(mp_alloc(pool, &idx1));
-        assert(NULL != mp_get(pool, idx1));
-        assert(mp_free(pool, idx1));
-        assert(NULL == mp_get(pool, idx1));
-        assert(NULL == mp_get(pool, idx2));
-    });
-
     it("fails to put to not allocated blocks", {
         struct mp_pool* pool = mp_pool_alloc(2, sizeof(int));
         defer(mp_pool_free(&pool));
@@ -49,6 +36,22 @@ describe(mempool, {
         assert(mp_free(pool, idx1));
         assert(!mp_put(pool, idx1, &i));
         assert(!mp_put(pool, idx2, &i));
+    });
+
+    it("fails to get from not allocated blocks", {
+        struct mp_pool* pool = mp_pool_alloc(2, sizeof(int));
+        defer(mp_pool_free(&pool));
+        uint64_t idx1 = 1, idx2 = 2;
+        int i = -1;
+        assert(NULL == mp_get(pool, idx1));
+        assert(NULL == mp_get(pool, idx2));
+        assert(mp_alloc(pool, &idx1));
+        assert(NULL == mp_get(pool, idx1));
+        assert(mp_put(pool, idx1, &i));
+        assert(NULL != mp_get(pool, idx1));
+        assert(mp_free(pool, idx1));
+        assert(NULL == mp_get(pool, idx1));
+        assert(NULL == mp_get(pool, idx2));
     });
 
     it("fills a mempool then remove all elements", {

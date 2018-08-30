@@ -127,6 +127,37 @@ describe(mempool, {
             }
         }
     });
+
+    it("allocates a cluster", {
+        struct mp_cluster* cluster = mp_cluster_alloc(
+                mp_pool_alloc(512, sizeof(int)));
+        assert(cluster);
+        assert(mp_cluster_size(cluster) == 1);
+        mp_cluster_free(&cluster);
+    });
+
+    it("makes a cluster grow & shrink", {
+        size_t blockc = 10;
+        size_t poolc = 10;
+        size_t handlec = blockc * poolc;
+        uint64_t handles[handlec];
+        struct mp_cluster* cluster = mp_cluster_alloc(
+                mp_pool_alloc(blockc, sizeof(size_t)));
+        defer(mp_cluster_free(&cluster));
+        assert(mp_cluster_size(cluster) == 1);
+        /* Grow. */
+        for (size_t h = 0; h < handlec; h++) {
+            assert(mp_alloc(cluster, &handles[h]));
+            assert(mp_put(cluster, handles[h], &h));
+        }
+        assert(mp_cluster_size(cluster) == poolc+1);
+        /* Shrink. */
+        for (size_t h = 0; h < handlec; h++) {
+            assert(h == *(size_t*)mp_get(cluster, handles[h]));
+            mp_free(cluster, handles[h]);
+        }
+        assert(mp_cluster_size(cluster) == 1);
+    });
 });
 
 snow_main();

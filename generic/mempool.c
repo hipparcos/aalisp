@@ -5,6 +5,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+struct mp_cluster {
+    /** mp_cluster.pool_size is duplicated from the initial pool. */
+    size_t pool_size;
+    /** mp_cluster.block_size is duplicated from the initial pool. */
+    size_t block_size;
+    /** mp_cluster.next_free is the index of the pool with free blocks. */
+    size_t next_free;
+    /** mp_cluster.mask_pool_idx is the mask which gives the pool_idx (must be shifted). */
+    uint64_t mask_pool_idx;
+    /** mp_cluster.shift_pool_idx is the number of bits by which handle have to be shifted. */
+    uint8_t shift_pool_idx;
+    /** mp_cluster.poolc_allocated is the number of allocated pools. */
+    size_t poolc_allocated;
+    /** mp_cluster.poolc is the number of allocated pools. */
+    size_t poolc;
+    /** mp_cluster.pools is the pool of pools. */
+    struct mp_pool** pools;
+};
+
 struct mp_pool {
     /** mp_pool.block_size is the size of each memory block. */
     size_t block_size;
@@ -29,6 +48,7 @@ struct mp_pool {
  ** The last 32 bits are the actual index of the block. */
 static const uint64_t mp_mask_alive = 0x7FFFFFFF00000000;
 static const uint64_t mp_mask_index = 0x00000000FFFFFFFF;
+static const uint8_t mp_shift_alive = 32;
 
 /** header memory layout:
  ** header is a uint64_t.
@@ -64,12 +84,12 @@ static const uint64_t mp_mask_init = 0x8000000000000000;
 /** mp_print_handle is used for debugging purpose. */
 void mp_print_handle(uint64_t handle) {
     uint32_t index = handle & mp_mask_index;
-    uint32_t alive = (handle & mp_mask_alive) >> 32;
+    uint32_t alive = (handle & mp_mask_alive) >> mp_shift_alive;
     fprintf(stdout, "handle{index = %d ; alive = %x}\n", index, alive);
 }
 
 struct mp_pool* mp_pool_alloc(size_t blockc, size_t block_size) {
-    assert(blockc > 0);
+    assert(blockc > 0 && blockc <= mp_mask_index);
     assert(block_size > 0);
     struct mp_pool* pool = malloc(sizeof(struct mp_pool));
     assert(pool);
@@ -87,10 +107,12 @@ struct mp_pool* mp_pool_alloc(size_t blockc, size_t block_size) {
 }
 
 void mp_pool_free(struct mp_pool** pool) {
-    if (!pool) {
+    if (!pool || !(*pool)) {
         return;
     }
-    free((*pool)->blocks);
+    if ((*pool)->blocks) {
+        free((*pool)->blocks);
+    }
     free(*pool);
     *pool = NULL;
 }
@@ -105,11 +127,11 @@ bool mp_pool_is_full(struct mp_pool* pool) {
 
 static uint32_t mp_uniq(void) {
     static uint32_t last = 0;
-    last = (last+1) & (mp_mask_alive >> 32);
+    last = (last+1) & (mp_mask_alive >> mp_shift_alive);
     return (last) ? last : 1;
 }
 
-bool mp_alloc(struct mp_pool* pool, uint64_t* handle) {
+bool mp_alloc_from_pool(struct mp_pool* pool, uint64_t* handle) {
     if (!pool || !handle) {
         return false;
     }
@@ -118,13 +140,13 @@ bool mp_alloc(struct mp_pool* pool, uint64_t* handle) {
     }
     size_t index = pool->next_free;
     pool->next_free = *(mp_header_ptr(pool, index)) & mp_mask_index;
-    *handle = ((uint64_t)mp_uniq() << 32) + (uint64_t)index;
+    *handle = ((uint64_t)mp_uniq() << mp_shift_alive) + (uint64_t)index;
     *(mp_header_ptr(pool, index)) = *handle;
     pool->blockc_in_use++;
     return true;
 }
 
-bool mp_free(struct mp_pool* pool, uint64_t handle) {
+bool mp_free_from_pool(struct mp_pool* pool, uint64_t handle) {
     if (!pool) {
         return false;
     }
@@ -142,7 +164,7 @@ bool mp_free(struct mp_pool* pool, uint64_t handle) {
     return true;
 }
 
-const void* mp_get(struct mp_pool* pool, uint64_t handle) {
+const void* mp_get_from_pool(struct mp_pool* pool, uint64_t handle) {
     if (!pool) {
         return NULL;
     }
@@ -154,7 +176,7 @@ const void* mp_get(struct mp_pool* pool, uint64_t handle) {
     return mp_payload_ptr(pool, index);
 }
 
-bool mp_put(struct mp_pool* pool, uint64_t handle, const void* block) {
+bool mp_put_to_pool(struct mp_pool* pool, uint64_t handle, const void* block) {
     if (!pool) {
         return false;
     }
@@ -167,4 +189,155 @@ bool mp_put(struct mp_pool* pool, uint64_t handle, const void* block) {
     memcpy(mp_payload_ptr(pool, index),
             block, pool->block_size);
     return true;
+}
+
+static bool mp_cluster_grow(struct mp_cluster* cluster) {
+    size_t pool_idx = 0;
+    for (; pool_idx < cluster->poolc; pool_idx++) {
+        /* Free slot in the pool list? */
+        if (cluster->pools[pool_idx] == NULL) {
+            break;
+        }
+        /* Empty blocks? */
+        if (!mp_pool_is_full(cluster->pools[pool_idx])) {
+            cluster->next_free = pool_idx;
+            return true;
+        }
+    }
+    if (pool_idx == cluster->poolc) { // Append new pool.
+        cluster->pools = realloc(cluster->pools, (cluster->poolc+1) * sizeof(struct mp_pool*));
+        assert(cluster->pools);
+        cluster->pools[cluster->poolc] = mp_pool_alloc(cluster->pool_size, cluster->block_size);
+        cluster->poolc++;
+    } else { // Allocate a new pool at this location.
+        cluster->pools[pool_idx] = mp_pool_alloc(cluster->pool_size, cluster->block_size);
+    }
+    cluster->next_free = pool_idx;
+    cluster->poolc_allocated++;
+    return true;
+}
+
+static void mp_cluster_shrink(struct mp_cluster* cluster, size_t pool_idx) {
+    if (cluster->poolc_allocated > 1) {
+        mp_pool_free(&cluster->pools[pool_idx]);
+        cluster->poolc_allocated--;
+    }
+}
+
+static uint8_t bits(uint64_t n) {
+    uint8_t bits = 0;
+    while (n) {
+        n >>= 1;
+        bits++;
+    }
+    return bits;
+}
+static uint64_t to_mask(uint8_t n) {
+    uint64_t bits = 0;
+    while (n--) {
+        bits <<= 1;
+        bits++;
+    }
+    return bits;
+}
+
+struct mp_cluster* mp_cluster_alloc(struct mp_pool* pool) {
+    assert(pool != NULL);
+    struct mp_cluster* cluster = malloc(sizeof(struct mp_cluster));
+    assert(cluster);
+    cluster->pool_size = pool->blockc;
+    cluster->block_size = pool->block_size;
+    uint8_t bps = bits(cluster->pool_size);
+    cluster->mask_pool_idx = mp_mask_index & ~to_mask(bps);
+    assert(cluster->mask_pool_idx);
+    cluster->shift_pool_idx = bps;
+    cluster->poolc = 1;
+    cluster->poolc_allocated = 1;
+    cluster->next_free = 0;
+    cluster->pools = malloc(sizeof(struct mp_pool*));
+    cluster->pools[0] = pool;
+    if (mp_pool_is_full(pool)) {
+        mp_cluster_grow(cluster);
+    }
+    return cluster;
+}
+
+void mp_cluster_free(struct mp_cluster** cluster) {
+    if (!cluster || !(*cluster)) {
+        return;
+    }
+    for (size_t p = 0; p < (*cluster)->poolc; p++) {
+        mp_pool_free(&(*cluster)->pools[p]);
+    }
+    if ((*cluster)->pools) {
+        free((*cluster)->pools);
+    }
+    free(*cluster);
+    *cluster = NULL;
+}
+
+size_t mp_cluster_size(struct mp_cluster* cluster) {
+    if (!cluster) {
+        return 0;
+    }
+    return cluster->poolc_allocated;
+}
+
+bool mp_alloc_from_cluster(struct mp_cluster* cluster, uint64_t* handle) {
+    if (!cluster) {
+        return false;
+    }
+    size_t pool_idx = cluster->next_free;
+    struct mp_pool* pool = cluster->pools[pool_idx];
+    if (!mp_alloc_from_pool(pool, handle)) {
+        return false;
+    }
+    *handle = *handle + ((uint64_t)pool_idx << cluster->shift_pool_idx);
+    if (mp_pool_is_full(pool) && cluster->next_free == pool_idx) {
+        mp_cluster_grow(cluster);
+    }
+    return true;
+}
+
+bool mp_free_from_cluster(struct mp_cluster* cluster, uint64_t handle) {
+    if (!cluster) {
+        return false;
+    }
+    uint64_t pool_idx = (handle & cluster->mask_pool_idx) >> cluster->shift_pool_idx;
+    if (pool_idx >= cluster->poolc) {
+        return false;
+    }
+    struct mp_pool* pool = cluster->pools[pool_idx];
+    handle &= ~cluster->mask_pool_idx;
+    if (!mp_free_from_pool(pool, handle)) {
+        return false;
+    }
+    if (mp_pool_is_empty(pool) && cluster->next_free != pool_idx) {
+        mp_cluster_shrink(cluster, pool_idx);
+    }
+    return true;
+}
+
+const void* mp_get_from_cluster(struct mp_cluster* cluster, uint64_t handle) {
+    if (!cluster) {
+        return false;
+    }
+    uint64_t pool_idx = (handle & cluster->mask_pool_idx) >> cluster->shift_pool_idx;
+    if (pool_idx >= cluster->poolc) {
+        return false;
+    }
+    handle &= ~cluster->mask_pool_idx;
+    return mp_get_from_pool(cluster->pools[pool_idx], handle);
+}
+
+bool mp_put_to_cluster(struct mp_cluster* cluster, uint64_t handle, const void* block) {
+    if (!cluster) {
+        return false;
+    }
+    uint64_t pool_idx = (handle & cluster->mask_pool_idx) >> cluster->shift_pool_idx;
+    if (pool_idx >= cluster->poolc) {
+        return false;
+    }
+    handle &= ~cluster->mask_pool_idx;
+    return mp_put_to_pool(cluster->pools[pool_idx], handle, block);
 }

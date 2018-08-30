@@ -12,6 +12,7 @@ build_dir:=build
 version_file:=version.mk
 build_file:=buildnumber.mk
 test_file:=test.mk
+benchmark_file:=benchmark.mk
 version_header:=version.h
 
 objects=$(addprefix $(build_dir)/,$(sources:%.c=%.o))
@@ -20,7 +21,7 @@ deps=$(addprefix $(build_dir)/,$(sources:%.c=%.d))
 CC=gcc
 SHELL:=/bin/bash
 DEBUG?=-ggdb3 -O0
-CFLAGS:=-Wall -std=c11 $(DEBUG)
+CFLAGS:=-Wall -std=gnu11 $(DEBUG)
 LDFLAGS:=-Wall -lreadline -lm
 VGFLAGS?=\
 	--quiet --leak-check=full --show-leak-kinds=all \
@@ -44,6 +45,9 @@ clean::
 
 # test target.
 include $(test_file)
+#
+# benchmark target.
+include $(benchmark_file)
 
 leakcheck: $(out)
 	valgrind $(VGFLAGS) ./$^

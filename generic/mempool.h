@@ -38,6 +38,8 @@ struct mp_cluster* mp_cluster_alloc(struct mp_pool* pool);
 void mp_cluster_free(struct mp_cluster**);
 /** mp_cluster_size returns the number of allocated pools. */
 size_t mp_cluster_size(struct mp_cluster*);
+/** mp_cluster_is_empty tells if the given cluster is empty. */
+bool mp_cluster_is_empty(struct mp_cluster*);
 /** mp_alloc_from_cluster allocates a new block from the cluster. See mp_alloc. */
 bool mp_alloc_from_cluster(struct mp_cluster*, uint64_t* handle);
 /** mp_free_from_cluster frees the block designated by handle. See mp_free. */

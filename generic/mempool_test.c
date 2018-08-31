@@ -133,6 +133,7 @@ describe(mempool, {
                 mp_pool_alloc(512, sizeof(int)));
         assert(cluster);
         assert(mp_cluster_size(cluster) == 1);
+        assert(mp_cluster_is_empty(cluster));
         mp_cluster_free(&cluster);
     });
 

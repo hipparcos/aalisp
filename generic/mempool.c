@@ -283,6 +283,13 @@ size_t mp_cluster_size(struct mp_cluster* cluster) {
     return cluster->poolc_allocated;
 }
 
+bool mp_cluster_is_empty(struct mp_cluster* cluster) {
+    if (!cluster) {
+        return false;
+    }
+    return cluster->poolc_allocated == 1 && mp_pool_is_empty(cluster->pools[cluster->next_free]);
+}
+
 bool mp_alloc_from_cluster(struct mp_cluster* cluster, uint64_t* handle) {
     if (!cluster) {
         return false;

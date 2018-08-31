@@ -1,195 +1,206 @@
-#ifndef _H_LVAL_
-#define _H_LVAL_
+#ifndef H_LVAL_
+#define H_LVAL_
 
 #include <stdbool.h>
 #include <stdio.h>
-
+#include <stdint.h>
 #include "vendor/mini-gmp/mini-gmp.h"
 
 #include "lerr.h"
 
-/** ltype is the type of a lval. */
-enum ltype {
-    LVAL_NIL = 0,
-    LVAL_BOOL,
-    LVAL_NUM,
-    LVAL_BIGNUM,
-    LVAL_DBL,
-    LVAL_ERR,
-    LVAL_STR,
-    LVAL_SYM,
-    LVAL_FUNC,
-    LVAL_SEXPR,
-    LVAL_QEXPR,
-};
-
 /* Forward declaration of lfunc, see lfunc.h */
 struct lfunc;
 
-/** lval is the public handle to a ldata.
- ** This level of indirection is used to prepare the work on a GC. */
-struct lval {
-    /** lval.alive is a code used to detect aliveness of the payload. */
-    int alive;
-    /** lval.data is a pointer to the actual ldata. */
-    struct ldata* data;
-    /** lval.ast is a pointer to the corresponding ast node. For error handling.
-     ** Must not be used after the corresponding ast had been cleaned. */
-    const struct last* ast;
+/** lval is the public handle to a value. */
+typedef uint64_t lval_t;
+const uint64_t DEAD_REF = 0L;
+
+/** ltype is the type of a lval. */
+enum ltype {      // Underlying data is of type:
+    LVAL_NIL = 0,
+    LVAL_BOOL,    // bool
+    LVAL_NUM,     // long
+    LVAL_BIGNUM,  // mpz_t
+    LVAL_DBL,     // double
+    LVAL_ERR,     // lerr*
+    LVAL_STR,     // char*
+    LVAL_SYM,     // char*
+    LVAL_FUNC,    // lfunc*
+    LVAL_SEXPR,   // lval_t**
+    LVAL_QEXPR,   // lval_t**
 };
 
-/* Special lvals used in builtins. */
-extern const struct lval lnil;    /** = nil */
-extern const struct lval lzero;   /** = 0   */
-extern const struct lval lone;    /** = 1   */
-extern const struct lval lemptyq; /** = {}  */
-
-/* Constructor & Destructor */
-/** lval_alloc returns a handle to a new lval of type LVAL_NIL.
- ** Caller is responsible for calling lval_free. */
-struct lval* lval_alloc(void);
-/** lval_free reclaims v internal memory.
- ** v must not be used afterwards. */
-bool lval_free(struct lval* v);
-
 /* Memory management */
-/** lval_clear mutates v to LVAL_NIL.
- ** It immediately clears v internal memory.
- ** v becomes of type LVAL_NIL afterwards. */
-bool lval_clear(struct lval* v);
-/** lval_dup links dest to the same underlying data than src.
- ** lval_dup fails when dest == src. */
-bool lval_dup(struct lval* dest, const struct lval* src);
-/** lval_copy does a deep copy of src into dest. */
-bool lval_copy(struct lval* dest, const struct lval* src);
+/** lval_alloc returns a handle to a new lval of type LVAL_NIL.
+ ** It is safe to pass a lval_t by copy.
+ ** Caller is responsible for calling lval_free. */
+lval_t lval_alloc(void);
+/** lval_free reclaims v internal memory.
+ ** v is set to DEAD_REF. */
+bool lval_free(lval_t* v);
+/** lval_alloc_range allocates a list of length len in v.
+ ** v must be a list (LVAL_SEXPR, LVAL_QEXPR or LVAL_STR).
+ ** If v is DEAD_REF, v is allocated.
+ ** v might be relocated. */
+bool lval_alloc_range(lval_t* v, size_t len);
 
 /* Mutators */
-/** lval_mut_nil mutates v to LVAL_NIL type. */
-bool lval_mut_nil(struct lval* v);
-/** lval_mut_bool mutates v to LVAL_BOOL type. */
-bool lval_mut_bool(struct lval* v, bool x);
-/** lval_mut_num mutates v to LVAL_NUM type. */
-bool lval_mut_num(struct lval* v, long x);
-/** lval_mut_bignum mutates v to LVAL_BIGNUM type. x is copied. */
-bool lval_mut_bignum(struct lval* v, const mpz_t x);
-/** lval_mut_dbl mutates v to LVAL_DBL type. */
-bool lval_mut_dbl(struct lval* v, double x);
-/** lval_mut_err_code mutates v to LVAL_ERR type. */
-bool lval_mut_err_code(struct lval* v, enum lerr_code code);
+/** lval_copy copies src into dest.
+ ** If dest == src, nothing happens.
+ ** dest might be relocated. */
+bool lval_copy(lval_t* dest, lval_t src);
+/** lval_copy_range copies a range (from sfirst to but excluding) from src to
+ ** dest (starting from dfirst).
+ ** dest might be relocated. */
+bool lval_copy_range(lval_t* dest, size_t dfirst,
+        lval_t src, size_t sfirst, size_t slast);
+/** lval_mut_nil mutates v to LVAL_NIL type.
+ ** v might be relocated. */
+bool lval_mut_nil(lval_t* v);
+/** lval_mut_bool mutates v to LVAL_BOOL type.
+ ** v might be relocated. */
+bool lval_mut_bool(lval_t* v, bool x);
+/** lval_mut_num mutates v to LVAL_NUM type.
+ ** v might be relocated. */
+bool lval_mut_num(lval_t* v, long x);
+/** lval_mut_bignum mutates v to LVAL_BIGNUM type.
+ ** x is copied.
+ ** v might be relocated. */
+bool lval_mut_bignum(lval_t* v, const mpz_t x);
+/** lval_mut_dbl mutates v to LVAL_DBL type.
+ ** v might be relocated. */
+bool lval_mut_dbl(lval_t* v, double x);
+/** lval_mut_err_code mutates v to LVAL_ERR type.
+ ** v might be relocated. */
+bool lval_mut_err_code(lval_t* v, enum lerr_code code);
 /** lval_mut_err mutates v to LVAL_ERR type.
- ** *err is copied. */
-bool lval_mut_err(struct lval* v, const struct lerr* err);
+ ** err is copied.
+ ** v might be relocated. */
+bool lval_mut_err(lval_t* v, const struct lerr* err);
 /** lval_mut_err_ptr mutates v to LVAL_ERR type.
- ** *err is NOT copied. */
-bool lval_mut_err_ptr(struct lval* v, struct lerr* err);
-/** lval_mut_str mutates v to LVAL_STR type. str is copied. */
-bool lval_mut_str(struct lval* v, const char* str);
-/** lval_mut_sym mutates v to LVAL_SYM type. sym is copied */
-bool lval_mut_sym(struct lval* v, const char* const sym);
-/** lval_mut_func mutates v to LVAL_FUNC type. */
-bool lval_mut_func(struct lval* v, const struct lfunc* func);
-/** lval_mut_sexpr mutates v to LVAL_SEXPR type. */
-bool lval_mut_sexpr(struct lval* v);
-/** lval_mut_qexpr mutates v to LVAL_QEXPR type. */
-bool lval_mut_qexpr(struct lval* v);
-/** lval_mut_as mutates dest to the same type as src. */
-bool lval_mut_as(struct lval* dest, const struct lval* src);
-/** lval_cons add cell at the beginning of v.
- ** cell is safe to be freed by the caller after. */
-bool lval_cons(struct lval* v, const struct lval* cell);
-/** lval_push add cell to v. v must be of type sexpr or qexpr.
- ** cell is safe to be freed by the caller after. */
-bool lval_push(struct lval* v, const struct lval* cell);
-/** lval_pop remove cell c from v and returns it.
- ** Caller is responsible for calling free on returned value. */
-struct lval* lval_pop(struct lval* v, size_t c);
-/** lval_drop pops cell c from v then discards it. */
-bool lval_drop(struct lval* v, size_t c);
-/** lval_index returns the c-th child of a {s,q}expr in dest. */
-bool lval_index(const struct lval* v, size_t c, struct lval* dest);
-/** lval_index_ptr returns a pointer to the c-th element of v. v must be a qexpr.
- ** The pointer stays valid until v is freed or mutated. */
-const struct lval* lval_index_ptr(const struct lval* v, size_t c);
-/** lval_alloc_range allocates a list of len len in dest. */
-bool lval_alloc_range(struct lval* dest, size_t len);
-/** lval_copy_range copies a range from src to dest. */
-bool lval_copy_range(
-        struct lval* dest, size_t dfirst,
-        const struct lval* src, size_t sfirst, size_t slast);
-/** lval_reverse reverses a list or a string. */
-bool lval_reverse(struct lval* dest, const struct lval* src);
-/** lval_swap swaps two elements of v. */
-bool lval_swap(struct lval* v, size_t i, size_t j);
-/** lval_sort sorts v using the standard C qsort function. */
-bool lval_sort(struct lval* v);
-/** lval_len returns the length of an {s,q}expr. */
-size_t lval_len(const struct lval* v);
+ ** err is NOT copied.
+ ** v might be relocated. */
+bool lval_mut_err_ptr(lval_t* v, struct lerr* err);
+/** lval_mut_str mutates v to LVAL_STR type.
+ ** str is copied.
+ ** v might be relocated. */
+bool lval_mut_str(lval_t* v, const char* str);
+/** lval_mut_sym mutates v to LVAL_SYM type.
+ ** sym is copied
+ ** v might be relocated. */
+bool lval_mut_sym(lval_t* v, const char* const sym);
+/** lval_mut_func mutates v to LVAL_FUNC type.
+ ** fun is copied.
+ ** v might be relocated. */
+bool lval_mut_func(lval_t* v, const struct lfunc* fun);
+/** lval_mut_sexpr mutates v to LVAL_SEXPR type.
+ ** v might be relocated. */
+bool lval_mut_sexpr(lval_t* v);
+/** lval_mut_qexpr mutates v to LVAL_QEXPR type.
+ ** v might be relocated. */
+bool lval_mut_qexpr(lval_t* v);
+/** lval_mut_as mutates dest to the same type as src.
+ ** If dest == src, nothing happens.
+ ** v might be relocated. */
+bool lval_mut_as(lval_t* dest, lval_t src);
+
+/* List manipulators */
+/** lval_cons adds cell at the beginning of v. v must be a list.
+ ** cell is safe to be freed by the caller after.
+ ** v might be relocated. */
+bool lval_cons(lval_t* v, lval_t cell);
+/** lval_push adds cell at the end of v. v must be a list.
+ ** cell is safe to be freed by the caller after.
+ ** v might be relocated. */
+bool lval_push(lval_t* v, lval_t cell);
+/** lval_pop removes cell c from v and returns it. v must be a list.
+ ** Caller is responsible for calling free on the returned value.
+ ** v might be relocated. */
+lval_t lval_pop(lval_t* v, size_t c);
+/** lval_drop pops cell c from v then discards it. v must be a list.
+ ** v might be relocated. */
+bool lval_drop(lval_t* v, size_t c);
+/** lval_reverse reverses v. v must be a list.
+ ** If src != DEAD_REF, src is reversed into v (single pass).
+ ** v might be relocated. */
+bool lval_reverse(lval_t* v, lval_t src);
+/** lval_swap swaps two elements of v.
+ ** v might be relocated. */
+bool lval_swap(lval_t* v, size_t i, size_t j);
+/** lval_sort sorts v using the standard C qsort function.
+ ** v might be relocated. */
+bool lval_sort(lval_t* v);
 
 /* Accessors */
-/** lval_type returns the type of v. */
-enum ltype lval_type(const struct lval* v);
-/** lval_type_string returns the type of v as string. */
-const char* lval_type_string(enum ltype type);
-/** lval_type returns v as an error code. Its type must be LVAL_ERR. */
-bool lval_as_err_code(const struct lval* v, enum lerr_code* r);
-/** lval_type returns v as an lerr. Its type must be LVAL_ERR.
- ** The address pointer to the underlying error is returned.
- ** r stays valid until v is freed or mutated. */
-struct lerr* lval_as_err(const struct lval* v);
-/** lval_as_bool returns v as bool. */
-bool lval_as_bool(const struct lval* v);
-/** lval_type returns v as a long. Its type must be LVAL_NUM. */
-bool lval_as_num(const struct lval* v, long* r);
-/** lval_type returns v as a bignum. Its type must be LVAL_BIGNUM.
+/** lval_type returns v as an error code. v must be of type LVAL_ERR. */
+bool lval_as_err_code(lval_t v, enum lerr_code* r);
+/** lval_type returns v as an lerr. v must be of type LVAL_ERR.
+ ** The pointer to the underlying error is returned.
+ ** The returned value stays valid while v is alive. */
+struct lerr* lval_as_err(lval_t v);
+/** lval_as_bool returns true only when v is of type LVAL_BOOL and is true. */
+bool lval_as_bool(lval_t v);
+/** lval_type returns v as a long. v must be of type LVAL_NUM. */
+bool lval_as_num(lval_t v, long* r);
+/** lval_type returns v as a bignum. v must be of type LVAL_BIGNUM.
  ** r must be init by the caller. Caller is responsible for calling mpz_clear.
  ** r is a copy of the data. */
-bool lval_as_bignum(const struct lval* v, mpz_t r);
-/** lval_type returns v as a double. Its type must be LVAL_DBL. */
-bool lval_as_dbl(const struct lval* v, double* r);
-/** lval_type returns v as a string.
- ** v must be of type LVAL_STR.
+bool lval_as_bignum(lval_t v, mpz_t r);
+/** lval_type returns v as a double. v must be of type LVAL_DBL. */
+bool lval_as_dbl(lval_t v, double* r);
+/** lval_type returns v as a string. v must be of type LVAL_STR.
  ** The pointed value is NOT a copy of the string.
  ** The pointer stays valid while v is alive. */
-const char* lval_as_str(const struct lval* v);
-/** lval_as_sym returns v as a string. Its type must be LVAL_SYM.
+const char* lval_as_str(lval_t v);
+/** lval_as_sym returns v as a string. v must be of type LVAL_SYM.
  ** The pointed value is NOT a copy of the symbol.
  ** The pointer stays valid while v is alive. */
-const char* lval_as_sym(const struct lval* v);
+const char* lval_as_sym(lval_t v);
 /** lval_as_func returns v as a lbuiltin pointer.
  ** The pointed value is NOT a copy of the symbol.
  ** The pointer stays valid while v is alive. */
-struct lfunc* lval_as_func(const struct lval* v);
+struct lfunc* lval_as_func(lval_t v);
+/** lval_index returns the c-th child of v. v must be a list.
+ ** Caller is responsible for calling free on the returned value. */
+lval_t lval_index(lval_t v, size_t c);
+/** lval_len returns the length of v. */
+size_t lval_len(lval_t v);
 
-/* Inquiries */
-/** lval_is_nil returns true if v is nil. */
-bool lval_is_nil(const struct lval* v);
-/** lval_is_numeric returns true if v is of a numeric type.
- ** Numeric types are LVAL_NUM, LVAL_BIGNUM, LVAL_DBL. */
-bool lval_is_numeric(const struct lval* v);
-/** lval_is_zero returns true if v is zero for either of the numeric types. */
-bool lval_is_zero(const struct lval* v);
-/** lval_sign returns {-1, 0, 1} based on the sign of v. */
-int lval_sign(const struct lval* v);
-/** lval_is_list returns true is v is of type LVAL_SEXPR or LVAL_QEXPR. */
-bool lval_is_list(const struct lval* v);
-/** lval_are_equal returns true if x and y data are equal. */
-bool lval_are_equal(const struct lval* x, const struct lval* y);
-/** lval_compare compares x to y.
- ** lval_compare returns:
+/* Queriers */
+/** lval_type returns the type of v. */
+enum ltype lval_type(lval_t v);
+/** lval_type_string returns the type as string. */
+const char* lval_type_string(enum ltype type);
+/** lval_is_nil tells if v is nil.
+ ** lval_is_nil returns true when v == DEAD_REF. */
+bool lval_is_nil(lval_t v);
+/** lval_is_numeric tells if v is of types: LVAL_NUM, LVAL_BIGNUM, LVAL_DBL. */
+bool lval_is_numeric(lval_t v);
+/** lval_is_zero tells if v is zero for either of the numeric types. */
+bool lval_is_zero(lval_t v);
+/** lval_sign returns {-1, 0, 1} based on the sign of v.
+ ** lval_sign returns 0 for non-numeric types. */
+int lval_sign(lval_t v);
+/** lval_is_list tells if v is of types: LVAL_SEXPR, LVAL_QEXPR or LVAL_STR. */
+bool lval_is_list(lval_t v);
+/** lval_are_equal tells if x and y data are equal.
+ ** lval of distinct types are never equal, they must be casted beforehand. */
+bool lval_are_equal(lval_t x, lval_t y);
+/** lval_compare compares x to y:
  **   <0 if x < y
  **   =0 if x == y
  **   >0 if x > y */
-int lval_compare(const struct lval* x, const struct lval* y);
+int lval_compare(lval_t x, lval_t y);
 
-/* Printer */
-/** lval_debug_print_to prints debug infos of v to out (FILE*). */
-void lval_debug_print_to(const struct lval* v, FILE* out);
-void lval_debug_print_all_to(const struct lval* v, FILE* out);
-/** lval_debug_print prints debug infos of v to stdout. */
+/* Debugging */
+/** lval_debug_print_to prints debug infos of v to out. all means recursively. */
+void lval_debug_print_to(lval_t v, FILE* out);
+void lval_debug_print_all_to(lval_t v, FILE* out);
+/** lval_debug_print prints debug infos of v to stdout. all means recursively. */
 #define lval_debug_print(v) lval_debug_print_to(v, stdout)
 #define lval_debug_print_all(v) lval_debug_print_all_to(v, stdout)
-/** lval_print_to prints v to out (FILE*). */
-void lval_print_to(const struct lval* v, FILE* out);
+/** lval_print_to prints v to out. */
+void lval_print_to(lval_t v, FILE* out);
 /** lval_print prints v to stdout. */
 #define lval_print(v) lval_print_to(v, stdout)
 #define lval_println(v) (lval_print_to(v, stdout), fputc('\n', stdout))

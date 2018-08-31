@@ -25,7 +25,7 @@ int main(void)
 
     /* malloc/free */
     {
-    benchmark_display_banner("malloc", runs, "base case");
+    benchmark_display_banner("malloc", runs * blockc, "base case");
     stt = benchmark_get_time_ns();
     struct payload* handles[blockc];
     for (size_t r = 1; r <= runs; r++) {
@@ -42,12 +42,12 @@ int main(void)
         }
     }
     end = benchmark_get_time_ns();
-    benchmark_display_results(stt, end, runs);
+    benchmark_display_results(stt, end, runs * blockc);
     }
 
     /* A single pool. */
     {
-    benchmark_display_banner("mempool", runs, "pool overhead");
+    benchmark_display_banner("mempool", runs * blockc, "pool overhead");
     stt = benchmark_get_time_ns();
     struct mp_pool* pool = mp_pool_alloc(blockc, sizeof(struct payload));
     uint64_t handles[blockc];
@@ -67,12 +67,12 @@ int main(void)
     }
     mp_pool_free(&pool);
     end = benchmark_get_time_ns();
-    benchmark_display_results(stt, end, runs);
+    benchmark_display_results(stt, end, runs * blockc);
     }
 
     /* A cluster of a single pool. */
     {
-    benchmark_display_banner("mempool/cluster (1 pool)", runs, "cluster overhead");
+    benchmark_display_banner("mempool/cluster (1 pool)", runs * blockc, "cluster overhead");
     stt = benchmark_get_time_ns();
     struct mp_cluster* cluster =
         mp_cluster_alloc(mp_pool_alloc(blockc+1, sizeof(struct payload)));
@@ -92,12 +92,12 @@ int main(void)
     }
     mp_cluster_free(&cluster);
     end = benchmark_get_time_ns();
-    benchmark_display_results(stt, end, runs);
+    benchmark_display_results(stt, end, runs * blockc);
     }
 
     /* A cluster of 3 pools. */
     {
-    benchmark_display_banner("mempool/cluster (3 pools)", runs,
+    benchmark_display_banner("mempool/cluster (3 pools)", runs * blockc,
             "cluster growing/shrinking overhead");
     stt = benchmark_get_time_ns();
     struct mp_cluster* cluster =
@@ -118,7 +118,7 @@ int main(void)
     }
     mp_cluster_free(&cluster);
     end = benchmark_get_time_ns();
-    benchmark_display_results(stt, end, runs);
+    benchmark_display_results(stt, end, runs * blockc);
     }
 
     return EXIT_SUCCESS;

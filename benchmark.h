@@ -24,7 +24,7 @@ void benchmark_display_banner(const char* name, int runs, const char* infos) {
 
 void benchmark_display_results(long long startt, long long endt, int runs) {
     double elapsed = (double)(endt - startt) / 10e9; // s
-    double per_run = (double)(endt - startt) / 10e3 / runs; // ns
+    double per_run = (double)(endt - startt) / runs; // ns
     fprintf(stdout, "  Runs: %6d, Time elapsed: %6.3lf s, Time/Run: %6.1lf ns\n",
             runs, elapsed, per_run);
 }

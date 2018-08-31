@@ -1,7 +1,11 @@
 # dialecte
 
-dialecte \dja.lɛkt\ is a dialect of Lisp written in C (version C11).
-WIP...
+*dialecte* \dja.lɛkt\ is a dialect of Lisp written in C (revision C11).
+Its goals are simplicity and correctness.
+
+*dialecte* is a work in progress.
+It started when I read [Build Your Own Lisp](http://www.buildyourownlisp.com/).
+It's an excuse to develop in C, my favourite language so far.
 
 ## Getting started
 
@@ -14,7 +18,7 @@ Building:
 - GNU Readline (readline-x.x): CLI interface.
 
 Testing:
-- Valgrind (valgrind): memory leaks detection;
+- Valgrind (valgrind): memory leaks detection.
 
 ### Dependancies
 
@@ -23,6 +27,8 @@ Included under vendor/:
 - [mortie/snow](https://github.com/mortie/snow): unit testing.
 
 ### Building & running
+
+*dialecte* has only been compiled on Arch Linux so far.
 
 ```bash
 git clone https://github.com/hipparcos/dialecte.git
@@ -51,27 +57,25 @@ make test DO_MEMCHECK=false
 See [DOC.md](https://github.com/hipparcos/dialecte/blob/master/DOC.md).
 
 ```lisp
-> (fun {max xs} { fold (\ {x y} {if (> x y) {x} {y}}) (head xs) xs })
+> fun {max xs} {fold (\ {x y} {if (> x y) {x} {y}}) (head xs) xs}
 {max}
-> max $ list 4 5 1 9 8 3 0
+> max $ list 6 7 4 2 1 9 8 0
 9
 ```
 
 ## TODO
 
-- [ ] Add debug functions (print-env, print-func, ...);
-- [ ] Delete unused builtins;
-- [ ] Define aliases in stdlib;
-- [ ] Implement standard library (chapter 15);
-- [ ] Add tests;
-- [ ] Improve error reporting;
 - [ ] Implement pool allocation for lval;
-- [ ] Reduce the number of lval copy;
+- [ ] Reduce the number of call to lval_copy;
+- [ ] Fix strncpy warnings (when compiled with -O2);
+- [ ] Add debug functions (debug, next, step);
+- [ ] Implement standard library (chapter 15);
+- [ ] Add more unit tests (lval, builtins);
+- [ ] Improve error reporting;
 - [ ] Add cast functions;
 - [ ] Add string functions (+ character type?);
 - [ ] Support UTF-8;
 - [ ] Implement user defined types;
-- [ ] Implement list literal;
 - [ ] Implement OS interaction;
 - [ ] Implement variables hashtable;
 - [ ] Implement garbage collection;

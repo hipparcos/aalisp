@@ -16,9 +16,8 @@ struct ltok* token_list_builder(const struct token_list* list) {
         struct ltok* curr = calloc(1, sizeof(struct ltok));
         curr->type = list->type;
         size_t len = strlen(list->content);
-        curr->content = calloc(len+1, 1);
-        strncpy(curr->content, list->content, len);
-        curr->content[len] = '\0';
+        curr->content = malloc(len+1);
+        strncpy(curr->content, list->content, len+1);
         *last = curr;
         last = &(curr->next);
     } while (++list && list->content != NULL);

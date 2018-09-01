@@ -41,8 +41,8 @@ void lfunc_set_symbol(struct lfunc* fun, const char* symbol) {
     }
     if (symbol) {
         size_t len = strlen(symbol);
-        fun->symbol = calloc(len+1, 1);
-        strncpy(fun->symbol, symbol, len);
+        fun->symbol = malloc(len+1);
+        strncpy(fun->symbol, symbol, len+1);
     }
 }
 

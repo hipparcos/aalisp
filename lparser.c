@@ -24,8 +24,9 @@ static struct last* last_alloc(enum ltag tag, const char* content, const struct 
     struct last* ast = calloc(1, sizeof(struct last));
     ast->tag = tag;
     size_t len = strlen(content);
-    ast->content = calloc(len + 1, sizeof(char));
-    strncpy(ast->content, content, len);
+    ast->content = malloc(len+1);
+    memcpy(ast->content, content, len);
+    ast->content[len] = '\0';
     if (tok) {
         ast->line = tok->line;
         ast->col = tok->col;
@@ -77,18 +78,19 @@ static struct last* lparse_string(struct ltok* tokens) {
     content++; // skip opening ".
     size_t len = strlen(content);
     len--; // skip closing ".
-    char* buffer = calloc(len + 1, sizeof(char));
+    char* buffer = malloc(len+1);
     /* Remove opening and closing " and escape \. */
     size_t lencpy = 0;
     char *curr = buffer, *end = NULL;
     while (NULL != (end = strstr(content, "\\\""))) {
         lencpy = end - content;
-        strncpy(curr, content, lencpy);
+        memcpy(curr, content, lencpy);
         curr += lencpy;
         content += lencpy + 1; // skip \.
         len -= lencpy + 1;
     }
-    strncpy(curr, content, len);
+    memcpy(curr, content, len);
+    curr[len] = '\0';
     struct last* node = last_alloc(LTAG_STR, buffer, tokens);
     free(buffer);
     return node;

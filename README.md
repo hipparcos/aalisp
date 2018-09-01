@@ -67,7 +67,6 @@ See [DOC.md](https://github.com/hipparcos/dialecte/blob/master/DOC.md).
 
 - [ ] Implement pool allocation for lval;
 - [ ] Reduce the number of call to lval_copy;
-- [ ] Fix strncpy warnings (when compiled with -O2);
 - [ ] Add debug functions (debug, next, step);
 - [ ] Implement standard library (chapter 15);
 - [ ] Add more unit tests (lval, builtins);

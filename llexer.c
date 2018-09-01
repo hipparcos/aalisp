@@ -224,8 +224,10 @@ static struct ltok* llex_emit(struct lscanner* scanner) {
         tok->content = NULL;
         return tok;
     }
-    tok->content = calloc(sizeof(char), scanner->width + 1);
-    strncpy(tok->content, &scanner->input[scanner->start], scanner->width);
+    size_t len = scanner->width;
+    tok->content = malloc(len+1);
+    memcpy(tok->content, &scanner->input[scanner->start], len);
+    tok->content[len] = '\0';
     return tok;
 }
 
@@ -239,16 +241,16 @@ static struct ltok* llex_emitEOF() {
 static struct ltok* llex_emitOPAR() {
     struct ltok* tok = calloc(1, sizeof(struct ltok));
     tok->type = LTOK_OPAR;
-    tok->content = calloc(2, 1);
-    strncpy(tok->content, "(", 2);
+    tok->content = malloc(2);
+    memcpy(tok->content, "(", 2);
     return tok;
 }
 
 static struct ltok* llex_emitCPAR() {
     struct ltok* tok = calloc(1, sizeof(struct ltok));
     tok->type = LTOK_CPAR;
-    tok->content = calloc(2, 1);
-    strncpy(tok->content, ")", 2);
+    tok->content = malloc(2);
+    memcpy(tok->content, ")", 2);
     return tok;
 }
 

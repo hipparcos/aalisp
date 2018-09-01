@@ -107,8 +107,8 @@ void lerr_set_file(struct lerr* err, const char* file) {
     }
     if (file) {
         size_t len = strlen(file);
-        cause->file = calloc(len+1, 1);
-        strncpy(cause->file, file, len);
+        cause->file = malloc(len+1);
+        strncpy(cause->file, file, len+1);
     }
 }
 

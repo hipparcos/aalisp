@@ -31,8 +31,8 @@ struct last* ast_builder(struct ast_list* list) {
         struct last* node = calloc(1, sizeof(struct last));
         node->tag = curr->tag;
         size_t len = strlen(curr->content);
-        node->content = calloc(1, len + 1);
-        strncpy(node->content, curr->content, len);
+        node->content = malloc(len+1);
+        strncpy(node->content, curr->content, len+1);
         /* Save node into current list element. */
         curr->node = node;
         /* Set new root. */

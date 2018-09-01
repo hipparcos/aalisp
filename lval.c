@@ -317,10 +317,11 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
         break;
     case LVAL_STR:
     case LVAL_SYM:
-        dest->payload.str = calloc(src->len + 1, sizeof(char));
-        if (!strncpy(dest->payload.str, src->payload.str, src->len)) {
+        dest->payload.str = malloc(src->len+1);
+        if (!strncpy(dest->payload.str, src->payload.str, src->len+1)) {
             free(dest->payload.str);
         }
+        src->payload.str[src->len] = '\0';
         break;
     case LVAL_FUNC:
         dest->payload.func = lfunc_alloc();
@@ -490,11 +491,11 @@ bool lval_mut_str(struct lval* v, const char* const str) {
         return false;
     }
     size_t len = strlen(str);
-    if(!(data->payload.str = calloc(len + 1, sizeof(char)))) {
+    if(!(data->payload.str = malloc(len+1))) {
         free(data);
         return false;
     }
-    if (!strncpy(data->payload.str, str, len)) {
+    if (!strncpy(data->payload.str, str, len+1)) {
         free(data->payload.str);
         free(data);
         return false;
@@ -821,6 +822,7 @@ bool lval_copy_range(
     }
     if (lval_type(src) == LVAL_STR) {
         strncpy(dest->data->payload.str+dfirst, src->data->payload.str+sfirst, len_range);
+        dest->data->payload.str[len_dest] = '\0';
         return true;
     }
     size_t d = dfirst;

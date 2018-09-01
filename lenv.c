@@ -19,8 +19,9 @@ struct env_payload {
 static struct env_payload* env_payload_alloc(const char* key, const struct lval* val) {
     struct env_payload* pl = calloc(1, sizeof(struct env_payload));
     size_t len = strlen(key);
-    pl->key = calloc(len + 1, 1);
-    strncpy(pl->key, key, len);
+    pl->key = malloc(len+1);
+    memcpy(pl->key, key, len);
+    pl->key[len] = '\0';
     pl->val = lval_alloc();
     lval_copy(pl->val, val);
     return pl;

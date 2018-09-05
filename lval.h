@@ -26,8 +26,8 @@ enum ltype {      // Underlying data is of type:
     LVAL_STR,     // char*
     LVAL_SYM,     // char*
     LVAL_FUNC,    // lfunc*
-    LVAL_SEXPR,   // lval_t**
-    LVAL_QEXPR,   // lval_t**
+    LVAL_SEXPR,   // lval_t*
+    LVAL_QEXPR,   // lval_t*
 };
 
 /* Memory management */
@@ -133,7 +133,7 @@ bool lval_sort(lval_t* v);
 
 /* Accessors */
 /** lval_type returns v as an error code. v must be of type LVAL_ERR. */
-bool lval_as_err_code(lval_t v, enum lerr_code* r);
+enum lerr_code lval_as_err_code(lval_t v);
 /** lval_type returns v as an lerr. v must be of type LVAL_ERR.
  ** The pointer to the underlying error is returned.
  ** The returned value stays valid while v is alive. */
@@ -141,13 +141,13 @@ struct lerr* lval_as_err(lval_t v);
 /** lval_as_bool returns true only when v is of type LVAL_BOOL and is true. */
 bool lval_as_bool(lval_t v);
 /** lval_type returns v as a long. v must be of type LVAL_NUM. */
-bool lval_as_num(lval_t v, long* r);
+long lval_as_num(lval_t v);
 /** lval_type returns v as a bignum. v must be of type LVAL_BIGNUM.
- ** r must be init by the caller. Caller is responsible for calling mpz_clear.
+ ** r must be initialized by the caller. Caller is responsible for calling mpz_clear.
  ** r is a copy of the data. */
 bool lval_as_bignum(lval_t v, mpz_t r);
 /** lval_type returns v as a double. v must be of type LVAL_DBL. */
-bool lval_as_dbl(lval_t v, double* r);
+double lval_as_dbl(lval_t v);
 /** lval_type returns v as a string. v must be of type LVAL_STR.
  ** The pointed value is NOT a copy of the string.
  ** The pointer stays valid while v is alive. */
@@ -156,8 +156,8 @@ const char* lval_as_str(lval_t v);
  ** The pointed value is NOT a copy of the symbol.
  ** The pointer stays valid while v is alive. */
 const char* lval_as_sym(lval_t v);
-/** lval_as_func returns v as a lbuiltin pointer.
- ** The pointed value is NOT a copy of the symbol.
+/** lval_as_func returns v as a lfunc pointer.
+ ** The pointed value is NOT a copy of the lfunc.
  ** The pointer stays valid while v is alive. */
 struct lfunc* lval_as_func(lval_t v);
 /** lval_index returns the c-th child of v. v must be a list.

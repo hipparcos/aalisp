@@ -1,5 +1,7 @@
 # dialecte
 
+[![Build Status](https://travis-ci.org/hipparcos/dialecte.svg?branch=master)](https://travis-ci.org/hipparcos/dialecte)
+
 *dialecte* \dja.lɛkt\ is a dialect of Lisp written in C (revision C11).
 Its goals are simplicity and correctness.
 

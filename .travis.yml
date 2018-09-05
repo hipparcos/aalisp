@@ -1,0 +1,19 @@
+language: c
+install: git submodule init && git update
+script: make && make test
+compiler: gcc
+
+matrix:
+  include:
+    - os: linux
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-4.9
+      env:
+         - MATRIX_EVAL="CC=gcc-4.9"
+
+before_install:
+    - eval "${MATRIX_EVAL}"

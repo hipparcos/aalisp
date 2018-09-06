@@ -11,6 +11,7 @@ matrix:
           sources:
             - ubuntu-toolchain-r-test
           packages:
+            - build-essential
             - gcc-8
             - libreadline6
       env:

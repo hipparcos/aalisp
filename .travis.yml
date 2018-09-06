@@ -12,6 +12,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - gcc-8
+            - libreadline6
       env:
          - MATRIX_EVAL="CC=gcc-8"
 

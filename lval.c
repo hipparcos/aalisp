@@ -1,5 +1,6 @@
 #include "lval.h"
 
+#include <assert.h>
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -7,23 +8,17 @@
 #include <string.h>
 
 #include "lfunc.h"
+#include "generic/mempool.h"
 
-#ifdef OPTIM
-#define INLINE inline
-#else
-#define INLINE
-#endif
-
-/** ldata is the return type of an evalution. */
+/** ldata is a dialecte value.
+ ** A ldata initialized to {0} is a valid nil value. */
 struct ldata {
-    /** ldata.alive is a code used to detect mutation.
-     ** This ldata is dead if set to 0. */
-    int alive;
-    /** refc is the number of lval referencing this ldata. */
+    /** ldata.immutable tells if the ldata is immutable.
+     ** If so, associated lval can't be modified. */
+    bool immutable;
+    /** ldata.refc is the number of references to this ldata. */
     int refc;
-    /** ldata.mutable tells if the ldata is mutable, associated lval can't be modified. */
-    bool mutable;
-    /** ldata.type to use the union. */
+    /** ldata.type is the type of this ldata (to use the union). */
     enum ltype type;
     /** ldata.len value:
      ** LVAL_NIL = 0;
@@ -31,289 +26,146 @@ struct ldata {
      ** LVAL_STR, LVAL_SYM = strlen(str);
      ** LVAL_SEXPR, LVAL_QEXPR = number of elements. */
     size_t len;
-    /** ldata.payload must be considered according to ldata.type */
+    /** The following fields are the payload. Depends on ldata.type. */
     union {
-        bool          boolean;
+        bool          bol;
         long          num;
-        mpz_t         bignum; // int > LONG_MAX.
+        mpz_t         bgn; // integer > LONG_MAX.
         double        dbl;
-        char*         str;    // string or symbol.
-        struct lval** cell;   // list of lval (can detect data mutation).
-        struct lfunc* func;   // pointer to a function descriptor.
-        struct lerr*  err;    // error.
-    } payload;
+        char*         str; // string or symbol.
+        lval_t*       val; // list of lval.
+        struct lfunc* fun;
+        struct lerr*  err;
+    }; // Anonymous union, require C11.
 };
 
-/* ldata.alive special status. */
-#define DEAD      0
-#define IMMORTAL -1
+/** ldata_cluster is the ldata memory pool instance. */
+static struct mp_cluster* ldata_cluster;
+/** ldata_per_cluster is the number of ldata per pool. */
+static const size_t ldata_per_pool = 0xFFFF;
 
-static INLINE bool lval_is_alive(const struct lval* v) {
-    return v && v->alive != DEAD && v->alive == v->data->alive;
+/** ldata_get returns a pointer to the ldata pointed by handle or NULL.
+ ** ldata_get is an unsafe way to get/modify a ldata.
+ ** The returned pointer must not escape from the caller scope.
+ ** The returned pointer stays valid until handle is freed. */
+static struct ldata* ldata_get(lval_t handle) {
+    assert(ldata_cluster);
+    return (struct ldata*)mp_get(ldata_cluster, handle);
 }
 
-static INLINE bool lval_is_mutable(const struct lval* v) {
-    return lval_is_alive(v) && v->data->mutable;
-}
-
-/* Special lval definitions. */
-static const struct ldata ldata_nil = {
-    .alive       = IMMORTAL,
-    .mutable     = false,
-    .type        = LVAL_NIL,
-    .len         = 0,
-    .payload.num = 0
-};
-const struct lval lnil = {
-    .alive = IMMORTAL,
-    .data  = (struct ldata*) &ldata_nil
-};
-static const struct ldata ldata_zero = {
-    .alive       = IMMORTAL,
-    .mutable     = false,
-    .type        = LVAL_NUM,
-    .len         = 1,
-    .payload.num = 0
-};
-const struct lval lzero = {
-    .alive = IMMORTAL,
-    .data  = (struct ldata*) &ldata_zero
-};
- static const struct ldata ldata_one = {
-    .alive       = IMMORTAL,
-    .mutable     = false,
-    .type        = LVAL_NUM,
-    .len         = 1,
-    .payload.num = 1
-};
-const struct lval lone = {
-    .alive = IMMORTAL,
-    .data  = (struct ldata*) &ldata_one
-};
- static const struct ldata ldata_emptyq = {
-    .alive        = IMMORTAL,
-    .mutable      = false,
-    .type         = LVAL_QEXPR,
-    .len          = 0,
-    .payload.cell = NULL
-};
-const struct lval lemptyq = {
-    .alive = IMMORTAL,
-    .data  = (struct ldata*) &ldata_emptyq
-};
-/** ldata_init is used as init data for lval.
- ** It is mutable but a new data is always allocated because refc starts at 1.*/
-static struct ldata ldata_init = {
-    .alive       = IMMORTAL,
-    .mutable     = true,
-    .refc        = 1, /* Here's the trick: is mutable but refc starts at 1. */
-    .type        = LVAL_NIL,
-    .len         = 0,
-    .payload.num = 0
-};
-
-/** lvalp_unique returns a hopefully unique number. */
-static int lval_unique() {
-    static int last = 0;
-    return ++last; /* Does the trick for now. */
+/** ldata_put is a safe way to update the ldata pointed by handle.
+ ** The content of data is copied to the ldata designated by handle. */
+static bool ldata_put(lval_t handle, const struct ldata* data) {
+    assert(ldata_cluster);
+    static const struct ldata nil = {0};
+    if (!data) {
+        data = &nil;
+    }
+    return mp_put(ldata_cluster, handle, data);
 }
 
 /** ldata_clear clears the internal memory of d.
- ** d is set to nil. */
+ ** d is set to nil.
+ ** ldata_clear fails if d is immutable. */
 static bool ldata_clear(struct ldata* d) {
-    if (!d || !d->mutable) {
-        return false;
-    }
+    assert(d && !d->immutable);
     switch (d->type) {
     case LVAL_BIGNUM:
-        mpz_clear(d->payload.bignum);
+        mpz_clear(d->bgn);
         break;
     case LVAL_STR:
     case LVAL_SYM:
-        if (d->payload.str) {
-            free(d->payload.str);
-            d->payload.str = NULL;
+        if (d->str) { // d->str is NULL for 0-length strings.
+            free(d->str);
+            d->str = NULL;
         }
         break;
     case LVAL_SEXPR:
     case LVAL_QEXPR:
         for (size_t c = 0; c < d->len; c++) {
-            lval_free(d->payload.cell[c]);
+            lval_free(&d->val[c]);
         }
-        free(d->payload.cell);
-        d->payload.cell = NULL;
+        free(d->val);
+        d->val = NULL;
         break;
     case LVAL_FUNC:
-        lfunc_free(d->payload.func);
-        d->payload.func = NULL;
+        lfunc_free(d->fun);
+        d->fun = NULL;
         break;
     case LVAL_ERR:
-        lerr_free(d->payload.err);
-        d->payload.err = NULL;
+        lerr_free(d->err);
+        d->err = NULL;
         break;
     default: break;
     }
-    d->alive       = lval_unique();
-    d->mutable     = true;
-    d->refc        = 0;
-    d->type        = LVAL_NIL;
-    d->len         = 0;
-    d->payload.num = 0;
+    d->immutable = false;
+    d->refc    = 0;
+    d->type    = LVAL_NIL;
+    d->len     = 0;
+    d->num     = 0;
     return true;
 }
 
-/** ldata_alloc allocates a new ldata. Initialized to LVAL_NIL. */
-static struct ldata* ldata_alloc(void) {
-    /* Heap allocation for the moment.
-     * Allocation from a ldata pool later.
-     * Memory is set to 0. */
-    struct ldata* data = calloc(1, sizeof(struct ldata));
-    data->type = LVAL_NIL;
-    data->mutable = true;
-    ldata_clear(data);
-    return data;
+/** ldata_reference increments refc of the ldata designated by handle. */
+static bool ldata_reference(lval_t handle) {
+    struct ldata* data = ldata_get(handle);
+    if (!data) {
+        return false;
+    }
+    return ++data->refc;
 }
 
-/** lval_connect connects a v to d.
- ** v is connected to lnil (immutable) by default. */
-static void lval_connect(struct lval* v, struct ldata* d) {
-    if (!d) {
-        d = (struct ldata*) &ldata_init;
+/** ldata_dereference decrements refc of the ldata designated by handle.
+ ** If refc == 0, the ldata is freed.
+ ** handle is set to DEAD_REF. */
+static bool ldata_dereference(lval_t* handle) {
+    assert(ldata_cluster);
+    struct ldata* data = ldata_get(*handle);
+    if (!data) {
+        return false;
     }
-    if (v->data == d) {
-        v->alive = d->alive; // Keep alive updated.
-        return;
-    }
-    v->data  = d;
-    v->alive = d->alive;
-    v->data->refc++;
-}
-
-static void lval_kill(struct lval* v);
-
-/** lval_disconnect disconnects v from its ldata.
- ** v->data is reclaimed if refc = 0. */
-static struct ldata* lval_disconnect(struct lval* v, bool reuse) {
-    if (!v->data->mutable) {
-        return NULL;
-    }
-    if (v->data->refc > 0) {
-        v->data->refc--;
-    }
-    bool dead = v->data->refc == 0;
-    struct ldata* data = v->data;
-    if (reuse) {
-        if (dead) {
-            /* Reuse data. */
-            ldata_clear(data);
-        } else {
-            /* Can't reuse ldata. */
-            data = ldata_alloc();
+    if (--data->refc == 0) {
+        ldata_clear(data);
+        mp_free(ldata_cluster, *handle);
+        /* Destroy cluster if it's the last lval. */
+        if (mp_cluster_is_empty(ldata_cluster)) {
+            mp_cluster_free(&ldata_cluster);
         }
-    } else {
-        if (dead) {
-            ldata_clear(data);
-            if (data->alive != IMMORTAL) {
-                free(data);
-            }
-        }
-        data = NULL;
     }
-    /* Kill handle. */
-    v->data = NULL;
-    lval_kill(v);
-    return data;
-}
-
-/** lval_kill set v to DEAD REF. */
-static void lval_kill(struct lval* v) {
-    if (v->data) {
-        lval_disconnect(v, false);
-    }
-    v->alive = DEAD;
-    v->data = NULL;
-    v->ast = NULL;
-}
-
-struct lval* lval_alloc(void) {
-    struct lval* v = calloc(1, sizeof(struct lval));
-    /* Don't alloc data yet, let mutation functions do it. */
-    lval_connect(v, &ldata_init);
-    v->ast = NULL;
-    return v;
-}
-
-static struct lval* lval_alloc_handle(void) {
-    struct lval* v = calloc(1, sizeof(struct lval));
-    lval_kill(v);
-    return v;
-}
-
-bool lval_free(struct lval* v) {
-    if (!lval_is_mutable(v)) {
-        return false;
-    }
-    lval_disconnect(v, false);
-    free(v);
+    *handle = DEAD_REF;
     return true;
 }
 
-bool lval_clear(struct lval* v) {
-    if (!lval_is_mutable(v)) {
-        return false;
-    }
-    struct ldata* data = NULL;
-    if (!(data = lval_disconnect(v, true))) {
-        return false;
-    }
-    lval_connect(v, data);
-    return true;
-}
-
-bool lval_dup(struct lval* dest, const struct lval* src) {
-    if (!dest || !lval_is_alive(src)) {
-        return false;
-    }
-    if (dest == src) {
-        return false;
-    }
-    lval_disconnect(dest, false);
-    lval_connect(dest, src->data);
-    dest->ast = src->ast;
-    return true;
-}
-
+/** ldata_copy copies src into dest.
+ ** ldata_copy fails if dest is NULL or immutable. */
 bool ldata_copy(struct ldata* dest, const struct ldata* src) {
-    if (!dest->mutable) {
-        return false;
-    }
+    assert(dest && dest->immutable);
     switch (src->type) {
     case LVAL_NIL:
         break;
     case LVAL_BOOL:
-        dest->payload.boolean = src->payload.boolean;
+        dest->bol = src->bol;
         break;
     case LVAL_NUM:
-        dest->payload.num = src->payload.num;
+        dest->num = src->num;
         break;
     case LVAL_DBL:
-        dest->payload.dbl = src->payload.dbl;
+        dest->dbl = src->dbl;
         break;
     case LVAL_ERR:
-        dest->payload.err = lerr_alloc();
-        lerr_copy(dest->payload.err, src->payload.err);
+        dest->err = lerr_alloc();
+        lerr_copy(dest->err, src->err);
         break;
     case LVAL_SEXPR:
     case LVAL_QEXPR:
-        dest->payload.cell = calloc(src->len, sizeof(struct lval*));
+        dest->val = calloc(src->len, sizeof(lval_t));
         for (size_t c = 0; c < src->len; c++) {
-            struct lval* val = lval_alloc_handle();
-            lval_connect(val, src->payload.cell[c]->data);
-            dest->payload.cell[c] = val;
+            dest->val[c] = src->val[c];
+            ldata_reference(dest->val[c]);
         }
         break;
     case LVAL_BIGNUM:
-        mpz_init_set(dest->payload.bignum, src->payload.bignum);
+        mpz_init_set(dest->bgn, src->bgn);
         break;
     case LVAL_STR:
     case LVAL_SYM:
@@ -324,8 +176,8 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
         src->payload.str[src->len] = '\0';
         break;
     case LVAL_FUNC:
-        dest->payload.func = lfunc_alloc();
-        lfunc_copy(dest->payload.func, src->payload.func);
+        dest->fun = lfunc_alloc();
+        lfunc_copy(dest->fun, src->fun);
         break;
     }
     dest->type = src->type;
@@ -333,36 +185,51 @@ bool ldata_copy(struct ldata* dest, const struct ldata* src) {
     return true;
 }
 
-static void lval_copy_data(struct lval* v) {
-    struct ldata* data = ldata_alloc();
-    ldata_copy(data, v->data);
-    lval_disconnect(v, false);
-    lval_connect(v, data);
+static bool lval_is_mutable(lval_t handle) {
+    struct ldata* data = ldata_get(handle);
+    return data && !data->immutable;
 }
 
-static void lval_ensure_data_ownership(struct lval* v) {
-    if (v->data->refc > 1) {
-        lval_copy_data(v);
+lval_t lval_alloc(void) {
+    if (!ldata_cluster) {
+        ldata_cluster = mp_cluster_alloc(
+                mp_pool_alloc(ldata_per_pool, sizeof(struct ldata)));
+    }
+    lval_t handle;
+    if (!mp_alloc(ldata_cluster, &handle)) {
+        return DEAD_REF;
+    }
+    ldata_put(handle, NULL);
+    ldata_reference(handle);
+    return handle;
+}
+
+bool lval_free(lval_t* v) {
+    return ldata_dereference(v);
+}
+
+bool lval_clear(lval_t* v) {
+    if (!lval_is_mutable(*v)) {
+        return false;
+    }
+    ldata_dereference(v);
+    *v = lval_alloc();
+    return *v != DEAD_REF;
+}
+
+static void lval_ensure_data_ownership(lval_t* v) {
+    assert(v && *v != DEAD_REF);
+    struct ldata* data = ldata_get(*v);
+    if (data && data->refc > 1) {
+        ldata_dereference(v);
+        *v = lval_alloc();
+        ldata_copy(ldata_get(*v), data);
     }
 }
 
-bool lval_copy(struct lval* dest, const struct lval* src) {
-    if (!lval_is_alive(src)) {
-        return false;
-    }
-    if (!lval_is_mutable(dest)) {
-        return false;
-    }
-    if (!lval_clear(dest)) {
-        return false;
-    }
-    if (!ldata_copy(dest->data, src->data)) {
-        lval_connect(dest, dest->data);
-        return false;
-    }
-    lval_connect(dest, dest->data);
-    dest->ast = src->ast;
-    return true;
+bool lval_copy(lval_t* dest, lval_t src) {
+    assert(dest && *dest != DEAD_REF);
+
 }
 
 bool lval_mut_nil(struct lval* v) {

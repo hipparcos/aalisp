@@ -27,7 +27,7 @@ void handler_SIGINT(int sig) {
 }
 
 /**
- * Alisp is a small lisp interpreter.
+ * dialecte is a small lisp interpreter.
  * http://www.buildyourownlisp.com/contents
  */
 int main(int argc, char** argv) {

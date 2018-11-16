@@ -19,12 +19,13 @@ TEST_CFLAGS:=-DSNOW_ENABLED -g
 
 test: $(testcases) $(tests_lisp)
 
-$(testcases): %: $(test_build_dir)/%
+llexer_test: $(addprefix $(build_dir)/,llexer.o lerr.o)
 
-$(testcases_built): % : %.o $(filter-out $(build_dir)/$(PROGNAME).o,$(objects))
-	@$(CC) $(LDFLAGS) $(LDLIBS) $^ $(TEST_CFLAGS) -o $@
-	@if [ $$($(DO_MEMCHECK); echo $$?) -eq 0 ]; then valgrind $(VGFLAGS) ./$@; \
-		else ./$@; fi
+$(testcases): %: $(test_build_dir)/%.o
+#$(testcases_built): % : %.o #$(filter-out $(build_dir)/$(PROGNAME).o,$(objects))
+	@$(CC) $(LDFLAGS) $(LDLIBS) $^ $(TEST_CFLAGS) -o $(test_build_dir)/$@
+	@if [ $$($(DO_MEMCHECK); echo $$?) -eq 0 ]; then valgrind $(VGFLAGS) ./$(test_build_dir)/$@; \
+		else ./$(test_build_dir)/$@; fi
 
 $(test_build_dir)/%_test.o: %_test.c $$(@D)/.f
 	@$(CC) $(CFLAGS) $(TEST_CFLAGS) -c -o $@ $<

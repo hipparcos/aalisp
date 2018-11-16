@@ -5,15 +5,17 @@
 
 #include "lerr.h"
 
+#define STRINGIFY(c) #c
+
 const char* llex_type_string(enum ltok_type type) {
     switch (type) {
         case LTOK_EOF:  return "EOF";
         case LTOK_ERR:  return "error";
-        case LTOK_OPAR: return "(";
-        case LTOK_CPAR: return ")";
-        case LTOK_OBRC: return "{";
-        case LTOK_CBRC: return "}";
-        case LTOK_DOLL: return "$";
+        case LTOK_OPAR: return STRINGIFY(LLEX_OPAR);
+        case LTOK_CPAR: return STRINGIFY(LLEX_CPAR);
+        case LTOK_OBRC: return STRINGIFY(LLEX_OBRC);
+        case LTOK_CBRC: return STRINGIFY(LLEX_CBRC);
+        case LTOK_DOLL: return STRINGIFY(LLEX_DOLL);
         case LTOK_SYM:  return "symbol";
         case LTOK_NUM:  return "number";
         case LTOK_DBL:  return "double";
@@ -33,7 +35,7 @@ struct lscanner {
     enum lerr_code err;
 };
 
-static inline bool llex_is_whitespace(char c) {
+static bool llex_is_whitespace(char c) {
     switch (c) {
     case ' ':  return true;
     case '\t': return true;
@@ -42,23 +44,19 @@ static inline bool llex_is_whitespace(char c) {
     }
     return false;
 }
-static bool llex_is_whitespace(char c);
 
-static inline bool llex_is_numeric(char c) {
+static bool llex_is_numeric(char c) {
     return (c >= '0' && c <= '9');
 }
-static bool llex_is_numeric(char c);
 
-static inline bool llex_is_letter(char c) {
+static bool llex_is_letter(char c) {
     return (c >= 'a' && c <= 'z')
         || (c >= 'A' && c <= 'Z');
 }
-static bool llex_is_letter(char c);
 
-static inline bool llex_is_sign(char c) {
-    return c != '\0' && strchr("+-*/%^?!&|:,._#~<>=$§£¤µ\\", c); // strchr matches '\0'.
+static bool llex_is_symbolic(char c) {
+    return c != '\0' && strchr(LLEX_SYMB, c); // strchr matches '\0'.
 }
-static bool llex_is_sign(char c);
 
 static void llex_retain(struct lscanner* scanner) {
     if (scanner->input[scanner->pos] == '\n') {
@@ -104,12 +102,12 @@ static void llex_skip_to_EOL(struct lscanner* scanner) {
 
 static bool llex_scan_string(struct lscanner* scanner) {
     const char* c = &scanner->input[scanner->pos];
-    if (*c == '\"') {
+    if (*c == LLEX_OSTR) {
         llex_retain(scanner);
         c++; // Pass first quote.
     }
     /* Skip escaped quotes. */
-    while ((*c != '"' || *(c-1) == '\\') && *c != '\0') {
+    while ((*c != LLEX_CSTR || *(c-1) == '\\') && *c != '\0') {
         llex_retain(scanner);
         c++;
     }
@@ -147,7 +145,7 @@ static bool llex_scan_number(struct lscanner* scanner) {
 
 static bool llex_scan_symbol(struct lscanner* scanner) {
     const char* c = &scanner->input[scanner->pos];
-    while (llex_is_letter(*c) || llex_is_numeric(*c) || llex_is_sign(*c)) {
+    while (llex_is_letter(*c) || llex_is_numeric(*c) || llex_is_symbolic(*c)) {
         llex_retain(scanner);
         c++;
     }
@@ -155,10 +153,9 @@ static bool llex_scan_symbol(struct lscanner* scanner) {
     return true;
 }
 
-static inline char llex_peek(struct lscanner* scanner) {
+static char llex_peek(struct lscanner* scanner) {
     return scanner->input[scanner->pos+1];
 }
-static char llex_peek(struct lscanner* scanner);
 
 static bool llex_next(struct lscanner* scanner) {
     llex_reset(scanner);
@@ -166,30 +163,30 @@ static bool llex_next(struct lscanner* scanner) {
     char c = scanner->input[scanner->pos];
     /* Match special characters. */
     switch (c) {
-    case ';': // Comment.
+    case LLEX_COMM: // Comment.
         llex_skip_to_EOL(scanner);
         return llex_next(scanner);
-    case '(':
+    case LLEX_OPAR:
         scanner->tok = LTOK_OPAR;
         llex_retain(scanner);
         return true;
-    case ')':
+    case LLEX_CPAR:
         scanner->tok = LTOK_CPAR;
         llex_retain(scanner);
         return true;
-    case '{':
+    case LLEX_OBRC:
         scanner->tok = LTOK_OBRC;
         llex_retain(scanner);
         return true;
-    case '}':
+    case LLEX_CBRC:
         scanner->tok = LTOK_CBRC;
         llex_retain(scanner);
         return true;
-    case '$':
+    case LLEX_DOLL:
         scanner->tok = LTOK_DOLL;
         llex_retain(scanner);
         return true;
-    case '"':
+    case LLEX_OSTR:
         return llex_scan_string(scanner);
     case '\0':
     case EOF:
@@ -202,7 +199,7 @@ static bool llex_next(struct lscanner* scanner) {
         return llex_scan_number(scanner);
     }
     /* Match symbols. */
-    if (llex_is_letter(c) || llex_is_sign(c)) {
+    if (llex_is_letter(c) || llex_is_symbolic(c)) {
         return llex_scan_symbol(scanner);
     }
     scanner->tok = LTOK_ERR;
@@ -228,6 +225,7 @@ static struct ltok* llex_emit(struct lscanner* scanner) {
     tok->content = malloc(len+1);
     memcpy(tok->content, &scanner->input[scanner->start], len);
     tok->content[len] = '\0';
+    tok->len = len;
     return tok;
 }
 
@@ -242,7 +240,7 @@ static struct ltok* llex_emitOPAR() {
     struct ltok* tok = calloc(1, sizeof(struct ltok));
     tok->type = LTOK_OPAR;
     tok->content = malloc(2);
-    memcpy(tok->content, "(", 2);
+    memcpy(tok->content, STRINGIFY(LLEX_OPAR), 2);
     return tok;
 }
 
@@ -250,7 +248,8 @@ static struct ltok* llex_emitCPAR() {
     struct ltok* tok = calloc(1, sizeof(struct ltok));
     tok->type = LTOK_CPAR;
     tok->content = malloc(2);
-    memcpy(tok->content, ")", 2);
+    tok->len = 1;
+    memcpy(tok->content, STRINGIFY(LLEX_CPAR), 2);
     return tok;
 }
 
@@ -319,12 +318,15 @@ static struct ltok* llex(const char* input, struct lerr** err, bool surround) {
     return head;
 }
 
-struct ltok* lisp_lex(const char* input, struct lerr** err) {
+struct ltok* llex_lex(const char* input, struct lerr** err) {
     return llex(input, err, false);
 }
 
-struct ltok* lisp_lex_surround(const char* input, struct lerr** err) {
-    return llex(input, err, true);
+struct ltok* llex_lex_from(const FILE* input, struct lerr** err) {
+    (void)input;
+    (void)err;
+    puts("llex_lex_from not implemented yet.");
+    exit(EXIT_FAILURE);
 }
 
 void llex_free(struct ltok* tokens) {

@@ -4,13 +4,8 @@
 
 #include "vendor/snow/snow/snow.h"
 
-struct token_list {
-    enum ltok_type type;
-    char* content;
-};
-
 /** token_list_builder builds singly linked list of tokens from list. */
-struct ltok* token_list_builder(const struct token_list* list) {
+struct ltok* token_list_builder(const struct ltok* list) {
     struct ltok *head = NULL, **last = &head;
     do {
         struct ltok* curr = calloc(1, sizeof(struct ltok));
@@ -26,17 +21,7 @@ struct ltok* token_list_builder(const struct token_list* list) {
 
 /** test_pass displays input in header. */
 #define test_pass(msg, input, expected) \
-    it("passes for " msg " `" input "`", { \
-        _test_pass_body(input, expected) \
-    })
-
-/** test_pass_raw does not display input in header. */
-#define test_pass_raw(msg, input, expected) \
-    it("passes for " msg, { \
-        _test_pass_body(input, expected) \
-    })
-
-#define _test_pass_body(input, expected) \
+    it("pass for " msg, { \
         struct ltok* expec = token_list_builder(expected); \
         defer(llex_free(expec)); \
         struct lerr* err = NULL; \
@@ -45,10 +30,18 @@ struct ltok* token_list_builder(const struct token_list* list) {
         defer(llex_free(got)); \
         assert(got = llex_lex(input, &err)); \
         assert(err == NULL); \
-        assert(llex_are_all_equal(got, expec));
+        if (!llex_are_all_equal(got, expec)) { \
+            puts("\ngot:"); \
+            llex_print_all(got); \
+            puts("\nexpected:"); \
+            llex_print_all(expected); \
+            fail("got != expected"); \
+        } \
+    })
+
 
 #define test_fail(msg, input) \
-    it("fails for " msg " `" input "`", { \
+    it("fail for " msg, { \
         struct lerr* err = NULL; \
         defer(lerr_free(err)); \
         struct ltok* got = NULL; \
@@ -59,9 +52,9 @@ struct ltok* token_list_builder(const struct token_list* list) {
 
 describe(llex, {
 
-    test_pass_raw("NULL",
+    test_pass("NULL",
             NULL,
-            &((struct token_list[]){
+            &((struct ltok[]){
                 {LTOK_EOF, ""},
                 {0, NULL}
             })[0]
@@ -69,15 +62,15 @@ describe(llex, {
 
     test_pass("0-length",
             "",
-            &((struct token_list[]){
+            &((struct ltok[]){
                 {LTOK_EOF, ""},
                 {0, NULL}
             })[0]
         );
 
-    test_pass_raw("spaces",
+    test_pass("spaces",
             "   \t \r \n   ",
-            &((struct token_list[]){
+            &((struct ltok[]){
                 {LTOK_EOF, ""},
                 {0, NULL}
             })[0]
@@ -85,7 +78,7 @@ describe(llex, {
 
     test_pass("comment",
             "; I'm a comment.",
-            &((struct token_list[]){
+            &((struct ltok[]){
                 {LTOK_EOF, ""},
                 {0, NULL}
             })[0]
@@ -93,7 +86,7 @@ describe(llex, {
 
     test_pass("parenthesis",
             "(()",
-            &((struct token_list[]){
+            &((struct ltok[]){
                 {LTOK_OPAR, "("},
                 {LTOK_OPAR, "("},
                 {LTOK_CPAR, ")"},
@@ -104,7 +97,7 @@ describe(llex, {
 
     test_pass("braces",
             "{{}",
-            &((struct token_list[]){
+            &((struct ltok[]){
                 {LTOK_OBRC, "{"},
                 {LTOK_OBRC, "{"},
                 {LTOK_CBRC, "}"},
@@ -115,10 +108,10 @@ describe(llex, {
 
     test_pass("integers",
             "1 234  -32",
-            &((struct token_list[]){
-                {.type= LTOK_NUM, .content= "1"},
-                {.type= LTOK_NUM, .content= "234"},
-                {.type= LTOK_NUM, .content= "-32"},
+            &((struct ltok[]){
+                {LTOK_NUM, "1"},
+                {LTOK_NUM, "234"},
+                {LTOK_NUM, "-32"},
                 {LTOK_EOF, ""},
                 {0, NULL}
             })[0]
@@ -126,7 +119,7 @@ describe(llex, {
 
     test_pass("doubles",
             "0.0 234.0  -32.0",
-            &((struct token_list[]){
+            &((struct ltok[]){
                 {LTOK_DBL, "0.0"},
                 {LTOK_DBL, "234.0"},
                 {LTOK_DBL, "-32.0"},
@@ -137,7 +130,7 @@ describe(llex, {
 
     test_pass("strings",
             "\"string1\"  \"string2\"",
-            &((struct token_list[]){
+            &((struct ltok[]){
                 {LTOK_STR, "\"string1\""},
                 {LTOK_STR, "\"string2\""},
                 {LTOK_EOF, ""},
@@ -147,7 +140,7 @@ describe(llex, {
 
     test_pass("escaped strings",
             "\"string1\\\"escape\"",
-            &((struct token_list[]){
+            &((struct ltok[]){
                 {LTOK_STR, "\"string1\\\"escape\""},
                 {LTOK_EOF, ""},
                 {0, NULL}
@@ -156,7 +149,7 @@ describe(llex, {
 
     test_pass("symbols",
             "symbol  + == -",
-            &((struct token_list[]){
+            &((struct ltok[]){
                 {LTOK_SYM, "symbol"},
                 {LTOK_SYM, "+"},
                 {LTOK_SYM, "=="},
@@ -168,7 +161,7 @@ describe(llex, {
 
     test_pass("simple expression",
             "+ 1 (! 21)",
-            &((struct token_list[]){
+            &((struct ltok[]){
                 {LTOK_SYM, "+"},
                 {LTOK_NUM, "1"},
                 {LTOK_OPAR, "("},
@@ -182,7 +175,7 @@ describe(llex, {
 
     test_pass("simple expression with $",
             "+ 1 $ ! 21",
-            &((struct token_list[]){
+            &((struct ltok[]){
                 {LTOK_SYM, "+"},
                 {LTOK_NUM, "1"},
                 {LTOK_DOLL, "$"},
@@ -193,9 +186,9 @@ describe(llex, {
             })[0]
         );
 
-    test_pass_raw("multiline expression with comment",
+    test_pass("multiline expression with comment",
             "+ 1 (! ; I'm a comment.\n21)",
-            &((struct token_list[]){
+            &((struct ltok[]){
                 {LTOK_SYM, "+"},
                 {LTOK_NUM, "1"},
                 {LTOK_OPAR, "("},

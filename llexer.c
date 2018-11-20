@@ -236,23 +236,6 @@ static struct ltok* llex_emitEOF() {
     return tok;
 }
 
-static struct ltok* llex_emitOPAR() {
-    struct ltok* tok = calloc(1, sizeof(struct ltok));
-    tok->type = LTOK_OPAR;
-    tok->content = malloc(2);
-    memcpy(tok->content, STRINGIFY(LLEX_OPAR), 2);
-    return tok;
-}
-
-static struct ltok* llex_emitCPAR() {
-    struct ltok* tok = calloc(1, sizeof(struct ltok));
-    tok->type = LTOK_CPAR;
-    tok->content = malloc(2);
-    tok->len = 1;
-    memcpy(tok->content, STRINGIFY(LLEX_CPAR), 2);
-    return tok;
-}
-
 /** llex_append appends token to list.
  ** Returns the address of the next element. */
 static struct ltok** llex_append(struct ltok** last, struct ltok* curr) {
@@ -264,7 +247,7 @@ static struct ltok** llex_append(struct ltok** last, struct ltok* curr) {
     return &((*last)->next);
 }
 
-static struct ltok* llex(const char* input, struct lerr** err, bool surround) {
+static struct ltok* llex(const char* input, struct lerr** err) {
     if (!input || strlen(input) == 0) {
         return llex_emitEOF();
     }
@@ -285,17 +268,6 @@ static struct ltok* llex(const char* input, struct lerr** err, bool surround) {
         /* Force EOF emission. */
         llex_append(last, llex_emitEOF());
     } else {
-        /* Optional: ensure that it's a sexpr. */
-        if (head && surround && ((head && head->type != LTOK_OPAR)
-                              || (curr && curr->type != LTOK_CPAR))) {
-            struct ltok* opar = llex_emitOPAR();
-            struct ltok* cpar = llex_emitCPAR();
-            cpar->line = curr->line;
-            cpar->col = curr->col++;
-            llex_append(&opar, head);
-            last = llex_append(last, cpar);
-            head = opar;
-        }
         /* Last call to emit returns a LTOK_EOF. */
         llex_append(last, curr);
     }
@@ -319,7 +291,7 @@ static struct ltok* llex(const char* input, struct lerr** err, bool surround) {
 }
 
 struct ltok* llex_lex(const char* input, struct lerr** err) {
-    return llex(input, err, false);
+    return llex(input, err);
 }
 
 struct ltok* llex_lex_from(const FILE* input, struct lerr** err) {

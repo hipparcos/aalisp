@@ -5,17 +5,18 @@
 
 #include "lerr.h"
 
-#define STRINGIFY(c) #c
+#define CHAR_TO_STR(c,s) (s[0] = c, s)
 
 const char* llex_type_string(enum ltok_type type) {
+    static char s[2] = {0};
     switch (type) {
         case LTOK_EOF:  return "EOF";
         case LTOK_ERR:  return "error";
-        case LTOK_OPAR: return STRINGIFY(LLEX_OPAR);
-        case LTOK_CPAR: return STRINGIFY(LLEX_CPAR);
-        case LTOK_OBRC: return STRINGIFY(LLEX_OBRC);
-        case LTOK_CBRC: return STRINGIFY(LLEX_CBRC);
-        case LTOK_DOLL: return STRINGIFY(LLEX_DOLL);
+        case LTOK_OPAR: return CHAR_TO_STR(LLEX_OPAR, s);
+        case LTOK_CPAR: return CHAR_TO_STR(LLEX_CPAR, s);
+        case LTOK_OBRC: return CHAR_TO_STR(LLEX_OBRC, s);
+        case LTOK_CBRC: return CHAR_TO_STR(LLEX_CBRC, s);
+        case LTOK_DOLL: return CHAR_TO_STR(LLEX_DOLL, s);
         case LTOK_SYM:  return "symbol";
         case LTOK_NUM:  return "number";
         case LTOK_DBL:  return "double";

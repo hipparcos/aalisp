@@ -138,6 +138,16 @@ describe(llex, {
             })[0]
         );
 
+    test_pass("UTF-8 strings",
+            "\"عربى\"  \"भारतीय\"",
+            &((struct ltok[]){
+                {LTOK_STR, "\"عربى\""},
+                {LTOK_STR, "\"भारतीय\""},
+                {LTOK_EOF, ""},
+                {0, NULL}
+            })[0]
+        );
+
     test_pass("escaped strings",
             "\"string1\\\"escape\"",
             &((struct ltok[]){

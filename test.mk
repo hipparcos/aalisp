@@ -20,6 +20,7 @@ TEST_CFLAGS:=-DSNOW_ENABLED -g
 test: $(testcases) $(tests_lisp)
 
 llexer_test: $(addprefix $(build_dir)/,llexer.o lerr.o)
+lparser_test: $(addprefix $(build_dir)/,lparser.o llexer.o lerr.o)
 
 $(testcases): %: $(test_build_dir)/%.o
 #$(testcases_built): % : %.o #$(filter-out $(build_dir)/$(PROGNAME).o,$(objects))

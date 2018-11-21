@@ -12,13 +12,13 @@
 struct ast_list {
     size_t  id;
     size_t* children;
-    enum ltag tag;
+    enum last_type type;
     char* content;
     struct last* node;
 };
 
 /** ast_builder builds an ast from the given list.
- ** list must end with the LTAG_PROG node and then an element with id=0. */
+ ** list must end with the LAST_PROG node and then an element with id=0. */
 struct last* ast_builder(struct ast_list* list) {
     if (!list) {
         return NULL;
@@ -29,7 +29,7 @@ struct last* ast_builder(struct ast_list* list) {
     do {
         /* Create node. */
         struct last* node = calloc(1, sizeof(struct last));
-        node->tag = curr->tag;
+        node->type = curr->type;
         size_t len = strlen(curr->content);
         node->content = malloc(len+1);
         strncpy(node->content, curr->content, len+1);
@@ -60,30 +60,30 @@ struct last* ast_builder(struct ast_list* list) {
 }
 
 #define test_pass(msg, input, expected) \
-    it("passes for " msg " `" input "`", { \
+    it("pass for " msg, { \
         struct last* expec = ast_builder(expected); \
         defer(last_free(expec)); \
         struct lerr* err = NULL; \
         defer(lerr_free(err)); \
         struct ltok* tokens = NULL; \
-        defer(llex_free(tokens)); \
-        assert(tokens = lisp_lex(input, &err)); \
+        defer(ltok_free(tokens)); \
+        assert(tokens = llex(input, &err)); \
         struct last* got = NULL; \
         defer(last_free(got)); \
-        assert(got = lisp_parse(tokens, &err)); \
+        assert(got = lparse(tokens, &err)); \
         assert(last_are_all_equal(got, expec)); \
     })
 
 #define test_fail(msg, input) \
-    it("fails for " msg, { \
+    it("fail for " msg, { \
         struct ltok* tokens = NULL; \
-        defer(llex_free(tokens)); \
+        defer(ltok_free(tokens)); \
         struct lerr* err = NULL; \
         defer(lerr_free(err)); \
-        assert(tokens = lisp_lex(input, &err)); \
+        assert(tokens = llex(input, &err)); \
         struct last* got = NULL; \
         defer(last_free(got)); \
-        assert(!(got = lisp_parse(tokens, &err)) || err != NULL); \
+        assert(!(got = lparse(tokens, &err)) || err != NULL); \
     })
 
 describe(lparse, {
@@ -91,169 +91,169 @@ describe(lparse, {
     test_pass("s-expression",
             "(+ 1 2)",
             &((struct ast_list[]){
-                {.id= 1, .tag= LTAG_SYM, .content= "+", .children= NULL},
-                {.id= 2, .tag= LTAG_NUM, .content= "1", .children= NULL},
-                {.id= 3, .tag= LTAG_NUM, .content= "2", .children= NULL},
-                {.id= 4, .tag= LTAG_EXPR, .content= "",
+                {.id= 1, .type= LAST_SYM, .content= "+", .children= NULL},
+                {.id= 2, .type= LAST_NUM, .content= "1", .children= NULL},
+                {.id= 3, .type= LAST_NUM, .content= "2", .children= NULL},
+                {.id= 4, .type= LAST_EXPR, .content= "",
                     .children= &((size_t[]){1, 2, 3, 0}[0])},
-                {.id= 5, .tag= LTAG_SEXPR, .content= "",
+                {.id= 5, .type= LAST_SEXPR, .content= "",
                     .children= &((size_t[]){4, 0}[0])},
-                {.id= 6, .tag= LTAG_PROG, .content= "",
+                {.id= 6, .type= LAST_PROG, .content= "",
                     .children= &((size_t[]){5, 0}[0])},
-                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+                {.id= 0, .type= 0, .content= 0, .children= NULL}
             })[0]
         );
 
     test_pass("s-expression",
             "(+ 1 +)",
             &((struct ast_list[]){
-                {.id= 1, .tag= LTAG_SYM, .content= "+", .children= NULL},
-                {.id= 2, .tag= LTAG_NUM, .content= "1", .children= NULL},
-                {.id= 3, .tag= LTAG_SYM, .content= "+", .children= NULL},
-                {.id= 4, .tag= LTAG_EXPR, .content= "",
+                {.id= 1, .type= LAST_SYM, .content= "+", .children= NULL},
+                {.id= 2, .type= LAST_NUM, .content= "1", .children= NULL},
+                {.id= 3, .type= LAST_SYM, .content= "+", .children= NULL},
+                {.id= 4, .type= LAST_EXPR, .content= "",
                     .children= &((size_t[]){1, 2, 3, 0}[0])},
-                {.id= 5, .tag= LTAG_SEXPR, .content= "",
+                {.id= 5, .type= LAST_SEXPR, .content= "",
                     .children= &((size_t[]){4, 0}[0])},
-                {.id= 6, .tag= LTAG_PROG, .content= "",
+                {.id= 6, .type= LAST_PROG, .content= "",
                     .children= &((size_t[]){5, 0}[0])},
-                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+                {.id= 0, .type= 0, .content= 0, .children= NULL}
             })[0]
         );
 
     test_pass("s-expression",
             "((+) 1 2)",
             &((struct ast_list[]){
-                {.id= 1, .tag= LTAG_SYM, .content= "+", .children= NULL},
-                {.id= 2, .tag= LTAG_EXPR, .content= "",
+                {.id= 1, .type= LAST_SYM, .content= "+", .children= NULL},
+                {.id= 2, .type= LAST_EXPR, .content= "",
                     .children= &((size_t[]){1, 0}[0])},
-                {.id= 3, .tag= LTAG_SEXPR, .content= "",
+                {.id= 3, .type= LAST_SEXPR, .content= "",
                     .children= &((size_t[]){2, 0}[0])},
-                {.id= 4, .tag= LTAG_NUM, .content= "1", .children= NULL},
-                {.id= 5, .tag= LTAG_NUM, .content= "2", .children= NULL},
-                {.id= 6, .tag= LTAG_EXPR, .content= "",
+                {.id= 4, .type= LAST_NUM, .content= "1", .children= NULL},
+                {.id= 5, .type= LAST_NUM, .content= "2", .children= NULL},
+                {.id= 6, .type= LAST_EXPR, .content= "",
                     .children= &((size_t[]){3, 4, 5, 0}[0])},
-                {.id= 7, .tag= LTAG_SEXPR, .content= "",
+                {.id= 7, .type= LAST_SEXPR, .content= "",
                     .children= &((size_t[]){6, 0}[0])},
-                {.id= 8, .tag= LTAG_PROG, .content= "",
+                {.id= 8, .type= LAST_PROG, .content= "",
                     .children= &((size_t[]){7, 0}[0])},
-                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+                {.id= 0, .type= 0, .content= 0, .children= NULL}
             })[0]
         );
 
     test_pass("q-expression",
             "(head {1 2 3})",
             &((struct ast_list[]){
-                {.id= 1, .tag= LTAG_SYM, .content= "head", .children= NULL},
-                {.id= 2, .tag= LTAG_NUM, .content= "1", .children= NULL},
-                {.id= 3, .tag= LTAG_NUM, .content= "2", .children= NULL},
-                {.id= 4, .tag= LTAG_NUM, .content= "3", .children= NULL},
-                {.id= 5, .tag= LTAG_QEXPR, .content= "",
+                {.id= 1, .type= LAST_SYM, .content= "head", .children= NULL},
+                {.id= 2, .type= LAST_NUM, .content= "1", .children= NULL},
+                {.id= 3, .type= LAST_NUM, .content= "2", .children= NULL},
+                {.id= 4, .type= LAST_NUM, .content= "3", .children= NULL},
+                {.id= 5, .type= LAST_QEXPR, .content= "",
                     .children= &((size_t[]){2, 3, 4, 0}[0])},
-                {.id= 6, .tag= LTAG_EXPR, .content= "",
+                {.id= 6, .type= LAST_EXPR, .content= "",
                     .children= &((size_t[]){1, 5, 0}[0])},
-                {.id= 7, .tag= LTAG_SEXPR, .content= "",
+                {.id= 7, .type= LAST_SEXPR, .content= "",
                     .children= &((size_t[]){6, 0}[0])},
-                {.id= 8, .tag= LTAG_PROG, .content= "",
+                {.id= 8, .type= LAST_PROG, .content= "",
                     .children= &((size_t[]){7, 0}[0])},
-                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+                {.id= 0, .type= 0, .content= 0, .children= NULL}
             })[0]
         );
 
     test_pass("doubles",
             "(+ 1.0 2.0)",
             &((struct ast_list[]){
-                {.id= 1, .tag= LTAG_SYM, .content= "+", .children= NULL},
-                {.id= 2, .tag= LTAG_DBL, .content= "1.0", .children= NULL},
-                {.id= 3, .tag= LTAG_DBL, .content= "2.0", .children= NULL},
-                {.id= 4, .tag= LTAG_EXPR, .content= "",
+                {.id= 1, .type= LAST_SYM, .content= "+", .children= NULL},
+                {.id= 2, .type= LAST_DBL, .content= "1.0", .children= NULL},
+                {.id= 3, .type= LAST_DBL, .content= "2.0", .children= NULL},
+                {.id= 4, .type= LAST_EXPR, .content= "",
                     .children= &((size_t[]){1, 2, 3, 0}[0])},
-                {.id= 5, .tag= LTAG_SEXPR, .content= "",
+                {.id= 5, .type= LAST_SEXPR, .content= "",
                     .children= &((size_t[]){4, 0}[0])},
-                {.id= 6, .tag= LTAG_PROG, .content= "",
+                {.id= 6, .type= LAST_PROG, .content= "",
                     .children= &((size_t[]){5, 0}[0])},
-                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+                {.id= 0, .type= 0, .content= 0, .children= NULL}
             })[0]
         );
 
     test_pass("strings",
             "(concat \"test\" \"esc\\\"aped\")",
             &((struct ast_list[]){
-                {.id= 1, .tag= LTAG_SYM, .content= "concat", .children= NULL},
-                {.id= 2, .tag= LTAG_STR, .content= "test", .children= NULL},
-                {.id= 3, .tag= LTAG_STR, .content= "esc\"aped", .children= NULL},
-                {.id= 4, .tag= LTAG_EXPR, .content= "",
+                {.id= 1, .type= LAST_SYM, .content= "concat", .children= NULL},
+                {.id= 2, .type= LAST_STR, .content= "test", .children= NULL},
+                {.id= 3, .type= LAST_STR, .content= "esc\"aped", .children= NULL},
+                {.id= 4, .type= LAST_EXPR, .content= "",
                     .children= &((size_t[]){1, 2, 3, 0}[0])},
-                {.id= 5, .tag= LTAG_SEXPR, .content= "",
+                {.id= 5, .type= LAST_SEXPR, .content= "",
                     .children= &((size_t[]){4, 0}[0])},
-                {.id= 6, .tag= LTAG_PROG, .content= "",
+                {.id= 6, .type= LAST_PROG, .content= "",
                     .children= &((size_t[]){5, 0}[0])},
-                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+                {.id= 0, .type= 0, .content= 0, .children= NULL}
             })[0]
         );
 
     test_pass("nested s-expressions",
             "(+ 1 (! 2))",
             &((struct ast_list[]){
-                {.id= 1, .tag= LTAG_SYM, .content= "!", .children= NULL},
-                {.id= 2, .tag= LTAG_NUM, .content= "2", .children= NULL},
-                {.id= 3, .tag= LTAG_EXPR, .content= "",
+                {.id= 1, .type= LAST_SYM, .content= "!", .children= NULL},
+                {.id= 2, .type= LAST_NUM, .content= "2", .children= NULL},
+                {.id= 3, .type= LAST_EXPR, .content= "",
                     .children= &((size_t[]){1, 2, 0}[0])},
-                {.id= 4, .tag= LTAG_SEXPR, .content= "",
+                {.id= 4, .type= LAST_SEXPR, .content= "",
                     .children= &((size_t[]){3, 0}[0])},
-                {.id= 5, .tag= LTAG_SYM, .content= "+", .children= NULL},
-                {.id= 6, .tag= LTAG_NUM, .content= "1", .children= NULL},
-                {.id= 7, .tag= LTAG_EXPR, .content= "",
+                {.id= 5, .type= LAST_SYM, .content= "+", .children= NULL},
+                {.id= 6, .type= LAST_NUM, .content= "1", .children= NULL},
+                {.id= 7, .type= LAST_EXPR, .content= "",
                     .children= &((size_t[]){5, 6, 4, 0}[0])},
-                {.id= 8, .tag= LTAG_SEXPR, .content= "",
+                {.id= 8, .type= LAST_SEXPR, .content= "",
                     .children= &((size_t[]){7, 0}[0])},
-                {.id= 9, .tag= LTAG_PROG, .content= "",
+                {.id= 9, .type= LAST_PROG, .content= "",
                     .children= &((size_t[]){8, 0}[0])},
-                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+                {.id= 0, .type= 0, .content= 0, .children= NULL}
             })[0]
         );
 
     test_pass("nested s-expressions with $",
             "(+ 1 $ ! 2)",
             &((struct ast_list[]){
-                {.id= 1, .tag= LTAG_SYM, .content= "!", .children= NULL},
-                {.id= 2, .tag= LTAG_NUM, .content= "2", .children= NULL},
-                {.id= 3, .tag= LTAG_EXPR, .content= "",
+                {.id= 1, .type= LAST_SYM, .content= "!", .children= NULL},
+                {.id= 2, .type= LAST_NUM, .content= "2", .children= NULL},
+                {.id= 3, .type= LAST_EXPR, .content= "",
                     .children= &((size_t[]){1, 2, 0}[0])},
-                {.id= 4, .tag= LTAG_SEXPR, .content= "",
+                {.id= 4, .type= LAST_SEXPR, .content= "",
                     .children= &((size_t[]){3, 0}[0])},
-                {.id= 5, .tag= LTAG_SYM, .content= "+", .children= NULL},
-                {.id= 6, .tag= LTAG_NUM, .content= "1", .children= NULL},
-                {.id= 7, .tag= LTAG_EXPR, .content= "",
+                {.id= 5, .type= LAST_SYM, .content= "+", .children= NULL},
+                {.id= 6, .type= LAST_NUM, .content= "1", .children= NULL},
+                {.id= 7, .type= LAST_EXPR, .content= "",
                     .children= &((size_t[]){5, 6, 4, 0}[0])},
-                {.id= 8, .tag= LTAG_SEXPR, .content= "",
+                {.id= 8, .type= LAST_SEXPR, .content= "",
                     .children= &((size_t[]){7, 0}[0])},
-                {.id= 9, .tag= LTAG_PROG, .content= "",
+                {.id= 9, .type= LAST_PROG, .content= "",
                     .children= &((size_t[]){8, 0}[0])},
-                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+                {.id= 0, .type= 0, .content= 0, .children= NULL}
             })[0]
         );
 
     test_pass("s-expressions with $ inside a q-expression",
             "(head {+ 1 $ ! 2})",
             &((struct ast_list[]){
-                {.id= 1, .tag= LTAG_SYM, .content= "!", .children= NULL},
-                {.id= 2, .tag= LTAG_NUM, .content= "2", .children= NULL},
-                {.id= 3, .tag= LTAG_EXPR, .content= "",
+                {.id= 1, .type= LAST_SYM, .content= "!", .children= NULL},
+                {.id= 2, .type= LAST_NUM, .content= "2", .children= NULL},
+                {.id= 3, .type= LAST_EXPR, .content= "",
                     .children= &((size_t[]){1, 2, 0}[0])},
-                {.id= 4, .tag= LTAG_SEXPR, .content= "",
+                {.id= 4, .type= LAST_SEXPR, .content= "",
                     .children= &((size_t[]){3, 0}[0])},
-                {.id= 5, .tag= LTAG_SYM, .content= "+", .children= NULL},
-                {.id= 6, .tag= LTAG_NUM, .content= "1", .children= NULL},
-                {.id= 7, .tag= LTAG_QEXPR, .content= "",
+                {.id= 5, .type= LAST_SYM, .content= "+", .children= NULL},
+                {.id= 6, .type= LAST_NUM, .content= "1", .children= NULL},
+                {.id= 7, .type= LAST_QEXPR, .content= "",
                     .children= &((size_t[]){5, 6, 4, 0}[0])},
-                {.id= 8, .tag= LTAG_SYM, .content= "head", .children= NULL},
-                {.id= 9, .tag= LTAG_EXPR, .content= "",
+                {.id= 8, .type= LAST_SYM, .content= "head", .children= NULL},
+                {.id= 9, .type= LAST_EXPR, .content= "",
                     .children= &((size_t[]){8, 7, 0}[0])},
-                {.id= 10, .tag= LTAG_SEXPR, .content= "",
+                {.id= 10, .type= LAST_SEXPR, .content= "",
                     .children= &((size_t[]){9, 0}[0])},
-                {.id= 11, .tag= LTAG_PROG, .content= "",
+                {.id= 11, .type= LAST_PROG, .content= "",
                     .children= &((size_t[]){10, 0}[0])},
-                {.id= 0, .tag= 0, .content= 0, .children= NULL}
+                {.id= 0, .type= 0, .content= 0, .children= NULL}
             })[0]
         );
 

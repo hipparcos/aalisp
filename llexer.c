@@ -7,7 +7,7 @@
 
 #define CHAR_TO_STR(c,s) (s[0] = c, s)
 
-const char* llex_type_string(enum ltok_type type) {
+const char* ltok_type_string(enum ltok_type type) {
     static char s[2] = {0};
     switch (type) {
         case LTOK_EOF:  return "EOF";
@@ -248,7 +248,7 @@ static struct ltok** llex_append(struct ltok** last, struct ltok* curr) {
     return &((*last)->next);
 }
 
-static struct ltok* llex(const char* input, struct lerr** err) {
+struct ltok* llex(const char* input, struct lerr** err) {
     if (!input || strlen(input) == 0) {
         return llex_emitEOF();
     }
@@ -291,18 +291,14 @@ static struct ltok* llex(const char* input, struct lerr** err) {
     return head;
 }
 
-struct ltok* llex_lex(const char* input, struct lerr** err) {
-    return llex(input, err);
-}
-
-struct ltok* llex_lex_from(const FILE* input, struct lerr** err) {
+struct ltok* llex_from(const FILE* input, struct lerr** err) {
     (void)input;
     (void)err;
     puts("llex_lex_from not implemented yet.");
     exit(EXIT_FAILURE);
 }
 
-void llex_free(struct ltok* tokens) {
+void ltok_free(struct ltok* tokens) {
     if (!tokens) {
         return;
     }
@@ -320,14 +316,14 @@ void llex_free(struct ltok* tokens) {
     }
 }
 
-bool llex_are_equal(struct ltok* left, struct ltok* right) {
+bool ltok_are_equal(struct ltok* left, struct ltok* right) {
     if (!left || !right) {
         return false;
     }
     return left->type == right->type && strcmp(left->content, right->content) == 0;
 }
 
-bool llex_are_all_equal(struct ltok* left, struct ltok* right) {
+bool ltok_are_all_equal(struct ltok* left, struct ltok* right) {
     if (!left || !right) {
         return false;
     }
@@ -337,29 +333,29 @@ bool llex_are_all_equal(struct ltok* left, struct ltok* right) {
          && lcurr->type != LTOK_EOF && rcurr->type != LTOK_EOF) {
         lnext = lcurr->next;
         rnext = rcurr->next;
-        if (!llex_are_equal(lcurr, rcurr)) {
+        if (!ltok_are_equal(lcurr, rcurr)) {
             return false;
         }
     }
     return lcurr && lcurr->type == LTOK_EOF && rcurr && rcurr->type == LTOK_EOF;
 }
 
-void llex_print_to(struct ltok* token, FILE* out) {
+void ltok_print_to(struct ltok* token, FILE* out) {
     if (!token) {
         return;
     }
     fprintf(out, "tok:{type: %s, %d:%d, content: \"%s\"}",
-            llex_type_string(token->type), token->line, token->col, token->content);
+            ltok_type_string(token->type), token->line, token->col, token->content);
     fputc('\n', out);
 }
 
-void llex_print_all_to(struct ltok* tokens, FILE* out) {
+void ltok_print_all_to(struct ltok* tokens, FILE* out) {
     if (!tokens) {
         return;
     }
     struct ltok *curr, *next = tokens;
     while ((curr = next) && curr->type != LTOK_EOF) {
         next = curr->next;
-        llex_print_to(curr, out);
+        ltok_print_to(curr, out);
     }
 }

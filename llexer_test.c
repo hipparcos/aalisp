@@ -23,18 +23,18 @@ struct ltok* token_list_builder(const struct ltok* list) {
 #define test_pass(msg, input, expected) \
     it("pass for " msg, { \
         struct ltok* expec = token_list_builder(expected); \
-        defer(llex_free(expec)); \
+        defer(ltok_free(expec)); \
         struct lerr* err = NULL; \
         defer(lerr_free(err)); \
         struct ltok* got = NULL; \
-        defer(llex_free(got)); \
-        assert(got = llex_lex(input, &err)); \
+        defer(ltok_free(got)); \
+        assert(got = llex(input, &err)); \
         assert(err == NULL); \
-        if (!llex_are_all_equal(got, expec)) { \
+        if (!ltok_are_all_equal(got, expec)) { \
             puts("\ngot:"); \
-            llex_print_all(got); \
+            ltok_print_all(got); \
             puts("\nexpected:"); \
-            llex_print_all(expected); \
+            ltok_print_all(expected); \
             fail("got != expected"); \
         } \
     })
@@ -45,8 +45,8 @@ struct ltok* token_list_builder(const struct ltok* list) {
         struct lerr* err = NULL; \
         defer(lerr_free(err)); \
         struct ltok* got = NULL; \
-        assert(got = llex_lex(input, &err)); \
-        defer(llex_free(got)); \
+        assert(got = llex(input, &err)); \
+        defer(ltok_free(got)); \
         assert(err != NULL); \
     })
 

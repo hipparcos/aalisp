@@ -191,6 +191,22 @@ describe(lparse, {
             })[0]
         );
 
+    test_pass("UTF-8 strings",
+            "(concat \"عربى\" \"भारतीय\")",
+            &((struct ast_list[]){
+                {.id= 1, .type= LAST_SYM, .content= "concat", .children= NULL},
+                {.id= 2, .type= LAST_STR, .content= "عربى", .children= NULL},
+                {.id= 3, .type= LAST_STR, .content= "भारतीय", .children= NULL},
+                {.id= 4, .type= LAST_EXPR, .content= "",
+                    .children= &((size_t[]){1, 2, 3, 0}[0])},
+                {.id= 5, .type= LAST_SEXPR, .content= "",
+                    .children= &((size_t[]){4, 0}[0])},
+                {.id= 6, .type= LAST_PROG, .content= "",
+                    .children= &((size_t[]){5, 0}[0])},
+                {.id= 0, .type= 0, .content= 0, .children= NULL}
+            })[0]
+        );
+
     test_pass("nested s-expressions",
             "(+ 1 (! 2))",
             &((struct ast_list[]){

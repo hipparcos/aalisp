@@ -268,6 +268,27 @@ static struct last* lparse_qexpr(struct ltok* first, struct ltok** last) {
     return qexpr;
 }
 
+/** last_compress removes useless LAST_SEXPR+LAST_EXPR stacks.
+ ** ex: LAST_SEXPR(LAST_EXPR(LAST_SEXPR(x))) => LAST_SEXPR(x) */
+static struct last* last_compress(struct last* ast) {
+    while (true) {
+        if (ast->type == LAST_SEXPR && ast->childrenc == 1) {
+            struct last* child = ast->children[0];
+            if (child->type == LAST_EXPR && child->childrenc == 1) {
+                struct last* grandchild = child->children[0];
+                if (grandchild->childrenc == 1) {
+                    child->children[0] = NULL;
+                    last_free(ast);
+                    ast = grandchild;
+                    continue;
+                }
+            }
+        }
+        break;
+    }
+    return ast;
+}
+
 static struct last* lparse_program(struct ltok* tokens, struct last** error) {
     if (tokens->type == LTOK_EOF) {
         return NULL;
@@ -283,6 +304,7 @@ static struct last* lparse_program(struct ltok* tokens, struct last** error) {
             break;
         }
     }
+    prg->children[0] = last_compress(prg->children[0]);
     return prg;
 }
 

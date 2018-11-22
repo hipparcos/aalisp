@@ -71,7 +71,13 @@ struct last* ast_builder(struct ast_list* list) {
         struct last* got = NULL; \
         defer(last_free(got)); \
         assert(got = lparse(tokens, &err)); \
-        assert(last_are_all_equal(got, expec)); \
+        if (!last_are_all_equal(got, expec)) { \
+            puts("\ngot:"); \
+            last_print_all(got); \
+            puts("\nexpected:"); \
+            last_print_all(expec); \
+            fail("got != expected"); \
+        } \
     })
 
 #define test_fail(msg, input) \

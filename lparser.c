@@ -197,19 +197,16 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
 
 static struct last* lparse_sexpr(struct ltok* first, struct ltok** last, bool skip_par) {
     struct ltok* curr = first;
-    struct last* sexpr;
+    struct last* sexpr = NULL;
     struct last* expr = NULL;
     if (curr->type == LTOK_EOF) {
         *last = curr;
         return NULL;
     }
     // (.
-    if (curr->type != LTOK_OPAR && curr->type != LTOK_DOLL) {
-        sexpr = last_error(LERR_PARSER_MISSING_OPAR, curr);
-        *last = curr;
-        return sexpr;
+    if (curr->type == LTOK_DOLL || (skip_par && curr->type == LTOK_OPAR)) {
+        curr = curr->next; // Skip ( or $.
     }
-    curr = curr->next; // Skip ( or $.
     // Inner expr.
     expr = lparse_expr(curr, &curr);
     // Error = break.
@@ -217,11 +214,15 @@ static struct last* lparse_sexpr(struct ltok* first, struct ltok** last, bool sk
         return expr;
     }
     // ) or error.
-    if (skip_par && curr->type != LTOK_CPAR) {
-        sexpr = last_error(LERR_PARSER_MISSING_CPAR, curr);
-    } else {
+    if (skip_par) {
+        if (curr->type != LTOK_CPAR) {
+            sexpr = last_error(LERR_PARSER_MISSING_CPAR, curr);
+        } else {
+            curr = curr->next; // Skip ).
+        }
+    }
+    if (!sexpr) {
         sexpr = last_alloc(LAST_SEXPR, "", 0, curr);
-        if (skip_par) curr = curr->next; // Skip ).
     }
     last_attach(expr, sexpr);
     *last = curr;
@@ -275,7 +276,7 @@ static struct last* lparse_program(struct ltok* tokens, struct last** error) {
     struct ltok* curr = tokens;
     struct last* expr = NULL;
     *error = NULL;
-    while ((expr = lparse_sexpr(curr, &curr, true))) {
+    while ((expr = lparse_sexpr(curr, &curr, false))) {
         last_attach(expr, prg);
         if (expr->type == LAST_ERR) {
             *error = expr;

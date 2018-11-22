@@ -1,4 +1,4 @@
-#include "lmut.h"
+#include "lmutator.h"
 
 #include <limits.h>
 #include "vendor/mini-gmp/mini-gmp.h"
@@ -11,39 +11,39 @@
 #include "vendor/snow/snow/snow.h"
 
 #define test_pass(msg, input, ...) \
-    it("passes for " msg " `"input"`", { \
+    it("pass for " msg, { \
         struct lval* expected = lval_alloc(); \
         __VA_ARGS__ \
         defer(lval_free(expected)); \
         struct lerr* err = NULL; \
         defer(lerr_free(err)); \
         struct ltok* tokens = NULL; \
-        defer(llex_free(tokens)); \
-        assert(NULL != (tokens = lisp_lex(input, &err))); \
+        defer(ltok_free(tokens)); \
+        assert(NULL != (tokens = llex(input, &err))); \
         struct last* ast = NULL; \
         defer(last_free(ast)); \
-        assert(NULL != (ast = lisp_parse(tokens, &err))); \
+        assert(NULL != (ast = lparse(tokens, &err))); \
         struct lval* got = NULL; \
         defer(lval_free(got)); \
-        assert(NULL != (got = lisp_mut(ast, &err))); \
+        assert(NULL != (got = lmutate(ast, &err))); \
         assert(lval_are_equal(got, expected)); \
     })
 
 #define test_fail(msg, input) \
-    it("fails for " msg, { \
+    it("fail for " msg, { \
         struct last* ast = NULL; \
         defer(last_free(ast)); \
         struct lerr* err = NULL; \
         defer(lerr_free(err)); \
         struct lval* got = NULL; \
         defer(lval_free(got)); \
-        assert(NULL == (got = lisp_mut(ast, &err))); \
+        assert(NULL == (got = lmutate(ast, &err))); \
     })
 
 #define _STRINGIFY(str) #str
 #define STRINGIFY(str) _STRINGIFY(str)
 
-describe(lmut, {
+describe(lmutate, {
 
     test_pass("num", "(+ 1)", {
         struct lval* sym = lval_alloc(); defer(lval_free(sym));

@@ -1,9 +1,9 @@
-#include "lmut.h"
+#include "lmutator.h"
 
 #include <errno.h>
 
-#include "lparser.h"
 #include "lerr.h"
+#include "lparser.h"
 #include "lval.h"
 
 static struct lval* lmut_num(const struct last* ast, struct lerr** error) {
@@ -63,13 +63,13 @@ static struct lval* lmut_qexpr(const struct last* ast, struct lerr** error);
 void lmut_fill_list(struct lval* list, const struct last* ast, struct lerr** error) {
     for (size_t c = 0; c < ast->childrenc; c++) {
         struct lval* o = NULL;
-        switch (ast->children[c]->tag) {
-        case LTAG_NUM: o = lmut_num(ast->children[c], error); break;
-        case LTAG_DBL: o = lmut_dbl(ast->children[c], error); break;
-        case LTAG_SYM: o = lmut_sym(ast->children[c], error); break;
-        case LTAG_STR: o = lmut_str(ast->children[c], error); break;
-        case LTAG_SEXPR: o = lmut_sexpr(ast->children[c], error); break;
-        case LTAG_QEXPR: o = lmut_qexpr(ast->children[c], error); break;
+        switch (ast->children[c]->type) {
+        case LAST_NUM: o = lmut_num(ast->children[c], error); break;
+        case LAST_DBL: o = lmut_dbl(ast->children[c], error); break;
+        case LAST_SYM: o = lmut_sym(ast->children[c], error); break;
+        case LAST_STR: o = lmut_str(ast->children[c], error); break;
+        case LAST_SEXPR: o = lmut_sexpr(ast->children[c], error); break;
+        case LAST_QEXPR: o = lmut_qexpr(ast->children[c], error); break;
         default:
             o = lval_alloc();
             *error = lerr_throw(LERR_AST, "can't read AST");
@@ -107,13 +107,13 @@ static struct lval* lmut_sexpr(const struct last* ast, struct lerr** error) {
     return v;
 }
 
-struct lval* lisp_mut(const struct last* ast, struct lerr** error) {
+struct lval* lmutate(const struct last* ast, struct lerr** error) {
     if (!ast) {
         *error = NULL;
         return NULL;
     }
     struct lval* p = lval_alloc();
-    if (ast->tag != LTAG_PROG) {
+    if (ast->type != LAST_PROG) {
         struct lerr* err = lerr_throw(LERR_AST, "can't read AST");
         lval_mut_err_ptr(p, err);
         *error = NULL;
@@ -124,7 +124,7 @@ struct lval* lisp_mut(const struct last* ast, struct lerr** error) {
     p->ast = ast;
     for (size_t c = 0; c < ast->childrenc; c++) {
         struct lval* s = NULL;
-        if (ast->children[c]->tag == LTAG_SEXPR) {
+        if (ast->children[c]->type == LAST_SEXPR) {
             s = lmut_sexpr(ast->children[c], error);
         } else {
             s = lval_alloc();

@@ -8,7 +8,7 @@
 
 #include "llexer.h"
 #include "lparser.h"
-#include "lmut.h"
+#include "lmutator.h"
 #include "lval.h"
 #include "lenv.h"
 #include "lfunc.h"
@@ -143,21 +143,21 @@ struct lerr* leval_from_string(struct lenv* env,
     struct lerr* error = NULL;
     do {
         /* Lex input. */
-        tokens = lisp_lex_surround(input, &error);
+        tokens = llex(input, &error);
         if (error) {
             error = lerr_propagate(error, "lexing error:");
             lval_mut_err_code(r, LERR_EVAL);
             break;
         }
         /* Parse input. */
-        ast = lisp_parse(tokens, &error);
+        ast = lparse(tokens, &error);
         if (error) {
             error = lerr_propagate(error, "parsing error:");
             lval_mut_err_code(r, LERR_EVAL);
             break;
         }
         /* Mutate the AST. */
-        program = lisp_mut(ast, &error);
+        program = lmutate(ast, &error);
         if (error) {
             error = lerr_propagate(error, "mutation error:");
             lval_mut_err_code(r, LERR_EVAL);
@@ -172,7 +172,7 @@ struct lerr* leval_from_string(struct lenv* env,
         }
     } while (0); // Allow to break.
     /* Cleanup. */
-    if (tokens)  llex_free(tokens);
+    if (tokens)  ltok_free(tokens);
     if (ast)     last_free(ast);
     if (program) lval_free(program);
     return error;

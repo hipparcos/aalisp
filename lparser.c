@@ -22,10 +22,10 @@ const char* last_type_string(enum last_type type) {
     return NULL;
 }
 
-static struct last* last_alloc(enum last_type type, const char* content, const struct ltok* tok) {
+static struct last* last_alloc(
+        enum last_type type, const char* content, size_t len, const struct ltok* tok) {
     struct last* ast = calloc(1, sizeof(struct last));
     ast->type = type;
-    size_t len = strlen(content);
     ast->content = malloc(len+1);
     memcpy(ast->content, content, len);
     ast->content[len] = '\0';
@@ -37,7 +37,7 @@ static struct last* last_alloc(enum last_type type, const char* content, const s
 }
 
 static struct last* last_error(enum lerr_code error, const struct ltok* tok) {
-    struct last* err = last_alloc(LAST_ERR, "", tok);
+    struct last* err = last_alloc(LAST_ERR, "", 0, tok);
     err->err = error;
     return err;
 }
@@ -55,45 +55,44 @@ static struct last* lparse_symbol(struct ltok* tokens) {
     if (tokens->type != LTOK_SYM) {
         return NULL;
     }
-    return last_alloc(LAST_SYM, tokens->content, tokens);
+    return last_alloc(LAST_SYM, tokens->content, tokens->len, tokens);
 }
 
 static struct last* lparse_number(struct ltok* tokens) {
     if (tokens->type != LTOK_NUM) {
         return NULL;
     }
-    return last_alloc(LAST_NUM, tokens->content, tokens);
+    return last_alloc(LAST_NUM, tokens->content, tokens->len, tokens);
 }
 
 static struct last* lparse_double(struct ltok* tokens) {
     if (tokens->type != LTOK_DBL) {
         return NULL;
     }
-    return last_alloc(LAST_DBL, tokens->content, tokens);
+    return last_alloc(LAST_DBL, tokens->content, tokens->len, tokens);
 }
 
 static struct last* lparse_string(struct ltok* tokens) {
     if (tokens->type != LTOK_STR) {
         return NULL;
     }
-    char* content = tokens->content;
-    content++; // skip opening ".
-    size_t len = strlen(content);
-    len--; // skip closing ".
+    char* content = tokens->content+1; // skip opening ".
+    size_t len = tokens->len-2; // skip opening and closing ".
     char* buffer = malloc(len+1);
     /* Remove opening and closing " and escape \. */
-    size_t lencpy = 0;
+    size_t lenlastcpy = len;
     char *curr = buffer, *end = NULL;
     while (NULL != (end = strstr(content, "\\\""))) {
-        lencpy = end - content;
+        size_t lencpy = end - content;
         memcpy(curr, content, lencpy);
         curr += lencpy;
         content += lencpy + 1; // skip \.
-        len -= lencpy + 1;
+        lenlastcpy -= lencpy + 1;
+        len--; // skip \.
     }
-    memcpy(curr, content, len);
-    curr[len] = '\0';
-    struct last* node = last_alloc(LAST_STR, buffer, tokens);
+    memcpy(curr, content, lenlastcpy);
+    buffer[len] = '\0';
+    struct last* node = last_alloc(LAST_STR, buffer, len, tokens);
     free(buffer);
     return node;
 }
@@ -162,11 +161,11 @@ static struct last* lparse_expr(struct ltok* first, struct ltok** last) {
             expr = sexpr;
             break;
         }
-        expr = last_alloc(LAST_EXPR, "", curr);
+        expr = last_alloc(LAST_EXPR, "", 0, curr);
         last_attach(sexpr, expr);
         break;
     case LTOK_SYM:
-        expr = last_alloc(LAST_EXPR, "", curr);
+        expr = last_alloc(LAST_EXPR, "", 0, curr);
         /* Symbol. */
         last_attach(lparse_symbol(curr), expr);
         curr = curr->next;
@@ -221,7 +220,7 @@ static struct last* lparse_sexpr(struct ltok* first, struct ltok** last, bool sk
     if (skip_par && curr->type != LTOK_CPAR) {
         sexpr = last_error(LERR_PARSER_MISSING_CPAR, curr);
     } else {
-        sexpr = last_alloc(LAST_SEXPR, "", curr);
+        sexpr = last_alloc(LAST_SEXPR, "", 0, curr);
         if (skip_par) curr = curr->next; // Skip ).
     }
     last_attach(expr, sexpr);
@@ -237,7 +236,7 @@ static struct last* lparse_qexpr(struct ltok* first, struct ltok** last) {
     }
     curr = curr->next; // Skip {.
     // Inner list.
-    struct last* qexpr = last_alloc(LAST_QEXPR, "", curr);
+    struct last* qexpr = last_alloc(LAST_QEXPR, "", 0, curr);
     // LTOK_CPAR needed to detect missing `}`.
     while (curr->type != LTOK_CBRC && curr->type != LTOK_CPAR && curr->type != LTOK_EOF) {
         struct last* operand = NULL;
@@ -272,7 +271,7 @@ static struct last* lparse_program(struct ltok* tokens, struct last** error) {
     if (tokens->type == LTOK_EOF) {
         return NULL;
     }
-    struct last* prg = last_alloc(LAST_PROG, "", NULL);
+    struct last* prg = last_alloc(LAST_PROG, "", 0, NULL);
     struct ltok* curr = tokens;
     struct last* expr = NULL;
     *error = NULL;

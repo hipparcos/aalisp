@@ -64,7 +64,7 @@ $(build_dir)/%.o: %.c $$(@D)/.f
 $(build_dir)/%.d: %.c $(version_header) $$(@D)/.f
 	@set -e; rm -f $@; \
 		$(CC) -MM $(CFLAGS) $< > $@.$$$$; \
-		sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+		sed 's,\($*\)\.o[ :]*,$(build_dir)/\1.o $@ : ,g' < $@.$$$$ > $@; \
 		rm -f $@.$$$$
 
 # Include dependancies makefiles.

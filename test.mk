@@ -19,15 +19,17 @@ TEST_CFLAGS:=-DSNOW_ENABLED -g
 
 test: $(testcases) $(tests_lisp)
 
+generic/avl_test: $(addprefix $(build_dir)/,generic/avl.o)
+generic/mempool_test: $(addprefix $(build_dir)/,generic/mempool.o)
 llexer_test: $(addprefix $(build_dir)/,llexer.o lerr.o)
 lparser_test: $(addprefix $(build_dir)/,lparser.o llexer.o lerr.o)
-lmutator_test: $(addprefix $(build_dir)/, \
-	lmutator.o lparser.o llexer.o lerr.o \
-	lval.o lfunc.o lenv.o leval.o \
-	lbuiltin.o lbuiltin_condition.o lbuiltin_func.o lbuiltin_operator.o \
-	generic/avl.o \
-	vendor/mini-gmp/mini-gmp.o \
-	)
+lmutator_test: $(objects)
+lval_test: $(objects)
+lenv_test: $(objects)
+lbuiltin_func_test: $(objects)
+lbuiltin_operator_test: $(objects)
+leval_test: $(objects)
+marker_test: $(objects)
 
 $(testcases): %: $(test_build_dir)/%.o
 	@$(CC) $(LDFLAGS) $(LDLIBS) $^ $(TEST_CFLAGS) -o $(test_build_dir)/$@

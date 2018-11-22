@@ -15,7 +15,7 @@ test_file:=test.mk
 benchmark_file:=benchmark.mk
 version_header:=version.h
 
-objects=$(addprefix $(build_dir)/,$(sources:%.c=%.o))
+objects=$(addprefix $(build_dir)/,$(filter-out $(PROGNAME).o,$(sources:%.c=%.o)))
 deps=$(addprefix $(build_dir)/,$(sources:%.c=%.d))
 
 CC=gcc
@@ -53,7 +53,7 @@ leakcheck: $(out)
 	valgrind $(VGFLAGS) ./$^
 
 # Build executable.
-$(out): $(objects)
+$(out): $(PROGNAME).o $(objects)
 	$(CC) $(LDFLAGS) $(LDLIBS) $^ -o $@
 
 # Generate O file in $(build_dir); .f is a directory marker.

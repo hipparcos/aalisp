@@ -2,7 +2,8 @@
 tests:=generic/avl_test.c generic/mempool_test.c \
 	llexer_test.c lparser_test.c lmutator_test.c \
 	lval_test.c lenv_test.c lbuiltin_operator_test.c lbuiltin_func_test.c \
-	leval_test.c marker_test.c
+	leval_test.c marker_test.c \
+	lstring_test.c
 test_build_dir:=$(build_dir)
 
 tests_lisp:=test/stdlib_test.lisp
@@ -19,6 +20,7 @@ TEST_CFLAGS:=-DSNOW_ENABLED -g
 
 test: $(testcases) $(tests_lisp)
 
+lstring_test: $(addprefix $(build_dir)/,lstring.o)
 generic/avl_test: $(addprefix $(build_dir)/,generic/avl.o)
 generic/mempool_test: $(addprefix $(build_dir)/,generic/mempool.o)
 llexer_test: $(addprefix $(build_dir)/,llexer.o lerr.o)

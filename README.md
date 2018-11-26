@@ -24,7 +24,8 @@ Testing:
 
 Included under vendor/:
 - mini-gmp: bignum arithmetic;
-- [mortie/snow](https://github.com/mortie/snow): unit testing.
+- [mortie/snow](https://github.com/mortie/snow): unit testing;
+- [JuliaStrings/utf8proc](https://github.com/JuliaStrings/utf8proc): UTF-8 processing.
 
 ### Building & running
 

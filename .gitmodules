@@ -1,3 +1,6 @@
 [submodule "vendor/snow"]
 	path = vendor/snow
 	url = https://github.com/mortie/snow.git
+[submodule "vendor/utf8proc"]
+	path = vendor/utf8proc
+	url = https://github.com/JuliaStrings/utf8proc.git

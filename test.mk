@@ -20,7 +20,7 @@ TEST_CFLAGS:=-DSNOW_ENABLED -g
 
 test: $(testcases) $(tests_lisp)
 
-lstring_test: $(addprefix $(build_dir)/,lstring.o)
+lstring_test: $(addprefix $(build_dir)/,lstring.o vendor/utf8proc/utf8proc.o)
 generic/avl_test: $(addprefix $(build_dir)/,generic/avl.o)
 generic/mempool_test: $(addprefix $(build_dir)/,generic/mempool.o)
 llexer_test: $(addprefix $(build_dir)/,llexer.o lerr.o)

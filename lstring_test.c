@@ -79,14 +79,27 @@ describe(lstr, {
         });
     });
 
-    subdesc(lstr_cat_cstr, {
+    subdesc(lstr_cat_codepoint, {
         it("concatenates multiple char into buf", {
             struct lstr* buf = lbuf(3);
             defer(lstr_free(buf));
-            assert(lstr_cat_char(buf, 'a'));
-            assert(lstr_cat_char(buf, 'b'));
-            assert(lstr_cat_char(buf, 'c'));
+            assert(lstr_cat_codepoint(buf, 'a'));
+            assert(lstr_cat_codepoint(buf, 'b'));
+            assert(lstr_cat_codepoint(buf, 'c'));
             assert(strcmp(buf->content, "abc") == 0);
+        });
+
+        it("concatenates multibytes char into buf", {
+            const char* expected = "έδωσαν";
+            struct lstr* buf = lbuf(strlen(expected));
+            defer(lstr_free(buf));
+            assert(lstr_cat_codepoint(buf, L'έ'));
+            assert(lstr_cat_codepoint(buf, L'δ'));
+            assert(lstr_cat_codepoint(buf, L'ω'));
+            assert(lstr_cat_codepoint(buf, L'σ'));
+            assert(lstr_cat_codepoint(buf, L'α'));
+            assert(lstr_cat_codepoint(buf, L'ν'));
+            assert(strcmp(buf->content, expected) == 0);
         });
     });
 });

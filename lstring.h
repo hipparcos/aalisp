@@ -37,7 +37,7 @@ struct lstr* lstr_cat(struct lstr* buf, const struct lstr* str);
 /** lstr_cat_cstr concatenantes the '\0' terminated string str. to buf */
 struct lstr* lstr_cat_cstr(struct lstr* buf, const char* str);
 /** lstr_cat_char concatenates c at the end of buf. */
-struct lstr* lstr_cat_char(struct lstr* buf, uint32_t c);
+struct lstr* lstr_cat_codepoint(struct lstr* buf, int32_t codepoint);
 /** lstr_cmp compares two lstr.
  ** lstr_cmp returns:
  **   -1 if left>right

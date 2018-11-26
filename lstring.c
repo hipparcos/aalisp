@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <uchar.h>
+
+#include "vendor/utf8proc/utf8proc.h"
 
 struct lstr* lstr(const char* src) {
     size_t len = strlen(src);
@@ -60,27 +63,31 @@ struct lstr* lstr_cat_cstr(struct lstr* buf, const char* str) {
     if (len == 0) {
         return NULL;
     }
+    if (len > buf->cap - buf->len) {
+        return NULL;
+    }
     memcpy(buf->content + buf->len, str, len);
     buf->len += len;
     buf->content[buf->len] = '\0';
     return buf;
 }
 
-struct lstr* lstr_cat_char(struct lstr* buf, uint32_t c) {
+struct lstr* lstr_cat_codepoint(struct lstr* buf, int32_t codepoint) {
     if (!buf) {
         return NULL;
     }
     if (buf->cap == buf->len) {
         return NULL;
     }
-    if (c <= 0xFF) {
-        buf->content[buf->len++] = c;
-        buf->content[buf->len] = '\0';
-    } else {
-        fputs("lstr_cat_char not implemented yet for multibytes char.", stderr);
-        exit(EXIT_FAILURE);
+    // Check UTF-8 validity.
+    if (!utf8proc_codepoint_valid(codepoint)) {
+        return NULL;
     }
-    return buf;
+    // Encode as string.
+    uint8_t s[5] = {0};
+    utf8proc_encode_char(codepoint, &s[0]);
+    // Concatenate to buffer.
+    return lstr_cat_cstr(buf, (char*)s);
 }
 
 int lstr_cmp(const struct lstr* left, const struct lstr* right) {
